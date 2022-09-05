@@ -10,6 +10,9 @@ var fullData = [];
 var fullCounter = 0;
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
+const cCConditions = ["php"];
+
+
 
 //const fs = require('fs');
 // const Crawler = require('crawler');
@@ -29,9 +32,23 @@ init();
 
 
 function init() {
+  // initializeHTMLPage();
   db.clear();
-  crawlAllUrls('https://futuress.org/learning/coding-resistance/');//https://www.ait.ac.at/en/
+  crawlAllUrls('https://www.belvedere.at/');//https://www.ait.ac.at/en/
 }
+
+function initializeHTMLPage() {
+  const http = require('http')
+  const fs = require('fs')
+
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'text/html' })
+    fs.createReadStream('index.html').pipe(res)
+  })
+
+  server.listen(process.env.PORT || 3000)
+}
+
 
 function crawlAllUrls(url) {
   // console.log(`Crawling ${url}`);
@@ -56,10 +73,21 @@ function crawlAllUrls(url) {
                 let pageTitle = JSON.stringify(`${url}`);
                 completeData.push('[[' + pageTitle + '],[' + data + ']]');
                 if (data) {
-                  dbUrl.get(url, function (err, key) {
+                  dbUrl.get(href, function (err, key) {
                     if (err) {
-                      console.log("new url " + url);
-                      searchForNames(urls[item].attribs.href, data);
+                      let countryCode = href.split('.').splice(-2);
+                      if (countryCode[1]) {
+                        if (countryCode[1].includes('%')) {
+                          countryCode = countryCode[1].split('%')[0];
+                        } else {
+                          countryCode = countryCode[1].split('/')[0];
+                        }
+                        // console.log("with countrycode" + countryCode)
+                        console.log(cCConditions.some(el => countryCode.includes(el)))
+                        searchForNames(href, countryCode, data);
+
+                      }
+
                     } else {
                       // console.log("revisited url: " + key);
                     }
@@ -81,7 +109,7 @@ function crawlAllUrls(url) {
 }
 
 
-function searchForNames(url, data) {
+function searchForNames(url, cc, data) {
 
   let doc = nlp(data);
   let person = doc.match('#Person #Noun')
@@ -98,7 +126,13 @@ function searchForNames(url, data) {
         allNames[fullCounter] += "'" + d.text('reduced');
         fullCounter++;
         if (allNames[fullCounter] !== null) {
-          writeToJsonFile(d.text('reduced'));
+          let obj = {
+            person: []
+          };
+          console.log("ländercode")
+
+          obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc });
+          writeToJsonFile(obj.person);
         }
 
       } else {
@@ -115,11 +149,6 @@ function searchForNames(url, data) {
   })
   doc.text()
 
-
-  // setTimeout(() => {
-  // console.log(allNames);
-  // }, 1000);
-
 }
 
 
@@ -132,6 +161,6 @@ function writeToJsonFile(mData) {
   const file = fs.readFileSync('names.json');
   var json = JSON.parse(file.toString());
   json.push(mData);
-  fs.writeFileSync("names.json", JSON.stringify(json))
+  fs.writeFileSync("names.json", JSON.stringify(json));
 
 }
