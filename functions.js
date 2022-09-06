@@ -2,8 +2,14 @@ import * as fs from 'fs';
 import pkg from 'terminal-kit';
 const { terminal, TextTable } = pkg;
 const term = pkg.terminal;
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
 
-
+export function getCurrentDate() {
+  let dateObject = new Date();
+  return (monthNames[dateObject.getMonth()] + ", " + dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds() + ", " + dateObject.getMilliseconds();
+}
 export function checkCountryCode(countryCode) {
   if (countryCode[1]) {
     if (countryCode[1].includes('%')) {
@@ -19,7 +25,7 @@ export function writeToJsonFile(mData, mfile) {
   var json = JSON.parse(file.toString());
   json.push(mData);
   fs.writeFileSync(mfile, JSON.stringify(json));
-
+  console.log("write to file");
 }
 export function readJsonFile() {
   const file = fs.readFileSync('names.json');
