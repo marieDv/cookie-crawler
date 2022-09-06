@@ -25,7 +25,7 @@ export function writeToJsonFile(mData, mfile) {
   var json = JSON.parse(file.toString());
   json.push(mData);
   fs.writeFileSync(mfile, JSON.stringify(json));
-  console.log("write to file");
+  // console.log("write to file");
 }
 export function readJsonFile() {
   const file = fs.readFileSync('names.json');

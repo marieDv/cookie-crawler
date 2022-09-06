@@ -1,9 +1,7 @@
 import { writeToJsonFile, readJsonFile, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
-import * as fs from 'fs';
 import { Level } from 'level';
 import Crawler from 'crawler';
 import nlp from 'de-compromise'
-
 
 var fullCounter = 0;
 var allNames = [];
@@ -12,15 +10,16 @@ let obselete = [];
 var currentDate;
 var fullCrawledData;
 
-
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
-const cCConditions = ["php"];
+const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 
 const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
 let c = new Crawler({
-  maxConnections: 10,
-  rateLimit: 10,
+  maxConnections: 2,
+  rateLimit: 0,
+  retries: 1,
+  skipDuplicates: true,
 });
 
 init();
@@ -28,7 +27,7 @@ init();
 function init() {
   clearDataBases([db, dbUrl]); //reset local database that compares entries
   writeLatestToTerminal(); // write current set of names into terminal
-  crawlAllUrls(startURL); 
+  crawlAllUrls(startURL);
 }
 
 //crawl url's and call searchForNames
@@ -61,7 +60,18 @@ function crawlAllUrls(url) {
                         } else {
                           countryCode = countryCode[1].split('/')[0];
                         }
-                        searchForNames(href, countryCode, data);
+
+                        let transferData = true;
+                        for (let i=0; i<blacklist.length; i++) {
+                          if (countryCode.includes(blacklist[i])) {
+                            console.log(blacklist[i]);
+                            transferData = false;
+                          }
+                        }
+                        console.log(transferData);
+                        if(transferData === true){
+                          searchForNames(href, countryCode, data)
+                        }
                       }
                     }
                   })
@@ -81,6 +91,7 @@ function crawlAllUrls(url) {
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
+  console.log("searching for names     " + cc);
   let doc = nlp(data);
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
@@ -95,7 +106,7 @@ function searchForNames(url, cc, data) {
         currentDate = getCurrentDate();
         obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate });
         writeToJsonFile(obj.person, 'names.json');
-        writeLatestToTerminal();
+        // writeLatestToTerminal();
         writeToJsonFile(d.text('reduced'), 'namesAsString.json');
         let urlObj = {
           url: []
