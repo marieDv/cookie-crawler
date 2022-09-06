@@ -1,29 +1,27 @@
-import { writeToJsonFile, readJsonFile, checkCountryCode } from './functions.js';
-
+import { writeToJsonFile, readJsonFile, checkCountryCode, clearDataBases,writeLatestToTerminal } from './functions.js';
 import * as fs from 'fs';
 import { Level } from 'level';
 import Crawler from 'crawler';
 import nlp from 'de-compromise'
+
+
+var fullCounter = 0;
 var allNames = [];
 var allURLS = [];
 var fullData = [];
-var fullCounter = 0;
+let obselete = [];
+var currentDate;
+var fullCrawledData;
+var completeData = [];
+
+
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const cCConditions = ["php"];
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
-import pkg from 'terminal-kit';
-const { terminal, TextTable } = pkg;
-const term = pkg.terminal;
-const textTable = pkg.TextTable;
-var currentDate;
-var fullCrawledData;
-var fullCrawledURLs;
-
-var completeData = [];
-let obselete = []; // Array of what was crawled already
+const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 10,
   rateLimit: 10,
@@ -31,14 +29,10 @@ let c = new Crawler({
 
 init();
 
-
 function init() {
-  // initializeHTMLPage();
-  db.clear();
-  dbUrl.clear();
+  clearDataBases([db, dbUrl]);
   writeLatestToTerminal();
-  crawlAllUrls('https://www.ait.ac.at/');//https://www.ait.ac.at/en/
-
+  crawlAllUrls(startURL);
 }
 
 
@@ -102,40 +96,7 @@ function setTableCells() {
   term.setCellContent(1, 1, mydata[mydata.length - 1][0].name);
 }
 
-function writeLatestToTerminal() {
-  const file = fs.readFileSync('names.json');
-  var mydata = JSON.parse(file.toString());
-  // if ([mydata.length - 4][0].name) {
-  term.fullscreen(true);
-  term.table([
-    ['name', 'countrycode', 'date'],
-    [mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].name : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].countrycode : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].date : ''],// mydata[mydata.length - 5][0].countrycode, mydata[mydata.length - 9][0].date],
-    [mydata[mydata.length - 2] ? mydata[mydata.length - 2][0].name : '', mydata[mydata.length - 2] ? mydata[mydata.length - 2][0].countrycode : '', mydata[mydata.length - 2] ? mydata[mydata.length - 2][0].date : ''],// mydata[mydata.length - 5][0].countrycode, mydata[mydata.length - 9][0].date],
-    [mydata[mydata.length - 3] ? mydata[mydata.length - 3][0].name : '', mydata[mydata.length - 3] ? mydata[mydata.length - 3][0].countrycode : '', mydata[mydata.length - 3] ? mydata[mydata.length - 3][0].date : ''],// mydata[mydata.length - 5][0].countrycode, mydata[mydata.length - 9][0].date],
-    [mydata[mydata.length - 4] ? mydata[mydata.length - 4][0].name : '', mydata[mydata.length - 4] ? mydata[mydata.length - 4][0].countrycode : '', mydata[mydata.length - 4] ? mydata[mydata.length - 4][0].date : ''],// mydata[mydata.length - 5][0].countrycode, mydata[mydata.length - 9][0].date]
-    [mydata[mydata.length - 5] ? mydata[mydata.length - 5][0].name : '', mydata[mydata.length - 5] ? mydata[mydata.length - 5][0].countrycode : '', mydata[mydata.length - 5] ? mydata[mydata.length - 5][0].date : ''],
-    [mydata[mydata.length - 6] ? mydata[mydata.length - 6][0].name : '', mydata[mydata.length - 6] ? mydata[mydata.length - 6][0].countrycode : '', mydata[mydata.length - 6] ? mydata[mydata.length - 6][0].date : ''],
-    [mydata[mydata.length - 7] ? mydata[mydata.length - 7][0].name : '', mydata[mydata.length - 7] ? mydata[mydata.length - 7][0].countrycode : '', mydata[mydata.length - 7] ? mydata[mydata.length - 7][0].date : ''],
-    [mydata[mydata.length - 8] ? mydata[mydata.length - 8][0].name : '', mydata[mydata.length - 8] ? mydata[mydata.length - 8][0].countrycode : '', mydata[mydata.length - 8] ? mydata[mydata.length - 8][0].date : ''],
-    [mydata[mydata.length - 9] ? mydata[mydata.length - 9][0].name : '', mydata[mydata.length - 9] ? mydata[mydata.length - 9][0].countrycode : '', mydata[mydata.length - 9] ? mydata[mydata.length - 9][0].date : ''],
-    [mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].name : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].countrycode : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].date : ''],
-    [mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].name : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].countrycode : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].date : ''],
 
-  ], {
-    hasBorder: true,
-    fullscreen: true,
-    contentHasMarkup: true,
-    // borderChars: 'lightRounded',
-    borderAttr: { color: 'white' },
-    textAttr: { bgColor: 'default' },
-    firstRowTextAttr: { bgColor: 'yellow' },
-
-    width: 90,
-    // fit: true   // Activate all expand/shrink + wordWrap
-  }
-  );
-  // }
-}
 
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
@@ -155,9 +116,9 @@ function searchForNames(url, cc, data) {
           let obj = {
             person: []
           };
-          
+
           let dateObject = new Date();
-          currentDate = (monthNames[dateObject.getMonth()] +", "+dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds()+", "+dateObject.getMilliseconds();
+          currentDate = (monthNames[dateObject.getMonth()] + ", " + dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds() + ", " + dateObject.getMilliseconds();
           obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate });
           writeToJsonFile(obj.person, 'names.json');
           console.log("write to file");
