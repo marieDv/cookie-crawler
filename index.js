@@ -1,23 +1,22 @@
-import { writeToJsonFile, readJsonFile, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
+import { writeToJsonFile, readJsonFile, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
 import { Level } from 'level';
 import Crawler from 'crawler';
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
-import LanguageDetect from 'languagedetect';
+
+var currentLanguage;
 var fullCounter = 0;
-var allNames = [];
 var allURLS = [];
 let obselete = [];
 var currentDate;
 var fullCrawledData;
-var lastValidLanguage = '';
-var currentLanguage;
 
-const lngDetector = new LanguageDetect();
+
+
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
-const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{"];
+const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–"];
 
 const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
 let c = new Crawler({
@@ -91,68 +90,50 @@ function crawlAllUrls(url) {
     }
   })
 }
-function detectDataLanguage(data) {
-  currentLanguage = lngDetector.detect(data, 1)[0] ? lngDetector.detect(data, 1)[0][0] : '';
-  if (currentLanguage !== '') {
-    lastValidLanguage = currentLanguage;
-  }
-  return currentLanguage !== '' ? currentLanguage : lastValidLanguage;
-}
 
-function checkBlacklist(mblacklist, text) {
-  let checkBlacklist = false;
-  for (let i = 0; i < mblacklist.length; i++) {
-    if (text.includes(blacklistNames[i])) {
-      checkBlacklist = true;
-      console.log("got blacklisted: " + text);
-    }
-  }
-  return checkBlacklist;
-}
 function languageProcessing(doc, data, url, cc) {
-
-
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
-    db.get(d.text('reduced'), function (err, key) {
-      if (err && checkBlacklist(blacklistNames, d.text('reduced')) === false) {
-        fullCounter++;
-        let obj = {
-          person: []
-        };
-        currentDate = getCurrentDate();
-        obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
-        writeToJsonFile(obj.person, 'names.json');
-        writeLatestToTerminal();
-        writeToJsonFile(d.text('reduced'), 'namesAsString.json');
-        let urlObj = {
-          url: []
-        };
-        urlObj.url.push({ url: url, date: currentDate });
-        writeToJsonFile(urlObj, 'fullOutputURLs.json');
-        if (fullCrawledData.length >= 200000) {
-          let dataObj = {
-            dataPage: []
+    if (checkBlacklist(blacklistNames, d.text('reduced')) === false) {
+      db.get(d.text('reduced'), function (err, key) {
+        if (err) {
+          fullCounter++;
+          let obj = {
+            person: []
           };
-          dataObj.dataPage.push({ text: data });
-          writeToJsonFile(dataObj, 'fullOutput.json');
-          fullCrawledData = '';
-        }
+          currentDate = getCurrentDate();
+          obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
+          writeToJsonFile(obj.person, 'names.json');
+          writeLatestToTerminal();
+          writeToJsonFile(d.text('reduced'), 'namesAsString.json');
+          let urlObj = {
+            url: []
+          };
+          urlObj.url.push({ url: url, date: currentDate });
+          writeToJsonFile(urlObj, 'fullOutputURLs.json');
+          if (fullCrawledData.length >= 200000) {
+            let dataObj = {
+              dataPage: []
+            };
+            dataObj.dataPage.push({ text: data });
+            writeToJsonFile(dataObj, 'fullOutput.json');
+            fullCrawledData = '';
+          }
 
-      }
-    })
-    db.put(d.text('reduced'), d.text('reduced'));
-    dbUrl.put(url, url);
+        }
+      })
+      db.put(d.text('reduced'), d.text('reduced'));
+      dbUrl.put(url, url);
+    }
   })
   doc.text()
 }
 
-
-
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
+  currentLanguage = detectDataLanguage(data);
   switch (detectDataLanguage(data)) {
     case 'german':
       languageProcessing(deNlp(data), data, url, cc)
