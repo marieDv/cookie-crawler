@@ -17,7 +17,7 @@ const lngDetector = new LanguageDetect();
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
-const blacklistNames = ["ii", "=", "'s", "}", '#', '"', "."];
+const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{"];
 
 const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
 let c = new Crawler({
@@ -69,7 +69,6 @@ function crawlAllUrls(url) {
                         let transferData = true;
                         for (let i = 0; i < blacklist.length; i++) {
                           if (countryCode.includes(blacklist[i])) {
-                            // console.log(blacklist[i]);
                             transferData = false;
                           }
                         }
@@ -100,14 +99,25 @@ function detectDataLanguage(data) {
   return currentLanguage !== '' ? currentLanguage : lastValidLanguage;
 }
 
-
+function checkBlacklist(mblacklist, text) {
+  let checkBlacklist = false;
+  for (let i = 0; i < mblacklist.length; i++) {
+    if (text.includes(blacklistNames[i])) {
+      checkBlacklist = true;
+      console.log("got blacklisted: " + text);
+    }
+  }
+  return checkBlacklist;
+}
 function languageProcessing(doc, data, url, cc) {
+
+
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
     db.get(d.text('reduced'), function (err, key) {
-      if (err) {
+      if (err && checkBlacklist(blacklistNames, d.text('reduced')) === false) {
         fullCounter++;
         let obj = {
           person: []
@@ -130,6 +140,7 @@ function languageProcessing(doc, data, url, cc) {
           writeToJsonFile(dataObj, 'fullOutput.json');
           fullCrawledData = '';
         }
+
       }
     })
     db.put(d.text('reduced'), d.text('reduced'));
