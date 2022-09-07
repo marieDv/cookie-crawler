@@ -1,18 +1,23 @@
 import { writeToJsonFile, readJsonFile, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
 import { Level } from 'level';
 import Crawler from 'crawler';
-import nlp from 'de-compromise'
-
+import enNlp from 'compromise';
+import deNlp from 'de-compromise';
+import LanguageDetect from 'languagedetect';
 var fullCounter = 0;
 var allNames = [];
 var allURLS = [];
 let obselete = [];
 var currentDate;
 var fullCrawledData;
+var lastValidLanguage = '';
+var currentLanguage;
 
+const lngDetector = new LanguageDetect();
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
+const blacklistNames = ["ii", "=", "'s", "}", '#', '"', "."];
 
 const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
 let c = new Crawler({
@@ -62,14 +67,13 @@ function crawlAllUrls(url) {
                         }
 
                         let transferData = true;
-                        for (let i=0; i<blacklist.length; i++) {
+                        for (let i = 0; i < blacklist.length; i++) {
                           if (countryCode.includes(blacklist[i])) {
-                            console.log(blacklist[i]);
+                            // console.log(blacklist[i]);
                             transferData = false;
                           }
                         }
-                        console.log(transferData);
-                        if(transferData === true){
+                        if (transferData === true) {
                           searchForNames(href, countryCode, data)
                         }
                       }
@@ -88,11 +92,16 @@ function crawlAllUrls(url) {
     }
   })
 }
+function detectDataLanguage(data) {
+  currentLanguage = lngDetector.detect(data, 1)[0] ? lngDetector.detect(data, 1)[0][0] : '';
+  if (currentLanguage !== '') {
+    lastValidLanguage = currentLanguage;
+  }
+  return currentLanguage !== '' ? currentLanguage : lastValidLanguage;
+}
 
-// SEARCH FOR NAMES IN THE SAVED TEXT
-function searchForNames(url, cc, data) {
-  console.log("searching for names     " + cc);
-  let doc = nlp(data);
+
+function languageProcessing(doc, data, url, cc) {
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
     allURLS[i] += `url': `;
@@ -104,9 +113,9 @@ function searchForNames(url, cc, data) {
           person: []
         };
         currentDate = getCurrentDate();
-        obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate });
+        obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
         writeToJsonFile(obj.person, 'names.json');
-        // writeLatestToTerminal();
+        writeLatestToTerminal();
         writeToJsonFile(d.text('reduced'), 'namesAsString.json');
         let urlObj = {
           url: []
@@ -127,4 +136,21 @@ function searchForNames(url, cc, data) {
     dbUrl.put(url, url);
   })
   doc.text()
+}
+
+
+
+// SEARCH FOR NAMES IN THE SAVED TEXT
+function searchForNames(url, cc, data) {
+  switch (detectDataLanguage(data)) {
+    case 'german':
+      languageProcessing(deNlp(data), data, url, cc)
+      break;
+    case 'english':
+      languageProcessing(enNlp(data), data, url, cc);
+      break;
+    case '':
+      languageProcessing(enNlp(data), data, url, cc);
+      break;
+  }
 }
