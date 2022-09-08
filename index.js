@@ -141,6 +141,15 @@ function searchForNames(url, cc, data) {
     case 'english':
       languageProcessing(enNlp(data), data, url, cc);
       break;
+    case 'french':
+      languageProcessing(enNlp(data), data, url, cc);
+      break;
+    case 'italian':
+      languageProcessing(enNlp(data), data, url, cc);
+      break;
+    case 'spanish':
+      languageProcessing(enNlp(data), data, url, cc);
+      break;
     case '':
       languageProcessing(enNlp(data), data, url, cc);
       break;
