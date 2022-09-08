@@ -3,6 +3,10 @@ import { Level } from 'level';
 import Crawler from 'crawler';
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
+import frNlp from 'fr-compromise';
+import esNlp from 'es-compromise';
+import itNlp from 'it-compromise';
+
 
 var currentLanguage;
 var fullCounter = 0;
@@ -16,7 +20,7 @@ const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.repubblica.it/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 2,
   rateLimit: 0,
@@ -27,9 +31,9 @@ let c = new Crawler({
 init();
 
 function init() {
-  saveToSDCard();
+  // saveToSDCard();
   clearDataBases([db, dbUrl]); //reset local database that compares entries
- writeLatestToTerminal(); // write current set of names into terminal
+  writeLatestToTerminal(); // write current set of names into terminal
   crawlAllUrls(startURL);
 }
 
@@ -105,8 +109,8 @@ function languageProcessing(doc, data, url, cc) {
           currentDate = getCurrentDate();
           obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
           writeToJsonFile(obj.person, 'names.json');
-           writeLatestToTerminal();
-          saveToSDCard(d.text('reduced'));
+          writeLatestToTerminal();
+          // saveToSDCard(d.text('reduced'));
           writeToJsonFile(d.text('reduced'), 'namesAsString.json');
           let urlObj = {
             url: []
@@ -142,16 +146,16 @@ function searchForNames(url, cc, data) {
       languageProcessing(enNlp(data), data, url, cc);
       break;
     case 'french':
-      languageProcessing(enNlp(data), data, url, cc);
+      languageProcessing(frNlp(data), data, url, cc);
       break;
     case 'italian':
-      languageProcessing(enNlp(data), data, url, cc);
+      languageProcessing(itNlp(data), data, url, cc);
       break;
     case 'spanish':
-      languageProcessing(enNlp(data), data, url, cc);
+      languageProcessing(esNlp(data), data, url, cc);
       break;
     case '':
-      languageProcessing(enNlp(data), data, url, cc);
+      // languageProcessing(enNlp(data), data, url, cc);
       break;
   }
 }
