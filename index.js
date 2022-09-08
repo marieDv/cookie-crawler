@@ -1,4 +1,4 @@
-import { writeToJsonFile, readJsonFile, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
+import { writeToJsonFile, readJsonFile, saveToSDCard, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
 import { Level } from 'level';
 import Crawler from 'crawler';
 import enNlp from 'compromise';
@@ -14,7 +14,7 @@ var fullCrawledData;
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
-const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–"];
+const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
 const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
 let c = new Crawler({
@@ -27,6 +27,7 @@ let c = new Crawler({
 init();
 
 function init() {
+  saveToSDCard();
   clearDataBases([db, dbUrl]); //reset local database that compares entries
  writeLatestToTerminal(); // write current set of names into terminal
   crawlAllUrls(startURL);
@@ -105,6 +106,7 @@ function languageProcessing(doc, data, url, cc) {
           obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
           writeToJsonFile(obj.person, 'names.json');
           writeLatestToTerminal();
+          saveToSDCard(d.text('reduced'));
           writeToJsonFile(d.text('reduced'), 'namesAsString.json');
           let urlObj = {
             url: []

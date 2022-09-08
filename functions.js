@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import pkg from 'terminal-kit';
 import LanguageDetect from 'languagedetect';
+import { open, close, fstat } from 'node:fs';
+
 var lastValidLanguage = '';
 
 const { terminal, TextTable } = pkg;
@@ -11,7 +13,45 @@ const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 var currentLanguage;
 const lngDetector = new LanguageDetect();
 
+export function saveToSDCard(mData) {
+  //PATH OSX /Volumes/SDCard1/test.txt
 
+  let pathOSX = "/Volumes/SDCard1/test.json";
+
+  const file = fs.readFileSync(pathOSX);
+
+  let json = JSON.parse(file.toString());
+  json.push(mData);
+  fs.writeFileSync(pathOSX, JSON.stringify(json));
+  fs.open(pathOSX, 'r', (err, fd) => {
+    if (err) throw err;
+    try {
+      fstat(fd, (err, stat) => {
+        if (err) {
+          closeFd(fd);
+          throw err;
+        }
+        console.log(stat.size / (1024 * 1024) +"MB")
+        closeFd(fd);
+      });
+    } catch (err) {
+      closeFd(fd);
+      throw err;
+    }
+  });
+
+  // (await fs.promises.stat(file)).size
+  // let stats = fs.statSync(file);
+  // let fileSizeInMegabytes = stats.size / (1024 * 1024);
+  // console.log(fileSizeInMegabytes);
+
+
+}
+function closeFd(fd) {
+  close(fd, (err) => {
+    if (err) throw err;
+  });
+}
 export function detectDataLanguage(data) {
   currentLanguage = lngDetector.detect(data, 1)[0] ? lngDetector.detect(data, 1)[0][0] : '';
   if (currentLanguage !== '') {
