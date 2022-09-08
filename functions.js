@@ -14,9 +14,9 @@ var currentLanguage;
 const lngDetector = new LanguageDetect();
 
 export function saveToSDCard(mData) {
-  //PATH OSX /Volumes/SDCard1/test.txt
-
-  let pathOSX = "/Volumes/SDCard1/test.json";
+  //PATH OSX /Volumes/SDCard1/test.json
+  let pathOSX = "/media/process/SDCard1/test.json";
+  let pathRasp = "/media/process/SDCard1/test.json";
 
   const file = fs.readFileSync(pathOSX);
 

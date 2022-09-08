@@ -105,7 +105,7 @@ function languageProcessing(doc, data, url, cc) {
           currentDate = getCurrentDate();
           obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
           writeToJsonFile(obj.person, 'names.json');
-          writeLatestToTerminal();
+           writeLatestToTerminal();
           saveToSDCard(d.text('reduced'));
           writeToJsonFile(d.text('reduced'), 'namesAsString.json');
           let urlObj = {
