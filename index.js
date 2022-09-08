@@ -11,10 +11,6 @@ let obselete = [];
 var currentDate;
 var fullCrawledData;
 
-
-console.log("changes");
-console.log("what")
-
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
@@ -32,7 +28,7 @@ init();
 
 function init() {
   clearDataBases([db, dbUrl]); //reset local database that compares entries
- // writeLatestToTerminal(); // write current set of names into terminal
+ writeLatestToTerminal(); // write current set of names into terminal
   crawlAllUrls(startURL);
 }
 
@@ -108,7 +104,7 @@ function languageProcessing(doc, data, url, cc) {
           currentDate = getCurrentDate();
           obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
           writeToJsonFile(obj.person, 'names.json');
-          // writeLatestToTerminal();
+          writeLatestToTerminal();
           writeToJsonFile(d.text('reduced'), 'namesAsString.json');
           let urlObj = {
             url: []
