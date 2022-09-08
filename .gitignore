@@ -2,6 +2,7 @@ namesLevel
 urlsLevel
 fullOutput.json
 fullOutput.txt
-names.js
+fullOutputURLs.json
+names.json
 namesAsString.json
 node_modules
