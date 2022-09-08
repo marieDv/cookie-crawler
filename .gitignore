@@ -1,0 +1,13 @@
+node_modules
+urlsLevel
+namesLevel
+fullOutput.json 
+fullOutputURLs.json
+names.json
+namesAsString.json
+namesLevel/CURRENT
+namesLevel/LOG
+namesLevel/LOG.old
+urlsLevel/CURRENT
+urlsLevel/LOG
+urlsLevel/LOG.old
