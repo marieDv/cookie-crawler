@@ -14,13 +14,17 @@ var allURLS = [];
 let obselete = [];
 var currentDate;
 var fullCrawledData;
+let dataStringWithoutNames = "";
+let latestData = "";
+let tempSaveNames = [];
+let inCurrentDataset = 0;
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'https://www.repubblica.it/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 2,
   rateLimit: 0,
@@ -33,7 +37,7 @@ init();
 function init() {
   // saveToSDCard();
   clearDataBases([db, dbUrl]); //reset local database that compares entries
-  writeLatestToTerminal(); // write current set of names into terminal
+  // writeLatestToTerminal(); // write current set of names into terminal
   crawlAllUrls(startURL);
 }
 
@@ -97,6 +101,10 @@ function crawlAllUrls(url) {
 function languageProcessing(doc, data, url, cc) {
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
+
+
+    // console.log(i);
+    // console.log(i);
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
     if (checkBlacklist(blacklistNames, d.text('reduced')) === false) {
@@ -106,26 +114,48 @@ function languageProcessing(doc, data, url, cc) {
           let obj = {
             person: []
           };
+
           currentDate = getCurrentDate();
           obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
           writeToJsonFile(obj.person, 'names.json');
-          writeLatestToTerminal();
+          // writeLatestToTerminal();
           // saveToSDCard(d.text('reduced'));
+          // console.log(latestData === data);
           writeToJsonFile(d.text('reduced'), 'namesAsString.json');
           let urlObj = {
             url: []
           };
           urlObj.url.push({ url: url, date: currentDate });
           writeToJsonFile(urlObj, 'fullOutputURLs.json');
-          if (fullCrawledData.length >= 200000) {
+
+
+          // if (fullCrawledData.length >= 200000) {
+          if (data === latestData) {
+            tempSaveNames[inCurrentDataset] = d.text('reduced');
+            console.log(tempSaveNames);
+            inCurrentDataset++;
+          } else {
+            console.log("deleted");
+            for (let q = 0; q < tempSaveNames.length; q++) {
+              dataStringWithoutNames = data.replaceAll(tempSaveNames[q], "REPLACEMENTTEXT");
+            }
+            inCurrentDataset = 0;
+            tempSaveNames = [];
             let dataObj = {
               dataPage: []
             };
-            dataObj.dataPage.push({ text: data });
+            dataObj.dataPage.push({ text: dataStringWithoutNames });
             writeToJsonFile(dataObj, 'fullOutput.json');
-            fullCrawledData = '';
-          }
 
+          }
+          // console.log(d.text('reduced'))
+
+
+
+          // writeToJsonFile(dataObj, 'fullOutput.json');
+          fullCrawledData = '';
+          // }
+          latestData = data;
         }
       })
       db.put(d.text('reduced'), d.text('reduced'));
