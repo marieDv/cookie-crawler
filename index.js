@@ -6,6 +6,7 @@ import deNlp from 'de-compromise';
 import frNlp from 'fr-compromise';
 import esNlp from 'es-compromise';
 import itNlp from 'it-compromise';
+import { convert } from 'html-to-text';
 
 
 var currentLanguage;
@@ -24,7 +25,7 @@ const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'https://www.schoenbrunn.at/';//https://www.ait.ac.at/en/
+const startURL = 'https://futuress.org/events/coding-resistance/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 2,
   rateLimit: 0,
@@ -98,6 +99,8 @@ function crawlAllUrls(url) {
   })
 }
 
+
+
 function languageProcessing(doc, data, url, cc) {
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
@@ -134,11 +137,18 @@ function languageProcessing(doc, data, url, cc) {
             tempSaveNames[inCurrentDataset] = d.text('reduced');
             inCurrentDataset++;
           } else {
+            const convertedData = convert(data, {
+              wordwrap: 130
+            });
+            let tempData = convertedData;
             for (let q = 0; q < tempSaveNames.length; q++) {
-              console.log(tempSaveNames[q]);
-              dataStringWithoutNames = latestData.replace(tempSaveNames[q], "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
+            console.log(convertedData.includes(tempSaveNames[q]))
+              if (convertedData.includes(tempSaveNames[q])) {
+                console.log("dataset includes " + tempSaveNames[q]);
+              }
+              dataStringWithoutNames = tempData.replace(tempSaveNames[q], "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
             }
-            console.log(dataStringWithoutNames);
+            // console.log(dataStringWithoutNames);
             let dataObj = {
               dataPage: []
             };
@@ -147,13 +157,8 @@ function languageProcessing(doc, data, url, cc) {
             inCurrentDataset = 0;
             tempSaveNames = [];
           }
-          // console.log(d.text('reduced'))
 
-
-
-          // writeToJsonFile(dataObj, 'fullOutput.json');
           fullCrawledData = '';
-          // }
           latestData = data;
         }
       })
