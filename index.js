@@ -1,4 +1,4 @@
-import { writeToJsonFile, readJsonFile, saveToSDCard, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
+import { writeToJsonFile, readJsonFile, replaceAllNames, saveToSDCard, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
 import { Level } from 'level';
 import Crawler from 'crawler';
 import enNlp from 'compromise';
@@ -20,12 +20,13 @@ let latestData = "";
 let tempSaveNames = [];
 let inCurrentDataset = 0;
 
+
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'https://futuress.org/events/coding-resistance/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.wienmuseum.at/en/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 2,
   rateLimit: 0,
@@ -37,6 +38,7 @@ init();
 
 function init() {
   // saveToSDCard();
+  // replaceAllNames();
   clearDataBases([db, dbUrl]); //reset local database that compares entries
   // writeLatestToTerminal(); // write current set of names into terminal
   crawlAllUrls(startURL);
@@ -104,10 +106,6 @@ function crawlAllUrls(url) {
 function languageProcessing(doc, data, url, cc) {
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
-
-
-    // console.log(i);
-    // console.log(i);
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
     if (checkBlacklist(blacklistNames, d.text('reduced')) === false) {
@@ -123,7 +121,7 @@ function languageProcessing(doc, data, url, cc) {
           writeToJsonFile(obj.person, 'names.json');
           // writeLatestToTerminal();
           // saveToSDCard(d.text('reduced'));
-          // console.log(latestData === data);
+
           writeToJsonFile(d.text('reduced'), 'namesAsString.json');
           let urlObj = {
             url: []
@@ -137,23 +135,26 @@ function languageProcessing(doc, data, url, cc) {
             tempSaveNames[inCurrentDataset] = d.text('reduced');
             inCurrentDataset++;
           } else {
-            const convertedData = convert(data, {
+            let convertedData = convert(data, {
               wordwrap: 130
             });
             let tempData = convertedData;
+
             for (let q = 0; q < tempSaveNames.length; q++) {
-            console.log(convertedData.includes(tempSaveNames[q]))
+
               if (convertedData.includes(tempSaveNames[q])) {
-                console.log("dataset includes " + tempSaveNames[q]);
               }
-              dataStringWithoutNames = tempData.replace(tempSaveNames[q], "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
+              dataStringWithoutNames = convertedData.replace(tempSaveNames[q], "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
             }
-            // console.log(dataStringWithoutNames);
+
             let dataObj = {
               dataPage: []
             };
             dataObj.dataPage.push({ text: dataStringWithoutNames });
             writeToJsonFile(dataObj, 'fullOutput.json');
+
+            replaceAllNames(tempSaveNames, fullCounter);
+            fullCounter++;
             inCurrentDataset = 0;
             tempSaveNames = [];
           }
@@ -168,6 +169,9 @@ function languageProcessing(doc, data, url, cc) {
   })
   doc.text()
 }
+
+
+
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {

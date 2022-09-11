@@ -82,6 +82,22 @@ export function checkCountryCode(countryCode) {
     return true;
   }
 }
+export function replaceAllNames(savedNames, counter) {
+  let file = fs.readFileSync("fullOutput.json");
+  var json = JSON.parse(file.toString());
+console.log(savedNames);
+console.log(counter);
+  if (json[2].dataPage[0].text.includes("Gustav Klimt")) {
+    let dataObj = {
+      dataPage: []
+    };
+
+    let dataStringWithoutNames = json[2].dataPage[0].text.replace("Gustav Klimt", "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
+    dataObj.dataPage.push({ text: dataStringWithoutNames });
+    // console.log(dataStringWithoutNames)
+    writeToJsonFile(dataObj, 'outputNoNames.json');
+  }
+}
 
 export function writeToJsonFile(mData, mfile) {
   const file = fs.readFileSync(mfile);
@@ -123,7 +139,7 @@ export function writeLatestToTerminal(mydata) {
     textAttr: { bgColor: 'default' },
     firstRowTextAttr: { bgColor: 'yellow' },
     width: 130,
-    lastCellTextAttr: { bgColor: 'blue' } ,
+    lastCellTextAttr: { bgColor: 'blue' },
 
 
   }
@@ -137,5 +153,5 @@ export function clearDataBases(databases) {
 }
 
 function roundToTwo(num) {
-    return +(Math.round(num + "e+5")  + "e-5");
+  return +(Math.round(num + "e+5") + "e-5");
 }
