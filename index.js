@@ -132,21 +132,20 @@ function languageProcessing(doc, data, url, cc) {
           // if (fullCrawledData.length >= 200000) {
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = d.text('reduced');
-            console.log(tempSaveNames);
             inCurrentDataset++;
           } else {
-            console.log("deleted");
             for (let q = 0; q < tempSaveNames.length; q++) {
-              dataStringWithoutNames = data.replaceAll(tempSaveNames[q], "REPLACEMENTTEXT");
+              console.log(tempSaveNames[q]);
+              dataStringWithoutNames = latestData.replace(tempSaveNames[q], "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
             }
-            inCurrentDataset = 0;
-            tempSaveNames = [];
+            console.log(dataStringWithoutNames);
             let dataObj = {
               dataPage: []
             };
             dataObj.dataPage.push({ text: dataStringWithoutNames });
             writeToJsonFile(dataObj, 'fullOutput.json');
-
+            inCurrentDataset = 0;
+            tempSaveNames = [];
           }
           // console.log(d.text('reduced'))
 
