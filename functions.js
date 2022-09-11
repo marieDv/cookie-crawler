@@ -82,20 +82,22 @@ export function checkCountryCode(countryCode) {
     return true;
   }
 }
-export function replaceAllNames(savedNames, counter) {
+export function replaceAllNames(savedNames, id) {
   let file = fs.readFileSync("fullOutput.json");
   var json = JSON.parse(file.toString());
-console.log(savedNames);
-console.log(counter);
-  if (json[2].dataPage[0].text.includes("Gustav Klimt")) {
-    let dataObj = {
-      dataPage: []
-    };
+  console.log(savedNames);
+  console.log(counter);
+  if (json[countUpID]) {
+    if (json[countUpID].dataPage[0].text.includes("Gustav Klimt")) {
+      let dataObj = {
+        dataPage: []
+      };
 
-    let dataStringWithoutNames = json[2].dataPage[0].text.replace("Gustav Klimt", "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
-    dataObj.dataPage.push({ text: dataStringWithoutNames });
-    // console.log(dataStringWithoutNames)
-    writeToJsonFile(dataObj, 'outputNoNames.json');
+      let dataStringWithoutNames = json[2].dataPage[0].text.replace("Gustav Klimt", "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
+      dataObj.dataPage.push({ text: dataStringWithoutNames });
+      // console.log(dataStringWithoutNames)
+      writeToJsonFile(dataObj, 'outputNoNames.json');
+    }
   }
 }
 

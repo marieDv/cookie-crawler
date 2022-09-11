@@ -19,6 +19,7 @@ let dataStringWithoutNames = "";
 let latestData = "";
 let tempSaveNames = [];
 let inCurrentDataset = 0;
+var countUpID = 0;
 
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
@@ -150,11 +151,11 @@ function languageProcessing(doc, data, url, cc) {
             let dataObj = {
               dataPage: []
             };
-            dataObj.dataPage.push({ text: dataStringWithoutNames });
+            dataObj.dataPage.push({ text: dataStringWithoutNames,  id: countUpID++});
             writeToJsonFile(dataObj, 'fullOutput.json');
 
-            replaceAllNames(tempSaveNames, fullCounter);
-            fullCounter++;
+            replaceAllNames(tempSaveNames, countUpID);
+            // fullCounter++;
             inCurrentDataset = 0;
             tempSaveNames = [];
           }
