@@ -42,6 +42,19 @@ export function saveToSDCard(mData) {
     }
   });
 }
+export function emptyFile(file) {
+  let result = {}
+  // fs.writeFile(file, []);
+  // writeToJsonFile(dataObj, 'outputNoNames.json');
+
+
+  let mfile = fs.readFileSync(file);
+  var json = [];
+  fs.writeFileSync(mfile, JSON.stringify(json));
+
+}
+
+
 
 function closeFd(fd) {
   close(fd, (err) => {
@@ -85,10 +98,14 @@ export function checkCountryCode(countryCode) {
 export function replaceAllNames(savedNames, id) {
   let file = fs.readFileSync("fullOutput.json");
   var json = JSON.parse(file.toString());
-  console.log(savedNames);
-  console.log(counter);
-  if (json[countUpID]) {
-    if (json[countUpID].dataPage[0].text.includes("Gustav Klimt")) {
+  // console.log(savedNames);
+
+  if (json[id-1]) {
+    // console.log(json[id-1]);
+    console.log(json[id-1].dataPage[0].text);
+    console.log(savedNames[0])
+    if (json[id-1].dataPage[0].text.includes(savedNames[0])) {
+      console.log("success!!!")
       let dataObj = {
         dataPage: []
       };
