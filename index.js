@@ -27,7 +27,7 @@ const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'https://www.wienmuseum.at/en/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.wien.gv.at/english/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 2,
   rateLimit: 0,
@@ -134,29 +134,19 @@ function languageProcessing(doc, data, url, cc) {
 
           // if (fullCrawledData.length >= 200000) {
           if (data === latestData) {
-            tempSaveNames[inCurrentDataset] = d.text('reduced');
+            tempSaveNames[inCurrentDataset] = d.text();
             inCurrentDataset++;
           } else {
-            let convertedData = convert(data, {
-              wordwrap: 130
-            });
-            let tempData = convertedData;
+      
+          
 
-            for (let q = 0; q < tempSaveNames.length; q++) {
+            // let dataObj = {
+            //   dataPage: []
+            // };
+            // dataObj.dataPage.push({ text: dataStringWithoutNames,  id: countUpID++});
+            // writeToJsonFile(dataObj, 'fullOutput.json');
 
-              if (convertedData.includes(tempSaveNames[q])) {
-              }
-              dataStringWithoutNames = convertedData.replace(tempSaveNames[q], "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
-            }
-
-            let dataObj = {
-              dataPage: []
-            };
-            dataObj.dataPage.push({ text: dataStringWithoutNames,  id: countUpID++});
-            writeToJsonFile(dataObj, 'fullOutput.json');
-
-            replaceAllNames(tempSaveNames, countUpID);
-            // fullCounter++;
+            replaceAllNames(data, tempSaveNames, countUpID);
             inCurrentDataset = 0;
             tempSaveNames = [];
           }
@@ -178,21 +168,24 @@ function languageProcessing(doc, data, url, cc) {
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
   currentLanguage = detectDataLanguage(data);
+  let convertedData = convert(data, {
+    wordwrap: 130
+  });
   switch (detectDataLanguage(data)) {
     case 'german':
-      languageProcessing(deNlp(data), data, url, cc)
+      languageProcessing(deNlp(convertedData), convertedData, url, cc)
       break;
     case 'english':
-      languageProcessing(enNlp(data), data, url, cc);
+      languageProcessing(enNlp(convertedData), convertedData, url, cc);
       break;
     case 'french':
-      languageProcessing(frNlp(data), data, url, cc);
+      languageProcessing(frNlp(convertedData), convertedData, url, cc);
       break;
     case 'italian':
-      languageProcessing(itNlp(data), data, url, cc);
+      languageProcessing(itNlp(convertedData), convertedData, url, cc);
       break;
     case 'spanish':
-      languageProcessing(esNlp(data), data, url, cc);
+      languageProcessing(esNlp(convertedData), convertedData, url, cc);
       break;
     case '':
       // languageProcessing(enNlp(data), data, url, cc);

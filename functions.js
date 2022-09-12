@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import pkg from 'terminal-kit';
 import LanguageDetect from 'languagedetect';
 import { open, close, fstat } from 'node:fs';
+import { convert } from 'html-to-text';
 
 var lastValidLanguage = '';
 
@@ -13,6 +14,7 @@ const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 var cardFilled = 0;
 var currentLanguage;
 const lngDetector = new LanguageDetect();
+var safeOneDataset;
 
 export function saveToSDCard(mData) {
   let pathOSX = "/Volumes/SDCard1/test.json";
@@ -95,27 +97,54 @@ export function checkCountryCode(countryCode) {
     return true;
   }
 }
-export function replaceAllNames(savedNames, id) {
+export function replaceAllNames(mdata, savedNames, id) {
   let file = fs.readFileSync("fullOutput.json");
   var json = JSON.parse(file.toString());
+  let replacedNames = '';
+
+
+
+  console.log("...");
   // console.log(savedNames);
+  // console.log(mdata)
+  if (safeOneDataset) {
+    let once = false;
+    //let tryoutData = mdata;// JSON.stringify(json[id].dataPage[0].text); 
+    
+    let dataStringWithoutNames = safeOneDataset.toString();
+    
+    console.log(console.log(safeOneDataset));
+    console.log("*************************************************************************************");
+    for (let q = 0; q < savedNames.length; q++) {
+      console.log(savedNames[q]);
+      
 
-  if (json[id-1]) {
-    // console.log(json[id-1]);
-    console.log(json[id-1].dataPage[0].text);
-    console.log(savedNames[0])
-    if (json[id-1].dataPage[0].text.includes(savedNames[0])) {
-      console.log("success!!!")
-      let dataObj = {
-        dataPage: []
-      };
+      // console.log(mdata);
 
-      let dataStringWithoutNames = json[2].dataPage[0].text.replace("Gustav Klimt", "!!!!!!!!!!!!!!!REPLACEMENTTEXT!!!!!!!!!!!");
-      dataObj.dataPage.push({ text: dataStringWithoutNames });
-      // console.log(dataStringWithoutNames)
-      writeToJsonFile(dataObj, 'outputNoNames.json');
+      if (safeOneDataset.includes(savedNames[q])) {
+        replacedNames += ", "+savedNames[q];
+        console.log("SUCCESS 1   " + q + savedNames[q]);
+        dataStringWithoutNames = safeOneDataset.replace(savedNames[q], "                                                    ");
+        if (once === true) {
+          dataStringWithoutNames = dataStringWithoutNames.replace(savedNames[q], "                                                    ");
+        }
+        once = true;
+      }
     }
+
+
+    let dataObj = {
+      dataPage: []
+    };
+
+
+    setTimeout(() => {
+      dataObj.dataPage.push({ text: dataStringWithoutNames, replacedNames: replacedNames });
+      writeToJsonFile(dataObj, 'outputNoNames.json');
+    }, 100);
+
   }
+  safeOneDataset = mdata;
 }
 
 export function writeToJsonFile(mData, mfile) {
