@@ -97,51 +97,43 @@ export function checkCountryCode(countryCode) {
     return true;
   }
 }
+
+
+
+export function deleteFileContent(mfile) {
+  if (mfile) {
+    fs.truncate(mfile, 0, function () { console.log('done') });
+    // fs.writeFileSync(mfile, '[]');
+  }
+}
+
+
+
+
+
 export function replaceAllNames(mdata, savedNames, id) {
   let file = fs.readFileSync("fullOutput.json");
   var json = JSON.parse(file.toString());
   let replacedNames = '';
-
-
-
   console.log("...");
-  // console.log(savedNames);
-  // console.log(mdata)
+
   if (safeOneDataset) {
-    let once = false;
-    //let tryoutData = mdata;// JSON.stringify(json[id].dataPage[0].text); 
-    
     let dataStringWithoutNames = safeOneDataset.toString();
-    
-    console.log(console.log(safeOneDataset));
-    console.log("*************************************************************************************");
     for (let q = 0; q < savedNames.length; q++) {
-      console.log(savedNames[q]);
-      
-
-      // console.log(mdata);
-
+      console.log(q + " " + savedNames[q]);
       if (safeOneDataset.includes(savedNames[q])) {
-        replacedNames += ", "+savedNames[q];
+        replacedNames += "" + savedNames[q] + ", ";
         console.log("SUCCESS 1   " + q + savedNames[q]);
-        dataStringWithoutNames = safeOneDataset.replace(savedNames[q], "                                                    ");
-        if (once === true) {
-          dataStringWithoutNames = dataStringWithoutNames.replace(savedNames[q], "                                                    ");
-        }
-        once = true;
+        dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], "                                                   ");
       }
     }
-
-
     let dataObj = {
       dataPage: []
     };
-
-
-    setTimeout(() => {
+    // setTimeout(() => {
       dataObj.dataPage.push({ text: dataStringWithoutNames, replacedNames: replacedNames });
       writeToJsonFile(dataObj, 'outputNoNames.json');
-    }, 100);
+    // }, 100);
 
   }
   safeOneDataset = mdata;
