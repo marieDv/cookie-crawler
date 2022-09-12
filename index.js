@@ -19,7 +19,8 @@ let dataStringWithoutNames = "";
 let latestData = "";
 let tempSaveNames = [];
 let inCurrentDataset = 0;
-var countUpID = 0;
+let countUpID = 0;
+let countNames = 0;
 
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
@@ -129,7 +130,7 @@ function languageProcessing(doc, data, url, cc) {
           currentDate = getCurrentDate();
           obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: countUpID });
           writeToJsonFile(obj.person, 'names.json');
-          // writeLatestToTerminal();
+
           // saveToSDCard(d.text('reduced'));
 
           writeToJsonFile(text, 'namesAsString.json');
@@ -142,14 +143,16 @@ function languageProcessing(doc, data, url, cc) {
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
             inCurrentDataset++;
+            countNames++;
           } else {
 
             replaceAllNames(data, tempSaveNames, countUpID);
             inCurrentDataset = 0;
             tempSaveNames = [];
             countUpID++;
+            countNames++;
           }
-
+          writeLatestToTerminal(countNames);
           fullCrawledData = '';
           latestData = data;
         }

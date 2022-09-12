@@ -148,7 +148,7 @@ export function readJsonFile() {
   var mydata = JSON.parse(file.toString());
 }
 
-export function writeLatestToTerminal(mydata) {
+export function writeLatestToTerminal(id) {
   const file = fs.readFileSync('names.json');
   var mydata = JSON.parse(file.toString());
   term.fullscreen(true);
@@ -166,7 +166,7 @@ export function writeLatestToTerminal(mydata) {
     [mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].name : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].countrycode : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].date : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].language : ''],
     [mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].name : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].countrycode : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].date : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].language : ''],
     [],
-    [cardFilled + "Mb"]
+    [cardFilled + "Mb", "Current Name Count", id]
   ], {
     hasBorder: true,
     contentHasMarkup: true,
