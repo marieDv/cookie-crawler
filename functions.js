@@ -115,26 +115,21 @@ export function replaceAllNames(mdata, savedNames, id) {
   let file = fs.readFileSync("fullOutput.json");
   var json = JSON.parse(file.toString());
   let replacedNames = '';
-  console.log("...");
-
+  // console.log("in function");
+  // console.log(savedNames);
   if (safeOneDataset) {
     let dataStringWithoutNames = safeOneDataset.toString();
     for (let q = 0; q < savedNames.length; q++) {
-      console.log(q + " " + savedNames[q]);
       if (safeOneDataset.includes(savedNames[q])) {
         replacedNames += "" + savedNames[q] + ", ";
-        console.log("SUCCESS 1   " + q + savedNames[q]);
-        dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], "                                                   ");
+        dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
       }
     }
     let dataObj = {
       dataPage: []
     };
-    // setTimeout(() => {
-      dataObj.dataPage.push({ text: dataStringWithoutNames, replacedNames: replacedNames });
-      writeToJsonFile(dataObj, 'outputNoNames.json');
-    // }, 100);
-
+    dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
+    writeToJsonFile(dataObj, 'outputNoNames.json');
   }
   safeOneDataset = mdata;
 }

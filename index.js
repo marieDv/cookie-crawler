@@ -25,9 +25,9 @@ var countUpID = 0;
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
-const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "'s", "{", "<", ">", "&", " i ", ",", "–", ":"];
+const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'https://www.wien.gv.at/english/';//https://www.ait.ac.at/en/
+const startURL = 'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 2,
   rateLimit: 0,
@@ -106,56 +106,55 @@ function crawlAllUrls(url) {
 
 
 function languageProcessing(doc, data, url, cc) {
+
+
+  console.log("enter with  " + url);
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
+    let text = d.text();
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
-    if (checkBlacklist(blacklistNames, d.text('reduced')) === false) {
-      db.get(d.text('reduced'), function (err, key) {
+
+    if (checkBlacklist(blacklistNames, text) === false) {
+      db.get(text, function (err, key) {
         if (err) {
           fullCounter++;
           let obj = {
             person: []
           };
+          if (text.includes("’s")) {
+            text = d.text().slice(0, -2);
+          }
 
           currentDate = getCurrentDate();
-          obj.person.push({ name: d.text('reduced'), url: url, countrycode: cc, date: currentDate, language: currentLanguage });
+          obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: countUpID });
           writeToJsonFile(obj.person, 'names.json');
           // writeLatestToTerminal();
           // saveToSDCard(d.text('reduced'));
 
-          writeToJsonFile(d.text('reduced'), 'namesAsString.json');
+          writeToJsonFile(text, 'namesAsString.json');
           let urlObj = {
             url: []
           };
           urlObj.url.push({ url: url, date: currentDate });
           writeToJsonFile(urlObj, 'fullOutputURLs.json');
 
-
-          // if (fullCrawledData.length >= 200000) {
           if (data === latestData) {
-            tempSaveNames[inCurrentDataset] = d.text();
+            tempSaveNames[inCurrentDataset] = text;
             inCurrentDataset++;
           } else {
-      
-          
-
-            // let dataObj = {
-            //   dataPage: []
-            // };
-            // dataObj.dataPage.push({ text: dataStringWithoutNames,  id: countUpID++});
-            // writeToJsonFile(dataObj, 'fullOutput.json');
 
             replaceAllNames(data, tempSaveNames, countUpID);
             inCurrentDataset = 0;
             tempSaveNames = [];
+            countUpID++;
           }
 
           fullCrawledData = '';
           latestData = data;
         }
       })
-      db.put(d.text('reduced'), d.text('reduced'));
+      db.put(text, text);
       dbUrl.put(url, url);
     }
   })
@@ -173,19 +172,19 @@ function searchForNames(url, cc, data) {
   });
   switch (detectDataLanguage(data)) {
     case 'german':
-      languageProcessing(deNlp(convertedData), convertedData, url, cc)
+      languageProcessing(deNlp(data), data, url, cc)
       break;
     case 'english':
-      languageProcessing(enNlp(convertedData), convertedData, url, cc);
+      languageProcessing(enNlp(data), data, url, cc);
       break;
     case 'french':
-      languageProcessing(frNlp(convertedData), convertedData, url, cc);
+      languageProcessing(frNlp(data), data, url, cc);
       break;
     case 'italian':
-      languageProcessing(itNlp(convertedData), convertedData, url, cc);
+      languageProcessing(itNlp(data), data, url, cc);
       break;
     case 'spanish':
-      languageProcessing(esNlp(convertedData), convertedData, url, cc);
+      languageProcessing(esNlp(data), data, url, cc);
       break;
     case '':
       // languageProcessing(enNlp(data), data, url, cc);
