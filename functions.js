@@ -4,39 +4,50 @@ import LanguageDetect from 'languagedetect';
 import { open, close, fstat } from 'node:fs';
 import { convert } from 'html-to-text';
 
-var lastValidLanguage = '';
+let lastValidLanguage = '';
 
 const { terminal, TextTable } = pkg;
 const term = pkg.terminal;
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
-var cardFilled = 0;
-var currentLanguage;
+let cardFilled = 0;
+let currentLanguage;
 const lngDetector = new LanguageDetect();
-var safeOneDataset;
-
-
+let safeOneDataset;
+let numberSDcards = 1;
+let totalURLs = 0;
 
 export function saveCurrentDataToFile() {
-  const file = fs.readFileSync("names.json");
-  var totalNumberNames = JSON.parse(file.toString());
-  console.log(Object.keys(totalNumberNames).length);
+
+  var totalNumberNames = JSON.parse(fs.readFileSync("names.json").toString());
+  var totalNumberURLs = JSON.parse(fs.readFileSync("fullOutputURLs.json").toString());
+
 
   let data = {
     keydata: []
   };
-  data.keydata.push({ totalNames: Object.keys(totalNumberNames).length, numberSDcards: 1 });
+
+  numberSDcards = 1;
+  totalURLs = Object.keys(totalNumberURLs).length;
+  data.keydata.push({ totalNames: Object.keys(totalNumberNames).length, totalURLs: Object.keys(totalNumberURLs).length, numberSDcards: 1, });
   fs.writeFileSync('./globalVariables.json', JSON.stringify(data));
-  return Object.keys(totalNumberNames).length;
+  return [Object.keys(totalNumberNames).length, totalURLs];
 }
 
 
-export function saveToSDCard(mData) {
+export function saveToSDCard(names, mData) {
   let pathOSX = "/Volumes/SDCard1/test.json";
   let pathRasp = "/media/process/SDCard1/test.json";
-  let currentPath = pathOSX;
+  let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
+  let currentPath = localPath;
+  if(names){
+    currentPath += "/test-fullnames.json";
+  }else{
+    currentPath += "/test-fulloutput.json";
+  }
 
+ 
   const file = fs.readFileSync(currentPath);
 
   let json = JSON.parse(file.toString());
@@ -145,6 +156,7 @@ export function replaceAllNames(mdata, savedNames, id) {
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
     writeToJsonFile(dataObj, 'outputNoNames.json');
+    saveToSDCard(false, dataObj);
   }
   safeOneDataset = mdata;
 }
@@ -166,7 +178,7 @@ export function readJsonFile() {
 
 
 
-export function writeLatestToTerminal(id) {
+export function writeLatestToTerminal(id, urls) {
   const file = fs.readFileSync('names.json');
   var mydata = JSON.parse(file.toString());
   term.fullscreen(true);
@@ -184,7 +196,7 @@ export function writeLatestToTerminal(id) {
     [mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].name : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].countrycode : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].date : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].language : ''],
     [mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].name : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].countrycode : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].date : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].language : ''],
     [],
-    [cardFilled + "Mb", "Number of names: " + id,]
+    [cardFilled + "Mb", "Number of names: " + id, "Number of visited URLs: " + urls, "current SD Card: " + numberSDcards]
   ], {
     hasBorder: true,
     contentHasMarkup: true,

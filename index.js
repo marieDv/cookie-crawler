@@ -21,16 +21,16 @@ let tempSaveNames = [];
 let inCurrentDataset = 0;
 let countUpID = 0;
 let countNames = 0;
-
+let countURLs = 0;
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'www.kunstschmankerl.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 let c = new Crawler({
-  maxConnections: 2,
+  maxConnections: 30,
   rateLimit: 0,
   retries: 1,
   skipDuplicates: true,
@@ -41,10 +41,11 @@ init();
 function init() {
   // saveToSDCard();
   // replaceAllNames();
-  
-  countNames = saveCurrentDataToFile();
-  clearDataBases([db, dbUrl]); //reset local database that compares entries
-  // writeLatestToTerminal(); // write current set of names into terminal
+
+  countNames = saveCurrentDataToFile()[0];
+  countURLs = saveCurrentDataToFile()[1];
+  clearDataBases([db, dbUrl]);
+  writeLatestToTerminal();
   crawlAllUrls(startURL);
 }
 
@@ -65,6 +66,12 @@ function crawlAllUrls(url) {
               obselete.push(href);
               setTimeout(function () {
                 href.startsWith('http') ? crawlAllUrls(href) : crawlAllUrls(`${url}${href}`)
+
+
+
+
+
+
                 let data = $("body").text();
                 if (data) {
                   dbUrl.get(href, function (err) {
@@ -110,7 +117,7 @@ function crawlAllUrls(url) {
 function languageProcessing(doc, data, url, cc) {
 
 
-  console.log("enter with  " + url);
+  // console.log("enter with  " + url);
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
     let text = d.text();
@@ -131,14 +138,15 @@ function languageProcessing(doc, data, url, cc) {
           currentDate = getCurrentDate();
           obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: countUpID });
           writeToJsonFile(obj.person, 'names.json');
+          saveToSDCard(true, obj.person);
 
-          // saveToSDCard(d.text('reduced'));
 
           writeToJsonFile(text, 'namesAsString.json');
           let urlObj = {
             url: []
           };
           urlObj.url.push({ url: url, date: currentDate });
+          countURLs++;
           writeToJsonFile(urlObj, 'fullOutputURLs.json');
 
           if (data === latestData) {
@@ -153,7 +161,7 @@ function languageProcessing(doc, data, url, cc) {
             countUpID++;
             countNames++;
           }
-          writeLatestToTerminal(countNames);
+          writeLatestToTerminal(countNames, countURLs);
           fullCrawledData = '';
           latestData = data;
         }
