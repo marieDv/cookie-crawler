@@ -1,4 +1,4 @@
-import { writeToJsonFile, deleteFileContent, readJsonFile, emptyFile, replaceAllNames, saveToSDCard, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
+import { writeToJsonFile, deleteFileContent, saveCurrentDataToFile, readJsonFile, emptyFile, replaceAllNames, saveToSDCard, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
 import { Level } from 'level';
 import Crawler from 'crawler';
 import enNlp from 'compromise';
@@ -41,7 +41,8 @@ init();
 function init() {
   // saveToSDCard();
   // replaceAllNames();
-  // deleteFileContent('OutputNoNames.json');
+  
+  countNames = saveCurrentDataToFile();
   clearDataBases([db, dbUrl]); //reset local database that compares entries
   // writeLatestToTerminal(); // write current set of names into terminal
   crawlAllUrls(startURL);

@@ -16,6 +16,22 @@ var currentLanguage;
 const lngDetector = new LanguageDetect();
 var safeOneDataset;
 
+
+
+export function saveCurrentDataToFile() {
+  const file = fs.readFileSync("names.json");
+  var totalNumberNames = JSON.parse(file.toString());
+  console.log(Object.keys(totalNumberNames).length);
+
+  let data = {
+    keydata: []
+  };
+  data.keydata.push({ totalNames: Object.keys(totalNumberNames).length, numberSDcards: 1 });
+  fs.writeFileSync('./globalVariables.json', JSON.stringify(data));
+  return Object.keys(totalNumberNames).length;
+}
+
+
 export function saveToSDCard(mData) {
   let pathOSX = "/Volumes/SDCard1/test.json";
   let pathRasp = "/media/process/SDCard1/test.json";
@@ -34,7 +50,6 @@ export function saveToSDCard(mData) {
           closeFd(fd);
           throw err;
         }
-        // console.log(stat.size / (1024 * 1024) + "MB")
         cardFilled = roundToTwo(stat.size / (1024 * 1024));
         closeFd(fd);
       });
@@ -148,6 +163,9 @@ export function readJsonFile() {
   var mydata = JSON.parse(file.toString());
 }
 
+
+
+
 export function writeLatestToTerminal(id) {
   const file = fs.readFileSync('names.json');
   var mydata = JSON.parse(file.toString());
@@ -166,7 +184,7 @@ export function writeLatestToTerminal(id) {
     [mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].name : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].countrycode : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].date : '', mydata[mydata.length - 10] ? mydata[mydata.length - 10][0].language : ''],
     [mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].name : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].countrycode : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].date : '', mydata[mydata.length - 11] ? mydata[mydata.length - 11][0].language : ''],
     [],
-    [cardFilled + "Mb", "Current Name Count", id]
+    [cardFilled + "Mb", "Number of names: " + id,]
   ], {
     hasBorder: true,
     contentHasMarkup: true,
