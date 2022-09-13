@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "compromise": "^14.5.0",
+    "crawlee": "^3.0.4",
     "crawler": "^1.3.0",
     "de-compromise": "^0.0.5",
     "es-compromise": "^0.1.2",

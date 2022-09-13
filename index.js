@@ -7,6 +7,14 @@ import frNlp from 'fr-compromise';
 import esNlp from 'es-compromise';
 import itNlp from 'it-compromise';
 import { convert } from 'html-to-text';
+import { CheerioCrawler } from 'crawlee';
+
+
+
+
+const base = "http://www.amazon.at";
+const crawledPages = { [base]: true };
+const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
 
 var currentLanguage;
@@ -14,7 +22,6 @@ var fullCounter = 0;
 var allURLS = [];
 let obselete = [];
 var currentDate;
-var fullCrawledData;
 let dataStringWithoutNames = "";
 let latestData = "";
 let tempSaveNames = [];
@@ -22,21 +29,23 @@ let inCurrentDataset = 0;
 let countUpID = 0;
 let countNames = 0;
 let countURLs = 0;
-
+let testcount = 0;
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
 const startURL = 'https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
-let c = new Crawler({
-  maxConnections: 30,
-  rateLimit: 0,
-  retries: 1,
-  skipDuplicates: true,
-});
+// let c = new Crawler({
+//   maxConnections: 30,
+//   rateLimit: 0,
+//   retries: 1,
+//   skipDuplicates: true,
+// });
 
 init();
+
+
 
 function init() {
   // saveToSDCard();
@@ -46,11 +55,87 @@ function init() {
   countURLs = saveCurrentDataToFile()[1];
   clearDataBases([db, dbUrl]);
   writeLatestToTerminal();
-  crawlAllUrls(startURL);
+  // crawlAllUrls(startURL);
+  crawlerTest();
+
 }
-function crawleeTest(){
-  
+function crawlerTest() {
+  const c = new Crawler({
+    maxConnections: 2,
+    skipDuplicates: true,
+    rateLimit: 1000,
+   
+    callback: (error, res, done) => {
+      if (error) {
+        console.log(error);
+      } else {
+        const $ = res.$;
+        // console.log(res.request.uri.href);
+        const urls = [];
+        $('a').each((i, a) => {
+        // $(`a[href^="/"]${ignoreSelector},a[href^="${base}"]${ignoreSelector}`).each((i, a) => {
+
+          if (a.attribs.href && a.attribs.href !== '#') {
+            const url = new URL(a.attribs.href, res.request.uri.href)
+            // extractData($("body").text(), url.href);
+            // console.log(url.href);
+            urls.push(url.href);
+            testcount++;
+            console.log(testcount)
+          }
+        });
+        // console.log(' -> %i links', urls.length);
+        // console.log(' -> %i queued', c.queueSize);
+        // console.log(urls[urls.length - 1]);
+        // extractData($("body").text(), url.href);
+        c.queue(urls);
+
+      }
+      done();
+    }
+  });
+
+  c.queue('http://www.amazon.at');
 }
+
+function extractData(mdata, href) {
+  if (mdata) {
+    dbUrl.get(href, function (err) {
+      if (err) {
+        let countryCode = href.split('.').splice(-2);
+        if (countryCode[1]) {
+          countryCode[1] = countryCode[1].substring(-4);
+          if (countryCode[1].includes('%')) {
+            countryCode = countryCode[1].split('%')[0];
+          } else {
+            countryCode = countryCode[1].split('/')[0];
+          }
+
+          let transferData = true;
+          for (let i = 0; i < blacklist.length; i++) {
+            if (countryCode.includes(blacklist[i])) {
+              transferData = false;
+            }
+          }
+          if (transferData === true) {
+            // console.log("search for names " + testcount);
+
+            // setTimeout(() => {
+              // searchForNames(href, countryCode, mdata)
+            // }, 100);
+
+          }
+        }
+      } else {
+        // console.log(href + " already exists")
+      }
+      dbUrl.put(href, href);
+    });
+  }
+}
+
+
+
 //crawl url's and call searchForNames
 function crawlAllUrls(url) {
   c.queue({
@@ -75,7 +160,7 @@ function crawlAllUrls(url) {
                 if (data) {
                   dbUrl.get(href, function (err) {
                     if (err) {
-                      fullCrawledData += data;
+
                       let countryCode = href.split('.').splice(-2);
                       if (countryCode[1]) {
                         countryCode[1] = countryCode[1].substring(-4);
@@ -119,8 +204,6 @@ function crawlAllUrls(url) {
 
 
 function languageProcessing(doc, data, url, cc) {
-
-
   // console.log("enter with  " + url);
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
@@ -166,12 +249,11 @@ function languageProcessing(doc, data, url, cc) {
             countNames++;
           }
           writeLatestToTerminal(countNames, countURLs);
-          fullCrawledData = '';
           latestData = data;
         }
       })
       db.put(text, text);
-      dbUrl.put(url, url);
+      // dbUrl.put(url, url);
     }
   })
   doc.text()
@@ -188,19 +270,24 @@ function searchForNames(url, cc, data) {
   });
   switch (detectDataLanguage(data)) {
     case 'german':
-      languageProcessing(deNlp(data), data, url, cc)
+      console.log("german");
+      // languageProcessing(deNlp(data), data, url, cc)
       break;
     case 'english':
-      languageProcessing(enNlp(data), data, url, cc);
+      console.log("english");
+      // languageProcessing(enNlp(data), data, url, cc);
       break;
     case 'french':
-      languageProcessing(frNlp(data), data, url, cc);
+      console.log("french");
+      // languageProcessing(frNlp(data), data, url, cc);
       break;
     case 'italian':
-      languageProcessing(itNlp(data), data, url, cc);
+      console.log("italian");
+      // languageProcessing(itNlp(data), data, url, cc);
       break;
     case 'spanish':
-      languageProcessing(esNlp(data), data, url, cc);
+      console.log("spanish");
+      // languageProcessing(esNlp(data), data, url, cc);
       break;
     case '':
       // languageProcessing(enNlp(data), data, url, cc);
