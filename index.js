@@ -7,7 +7,7 @@ import frNlp from 'fr-compromise';
 import esNlp from 'es-compromise';
 import itNlp from 'it-compromise';
 import { convert } from 'html-to-text';
-import { CheerioCrawler } from 'crawlee';
+
 
 
 
@@ -20,37 +20,25 @@ const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
-let obselete = [];
 var currentDate;
-let dataStringWithoutNames = "";
 let latestData = "";
 let tempSaveNames = [];
 let inCurrentDataset = 0;
 let countUpID = 0;
 let countNames = 0;
 let countURLs = 0;
-let testcount = 0;
+
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
-const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":"];
+const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":", "+", "|", "“"];
 
 const startURL = 'https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
-// let c = new Crawler({
-//   maxConnections: 30,
-//   rateLimit: 0,
-//   retries: 1,
-//   skipDuplicates: true,
-// });
-
 init();
 
 
 
 function init() {
-  // saveToSDCard();
-  // replaceAllNames();
-
   countNames = saveCurrentDataToFile()[0];
   countURLs = saveCurrentDataToFile()[1];
   clearDataBases([db, dbUrl]);
@@ -63,22 +51,22 @@ function crawlerTest() {
   let counter = 0;
 
   const c = new Crawler({
-    maxConnections: 1,
-    rateLimit: 500,
-    priorityRange: 5,
+    maxConnections: 3,
+    rateLimit: 1000,
     callback: (error, res, done) => {
       if (error) {
         console.log(error);
       } else {
         const $ = res.$;
         const urls = [];
-        $('a').each((i, a) => {
+
+         $(`a[href^="/"]${ignoreSelector},a[href^="${base}"]${ignoreSelector}`).each((i, a) => {
+        // $('a').each((i, a) => {
           if (a.attribs.href && a.attribs.href !== '#') {
             const url = new URL(a.attribs.href, res.request.uri.href)
             urls.push(url.href);
             counter++;
-            if (i <= 40) {
-              // console.log(counter);
+            if (i <= 50) {
               extractData($("body").text(), url.href);
             }
 
@@ -90,7 +78,7 @@ function crawlerTest() {
     }
   });
 
-  c.queue('http://www.amazon.at');
+  c.queue('https://www.amazon.de/');
 }
 
 function extractData(mdata, href) {
@@ -98,6 +86,7 @@ function extractData(mdata, href) {
     dbUrl.get(href, function (err) {
       if (err) {
         let countryCode = href.split('.').splice(-2);
+        // console.log(countryCode[1]);
         if (countryCode[1]) {
           countryCode[1] = countryCode[1].substring(-4);
           if (countryCode[1].includes('%')) {
@@ -113,12 +102,8 @@ function extractData(mdata, href) {
             }
           }
           if (transferData === true) {
-            console.log("search for names");
-
-            // setTimeout(() => {
+            // console.log("search for names");
             searchForNames(href, countryCode, mdata)
-            // }, 100);
-
           }
         }
       } else {
@@ -128,74 +113,6 @@ function extractData(mdata, href) {
     });
   }
 }
-
-
-
-//crawl url's and call searchForNames
-function crawlAllUrls(url) {
-  c.queue({
-    uri: url,
-    callback: function (err, res, done) {
-
-      if (err) { console.log(err.code); done(); return; }
-      let $ = res.$;
-      try {
-        // console.log("TRY")
-        let urls = $("a");
-        Object.keys(urls).forEach((item) => {
-          if (urls[item].type === 'tag') {
-
-            let href = urls[item].attribs.href;
-            if (href && !obselete.includes(href)) {
-              href = href.trim();
-              obselete.push(href);
-              setTimeout(function () {
-                href.startsWith('http') ? crawlAllUrls(href) : crawlAllUrls(`${url}${href}`)
-                let data = $("body").text();
-                if (data) {
-                  dbUrl.get(href, function (err) {
-                    if (err) {
-
-                      let countryCode = href.split('.').splice(-2);
-                      if (countryCode[1]) {
-                        countryCode[1] = countryCode[1].substring(-4);
-                        if (countryCode[1].includes('%')) {
-                          countryCode = countryCode[1].split('%')[0];
-                        } else {
-                          countryCode = countryCode[1].split('/')[0];
-                        }
-
-                        let transferData = true;
-                        for (let i = 0; i < blacklist.length; i++) {
-                          if (countryCode.includes(blacklist[i])) {
-                            transferData = false;
-                          }
-                        }
-                        if (transferData === true) {
-                          searchForNames(href, countryCode, data)
-                        }
-                      }
-                    }
-                  })
-                }
-              }, 1000)
-            }
-          }
-        });
-      } catch (e) {
-        // console.log(e)
-        let sE = e.toString();
-        // console.log(sE.includes("Invalid URI"));
-        console.log("******");
-        // console.log(err);
-        console.error(`Encountered an error crawling ${url}. Aborting crawl.`);
-        done()
-      }
-      done();
-    }
-  })
-}
-
 
 
 function languageProcessing(doc, data, url, cc) {
@@ -259,29 +176,24 @@ function languageProcessing(doc, data, url, cc) {
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
-  currentLanguage = detectDataLanguage(data.substring(0, 400));
+  currentLanguage = detectDataLanguage(data.substring(0, 2000));
   // let convertedData = convert(data, {
   //   wordwrap: 130
   // });
   switch (currentLanguage) {
     case 'german':
-      console.log("german");
       languageProcessing(deNlp(data), data, url, cc)
       break;
     case 'english':
-      console.log("english");
       languageProcessing(enNlp(data), data, url, cc);
       break;
     case 'french':
-      console.log("french");
       languageProcessing(frNlp(data), data, url, cc);
       break;
     case 'italian':
-      console.log("italian");
       languageProcessing(itNlp(data), data, url, cc);
       break;
     case 'spanish':
-      console.log("spanish");
       languageProcessing(esNlp(data), data, url, cc);
       break;
     case '':
