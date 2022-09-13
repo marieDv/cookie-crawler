@@ -28,7 +28,7 @@ const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":"];
 
-const startURL = 'www.kunstschmankerl.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 let c = new Crawler({
   maxConnections: 30,
   rateLimit: 0,
@@ -48,30 +48,29 @@ function init() {
   writeLatestToTerminal();
   crawlAllUrls(startURL);
 }
-
+function crawleeTest(){
+  
+}
 //crawl url's and call searchForNames
 function crawlAllUrls(url) {
   c.queue({
     uri: url,
     callback: function (err, res, done) {
-      if (err) throw err;
+
+      if (err) { console.log(err.code); done(); return; }
       let $ = res.$;
       try {
+        // console.log("TRY")
         let urls = $("a");
         Object.keys(urls).forEach((item) => {
           if (urls[item].type === 'tag') {
+
             let href = urls[item].attribs.href;
             if (href && !obselete.includes(href)) {
               href = href.trim();
               obselete.push(href);
               setTimeout(function () {
                 href.startsWith('http') ? crawlAllUrls(href) : crawlAllUrls(`${url}${href}`)
-
-
-
-
-
-
                 let data = $("body").text();
                 if (data) {
                   dbUrl.get(href, function (err) {
@@ -104,6 +103,11 @@ function crawlAllUrls(url) {
           }
         });
       } catch (e) {
+        // console.log(e)
+        let sE = e.toString();
+        // console.log(sE.includes("Invalid URI"));
+        console.log("******");
+        // console.log(err);
         console.error(`Encountered an error crawling ${url}. Aborting crawl.`);
         done()
       }
