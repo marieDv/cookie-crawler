@@ -60,36 +60,31 @@ function init() {
 
 }
 function crawlerTest() {
+  let counter = 0;
+
   const c = new Crawler({
-    maxConnections: 2,
-    skipDuplicates: true,
-    rateLimit: 1000,
-   
+    maxConnections: 1,
+    rateLimit: 500,
+    priorityRange: 5,
     callback: (error, res, done) => {
       if (error) {
         console.log(error);
       } else {
         const $ = res.$;
-        // console.log(res.request.uri.href);
         const urls = [];
         $('a').each((i, a) => {
-        // $(`a[href^="/"]${ignoreSelector},a[href^="${base}"]${ignoreSelector}`).each((i, a) => {
-
           if (a.attribs.href && a.attribs.href !== '#') {
             const url = new URL(a.attribs.href, res.request.uri.href)
-            // extractData($("body").text(), url.href);
-            // console.log(url.href);
             urls.push(url.href);
-            testcount++;
-            console.log(testcount)
+            counter++;
+            if (i <= 40) {
+              // console.log(counter);
+              extractData($("body").text(), url.href);
+            }
+
           }
         });
-        // console.log(' -> %i links', urls.length);
-        // console.log(' -> %i queued', c.queueSize);
-        // console.log(urls[urls.length - 1]);
-        // extractData($("body").text(), url.href);
         c.queue(urls);
-
       }
       done();
     }
@@ -118,10 +113,10 @@ function extractData(mdata, href) {
             }
           }
           if (transferData === true) {
-            // console.log("search for names " + testcount);
+            console.log("search for names");
 
             // setTimeout(() => {
-              // searchForNames(href, countryCode, mdata)
+            searchForNames(href, countryCode, mdata)
             // }, 100);
 
           }
@@ -264,30 +259,30 @@ function languageProcessing(doc, data, url, cc) {
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
-  currentLanguage = detectDataLanguage(data);
-  let convertedData = convert(data, {
-    wordwrap: 130
-  });
-  switch (detectDataLanguage(data)) {
+  currentLanguage = detectDataLanguage(data.substring(0, 400));
+  // let convertedData = convert(data, {
+  //   wordwrap: 130
+  // });
+  switch (currentLanguage) {
     case 'german':
       console.log("german");
-      // languageProcessing(deNlp(data), data, url, cc)
+      languageProcessing(deNlp(data), data, url, cc)
       break;
     case 'english':
       console.log("english");
-      // languageProcessing(enNlp(data), data, url, cc);
+      languageProcessing(enNlp(data), data, url, cc);
       break;
     case 'french':
       console.log("french");
-      // languageProcessing(frNlp(data), data, url, cc);
+      languageProcessing(frNlp(data), data, url, cc);
       break;
     case 'italian':
       console.log("italian");
-      // languageProcessing(itNlp(data), data, url, cc);
+      languageProcessing(itNlp(data), data, url, cc);
       break;
     case 'spanish':
       console.log("spanish");
-      // languageProcessing(esNlp(data), data, url, cc);
+      languageProcessing(esNlp(data), data, url, cc);
       break;
     case '':
       // languageProcessing(enNlp(data), data, url, cc);
