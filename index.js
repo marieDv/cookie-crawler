@@ -6,17 +6,12 @@ import deNlp from 'de-compromise';
 import frNlp from 'fr-compromise';
 import esNlp from 'es-compromise';
 import itNlp from 'it-compromise';
-import { convert } from 'html-to-text';
 
 
 
-
-
-const base = "http://www.amazon.at";
-const crawledPages = { [base]: true };
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-
+const startURL = 'https://www.amazon.de/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -30,10 +25,10 @@ let countURLs = 0;
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
-const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip"];
-const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":", "+", "|", "“"];
+const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip", "0&"];
+const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":", "+", "|", "“", "span"];
 
-const startURL = 'https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+
 init();
 
 
@@ -43,7 +38,6 @@ function init() {
   countURLs = saveCurrentDataToFile()[1];
   clearDataBases([db, dbUrl]);
   writeLatestToTerminal();
-  // crawlAllUrls(startURL);
   crawlerTest();
 
 }
@@ -60,8 +54,7 @@ function crawlerTest() {
         const $ = res.$;
         const urls = [];
 
-         $(`a[href^="/"]${ignoreSelector},a[href^="${base}"]${ignoreSelector}`).each((i, a) => {
-        // $('a').each((i, a) => {
+        $(`a[href^="/"]${ignoreSelector},a[href^="${startURL}"]${ignoreSelector}`).each((i, a) => {
           if (a.attribs.href && a.attribs.href !== '#') {
             const url = new URL(a.attribs.href, res.request.uri.href)
             urls.push(url.href);
@@ -78,7 +71,7 @@ function crawlerTest() {
     }
   });
 
-  c.queue('https://www.amazon.de/');
+  c.queue(startURL);
 }
 
 function extractData(mdata, href) {
@@ -86,7 +79,6 @@ function extractData(mdata, href) {
     dbUrl.get(href, function (err) {
       if (err) {
         let countryCode = href.split('.').splice(-2);
-        // console.log(countryCode[1]);
         if (countryCode[1]) {
           countryCode[1] = countryCode[1].substring(-4);
           if (countryCode[1].includes('%')) {
@@ -102,12 +94,11 @@ function extractData(mdata, href) {
             }
           }
           if (transferData === true) {
-            // console.log("search for names");
             searchForNames(href, countryCode, mdata)
           }
         }
       } else {
-        // console.log(href + " already exists")
+        // console.log(href + " already exists");
       }
       dbUrl.put(href, href);
     });
@@ -116,7 +107,6 @@ function extractData(mdata, href) {
 
 
 function languageProcessing(doc, data, url, cc) {
-  // console.log("enter with  " + url);
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
     let text = d.text();
@@ -162,24 +152,21 @@ function languageProcessing(doc, data, url, cc) {
           }
           writeLatestToTerminal(countNames, countURLs);
           latestData = data;
+        } else {
+          // console.log("name is already in the databse")
         }
       })
       db.put(text, text);
       // dbUrl.put(url, url);
+
     }
   })
   doc.text()
 }
 
-
-
-
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
   currentLanguage = detectDataLanguage(data.substring(0, 2000));
-  // let convertedData = convert(data, {
-  //   wordwrap: 130
-  // });
   switch (currentLanguage) {
     case 'german':
       languageProcessing(deNlp(data), data, url, cc)
