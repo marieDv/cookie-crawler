@@ -11,7 +11,7 @@ import itNlp from 'it-compromise';
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-const startURL = 'https://www.amazon.de/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.ait.ac.at/en/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -26,7 +26,8 @@ let countURLs = 0;
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip", "0&"];
-const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":", "+", "|", "“", "span"];
+
+const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":", "+", "|", "“", "span", ")", "(", "\t", "  "];
 
 
 init();
@@ -45,7 +46,7 @@ function crawlerTest() {
   let counter = 0;
 
   const c = new Crawler({
-    maxConnections: 3,
+    maxConnections: 15,
     rateLimit: 1000,
     callback: (error, res, done) => {
       if (error) {
@@ -54,15 +55,18 @@ function crawlerTest() {
         const $ = res.$;
         const urls = [];
 
-        $(`a[href^="/"]${ignoreSelector},a[href^="${startURL}"]${ignoreSelector}`).each((i, a) => {
+        $('a').each((i, a) => {
           if (a.attribs.href && a.attribs.href !== '#') {
-            const url = new URL(a.attribs.href, res.request.uri.href)
-            urls.push(url.href);
-            counter++;
-            if (i <= 50) {
-              extractData($("body").text(), url.href);
+            const matchedSites = a.attribs.href.match(new RegExp('(jpeg)|(png)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)'));
+            if (matchedSites === null) {
+              // console.log(a.attribs.href)
+              const url = new URL(a.attribs.href, res.request.uri.href)
+              urls.push(url.href);
+              counter++;
+              if (i <= 20) {
+                extractData($("body").text(), url.href);
+              }
             }
-
           }
         });
         c.queue(urls);
@@ -110,11 +114,12 @@ function languageProcessing(doc, data, url, cc) {
   let person = doc.match('#Person #Noun')
   person = person.forEach(function (d, i) {
     let text = d.text();
+    let textR = d.text('reduced');
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
 
     if (checkBlacklist(blacklistNames, text) === false) {
-      db.get(text, function (err, key) {
+      db.get(textR, function (err, key) {
         if (err) {
           fullCounter++;
           let obj = {
@@ -153,10 +158,12 @@ function languageProcessing(doc, data, url, cc) {
           writeLatestToTerminal(countNames, countURLs);
           latestData = data;
         } else {
-          // console.log("name is already in the databse")
+          console.log("name is already in the databse");
+          console.log(text);
         }
       })
-      db.put(text, text);
+      console.log(textR);
+      db.put(textR, textR);
       // dbUrl.put(url, url);
 
     }
