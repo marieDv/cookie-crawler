@@ -1,17 +1,17 @@
-import { writeToJsonFile, deleteFileContent, saveCurrentDataToFile, readJsonFile, emptyFile, replaceAllNames, saveToSDCard, detectDataLanguage, checkBlacklist, checkCountryCode, clearDataBases, writeLatestToTerminal, getCurrentDate } from './functions.js';
-import { Level } from 'level';
-import Crawler from 'crawler';
 import enNlp from 'compromise';
+import Crawler from 'crawler';
 import deNlp from 'de-compromise';
-import frNlp from 'fr-compromise';
 import esNlp from 'es-compromise';
+import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
+import { Level } from 'level';
+import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
 
 
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-const startURL = 'https://www.ait.ac.at/en/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.albertina.at/en/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -46,26 +46,33 @@ function crawlerTest() {
   let counter = 0;
 
   const c = new Crawler({
-    maxConnections: 15,
-    rateLimit: 1000,
+    maxConnections: 2,
+    rateLimit: 2000,
+    priorityRange: 5,
+    // timeout: 1500,
+    // rateLimit: 100,
     callback: (error, res, done) => {
       if (error) {
-        console.log(error);
+        // console.log(error);
       } else {
         const $ = res.$;
         const urls = [];
 
         $('a').each((i, a) => {
-          if (a.attribs.href && a.attribs.href !== '#') {
-            const matchedSites = a.attribs.href.match(new RegExp('(jpeg)|(png)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)'));
+          if (a.attribs.href && a.attribs.href !== '#' && i <= 10) {
+            const matchedSites = a.attribs.href.match(new RegExp('(jpeg)|(png)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)|(tel:)'));
             if (matchedSites === null) {
-              // console.log(a.attribs.href)
+
+              // if (i <= 2) {
               const url = new URL(a.attribs.href, res.request.uri.href)
               urls.push(url.href);
+              extractData($("body").text(), url.href);
+              // console.log(url.href);
+              // }
+              // console.log("..."+i)
               counter++;
-              if (i <= 20) {
-                extractData($("body").text(), url.href);
-              }
+
+
             }
           }
         });
@@ -118,8 +125,10 @@ function languageProcessing(doc, data, url, cc) {
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
 
-    if (checkBlacklist(blacklistNames, text) === false) {
+    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
+    if (matchedNames === null) {
       db.get(textR, function (err, key) {
+        // console.log("found a new name");
         if (err) {
           fullCounter++;
           let obj = {
@@ -158,14 +167,11 @@ function languageProcessing(doc, data, url, cc) {
           writeLatestToTerminal(countNames, countURLs);
           latestData = data;
         } else {
-          console.log("name is already in the databse");
-          console.log(text);
+          // console.log("name is already in the databse");
+          // console.log(text);
         }
       })
-      console.log(textR);
       db.put(textR, textR);
-      // dbUrl.put(url, url);
-
     }
   })
   doc.text()
@@ -173,25 +179,26 @@ function languageProcessing(doc, data, url, cc) {
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
-  currentLanguage = detectDataLanguage(data.substring(0, 2000));
-  switch (currentLanguage) {
-    case 'german':
-      languageProcessing(deNlp(data), data, url, cc)
-      break;
-    case 'english':
-      languageProcessing(enNlp(data), data, url, cc);
-      break;
-    case 'french':
-      languageProcessing(frNlp(data), data, url, cc);
-      break;
-    case 'italian':
-      languageProcessing(itNlp(data), data, url, cc);
-      break;
-    case 'spanish':
-      languageProcessing(esNlp(data), data, url, cc);
-      break;
-    case '':
-      // languageProcessing(enNlp(data), data, url, cc);
-      break;
-  }
+  // currentLanguage = detectDataLanguage(data.substring(500, 5000));
+  // console.log("searching for names " +currentLanguage);
+  // switch (currentLanguage) {
+  //   case 'german':
+  //     languageProcessing(deNlp(data), data, url, cc)
+  //     break;
+  //   case 'english':
+  languageProcessing(enNlp(data), data, url, cc);
+  //       break;
+  //     case 'french':
+  //       languageProcessing(frNlp(data), data, url, cc);
+  //       break;
+  //     case 'italian':
+  //       languageProcessing(itNlp(data), data, url, cc);
+  //       break;
+  //     case 'spanish':
+  //       languageProcessing(esNlp(data), data, url, cc);
+  //       break;
+  //     case '':
+  //       // languageProcessing(enNlp(data), data, url, cc);
+  //       break;
+  //   }
 }

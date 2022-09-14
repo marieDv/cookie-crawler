@@ -141,8 +141,6 @@ export function replaceAllNames(mdata, savedNames, id) {
   let file = fs.readFileSync("fullOutput.json");
   var json = JSON.parse(file.toString());
   let replacedNames = '';
-  // console.log("in function");
-  console.log(savedNames);
   if (safeOneDataset) {
     let dataStringWithoutNames = safeOneDataset.toString();
     for (let q = 0; q < savedNames.length; q++) {
