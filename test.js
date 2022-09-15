@@ -62,11 +62,10 @@ function crawlerTest() {
       } else {
         let usableLinks = 0;
         const $ = res.$;
-        console.log(res.headers['content-type'].split(';')[0])
+        console.log(res.getHeader())
         const urls = [];
         // console.log($('a').length);
-        if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-
+        if ($ && $('a').length >= 1) {
           $('a').each((i, a) => {
             if (a.attribs.href && a.attribs.href !== '#') {
               dbUrlPrecheck.get(a.attribs.href, function (err) {

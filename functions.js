@@ -146,9 +146,7 @@ export function deleteFileContent(mfile) {
 
 
 export function replaceAllNames(mdata, savedNames, id) {
-  // let file = fs.readFileSync("fullOutput.json");
-  // var json = JSON.parse(file.toString());
-  // console.log("replace all names")
+
   let replacedNames = '';
   if (safeOneDataset) {
     let dataStringWithoutNames = safeOneDataset.toString();
@@ -162,7 +160,6 @@ export function replaceAllNames(mdata, savedNames, id) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
-    // writeToJsonFile(dataObj, 'outputNoNames.json');
     console.log("replace all names")
     saveToSDCard(false, dataObj);
   }
@@ -173,8 +170,7 @@ export function writeToJsonFile(mData, mfile) {
   const file = fs.readFileSync(mfile);
   var json = JSON.parse(file.toString());
   json.push(mData);
-  fs.writeFileSync(mfile, JSON.stringify(json));
-  // console.log("write to file");
+  fs.writeFileSync(mfile, JSON.stringify(json, null, 2));
 }
 
 export function readJsonFile() {
