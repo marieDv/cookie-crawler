@@ -41,34 +41,42 @@ export function saveToSDCard(names, mData) {
   let pathRasp = "/media/process/SDCard1/test.json";
   let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
   let currentPath = localPath;
-  if(names){
-    currentPath += "/test-fullnames.json";
-  }else{
-    currentPath += "/test-fulloutput.json";
+  if (names) {
+    currentPath += "/test-fullnames-1.json";
+  } else {
+    currentPath += "/test-fulloutput-1.json";
   }
 
- 
-  const file = fs.readFileSync(currentPath);
 
-  let json = JSON.parse(file.toString());
-  json.push(mData);
-  fs.writeFileSync(currentPath, JSON.stringify(json));
-  fs.open(currentPath, 'r', (err, fd) => {
-    if (err) throw err;
-    try {
-      fstat(fd, (err, stat) => {
-        if (err) {
-          closeFd(fd);
-          throw err;
-        }
-        cardFilled = roundToTwo(stat.size / (1024 * 1024));
-        closeFd(fd);
-      });
-    } catch (err) {
-      closeFd(fd);
-      throw err;
-    }
-  });
+  /***** */
+  let dataObj = {
+    dataPage: []
+  };
+  dataObj.dataPage.push({ text: mData });
+  writeToJsonFile(dataObj, currentPath);
+  /***** */
+
+  console.log("write to sd card");
+  // const file = fs.readFileSync(currentPath);
+  // let json = JSON.parse(file.toString());
+  // json.push(mData);
+  // fs.writeFileSync(currentPath, JSON.stringify(json));
+  // fs.open(currentPath, 'r', (err, fd) => {
+  //   if (err) throw err;
+  //   try {
+  //     fstat(fd, (err, stat) => {
+  //       if (err) {
+  //         closeFd(fd);
+  //         throw err;
+  //       }
+  //       cardFilled = roundToTwo(stat.size / (1024 * 1024));
+  //       closeFd(fd);
+  //     });
+  //   } catch (err) {
+  //     closeFd(fd);
+  //     throw err;
+  //   }
+  // });
 }
 export function emptyFile(file) {
   let result = {}
@@ -138,8 +146,9 @@ export function deleteFileContent(mfile) {
 
 
 export function replaceAllNames(mdata, savedNames, id) {
-  let file = fs.readFileSync("fullOutput.json");
-  var json = JSON.parse(file.toString());
+  // let file = fs.readFileSync("fullOutput.json");
+  // var json = JSON.parse(file.toString());
+  // console.log("replace all names")
   let replacedNames = '';
   if (safeOneDataset) {
     let dataStringWithoutNames = safeOneDataset.toString();
@@ -153,7 +162,8 @@ export function replaceAllNames(mdata, savedNames, id) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
-    writeToJsonFile(dataObj, 'outputNoNames.json');
+    // writeToJsonFile(dataObj, 'outputNoNames.json');
+    console.log("replace all names")
     saveToSDCard(false, dataObj);
   }
   safeOneDataset = mdata;
@@ -179,7 +189,7 @@ export function readJsonFile() {
 export function writeLatestToTerminal(id, urls) {
   const file = fs.readFileSync('names.json');
   var mydata = JSON.parse(file.toString());
-  term.fullscreen(true);
+  // term.fullscreen(true);
   term.table([
     ['name', 'countrycode', 'date', 'language'],
     [mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].name : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].countrycode : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].date : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].language : ''],// mydata[mydata.length - 5][0].countrycode, mydata[mydata.length - 9][0].date],
@@ -207,6 +217,7 @@ export function writeLatestToTerminal(id, urls) {
 
   }
   );
+  // console.log("written to terminal");
 }
 
 export function clearDataBases(databases) {

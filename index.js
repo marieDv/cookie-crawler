@@ -11,7 +11,7 @@ import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, rep
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-const startURL = 'https://www.ait.ac.at/en/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.schoenbrunn.at/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -23,9 +23,11 @@ let countUpID = 0;
 let countNames = 0;
 let countURLs = 0;
 let ready = true;
+let alreadyVisited = false;
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
+const dbUrlPrecheck = new Level('dbUrlPrecheck', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip", "0&"];
 
 const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":", "+", "|", "“", "span", ")", "(", "\t", "  "];
@@ -38,104 +40,116 @@ init();
 function init() {
   countNames = saveCurrentDataToFile()[0];
   countURLs = saveCurrentDataToFile()[1];
-  clearDataBases([db, dbUrl]);
+  clearDataBases([db, dbUrl, dbUrlPrecheck]);
   writeLatestToTerminal();
   crawlerTest();
 
 }
 function crawlerTest() {
   let counter = 0;
+  // const starter = new URL(startURL, startURL)
 
+  // urls.push(starter)
   const c = new Crawler({
-    maxConnections: 2,
+    maxConnections: 20,
+    queueSize: 100,
     // rateLimit: 1000,
-    priorityRange: 5,
-    // timeout: 1500,
-    // rateLimit: 1000,
+    // priorityRange: 5,
+
     callback: (error, res, done) => {
       if (error) {
         // console.log(error);
       } else {
+        let usableLinks = 0;
         const $ = res.$;
+
         const urls = [];
-        if (ready === true) {
-          
+        // console.log($('a').length);
+        if ($('a').length >= 1) {
           $('a').each((i, a) => {
-            if (a.attribs.href && a.attribs.href !== '#' && i <= 50) {
-              const matchedSites = a.attribs.href.match(new RegExp('(jpeg)|(png)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)|(tel:)|(#carousel)'));
-              if (matchedSites === null) {
-                const url = new URL(a.attribs.href, res.request.uri.href)
-                urls.push(url.href);
-                setTimeout(() => {
-                  ready = false;
-                  if ($("body").text()) {
-                    extractData($("body").text(), url.href);
+            if (a.attribs.href && a.attribs.href !== '#') {
+              dbUrlPrecheck.get(a.attribs.href, function (err) {
+                if (err) {
+                  alreadyVisited = false;
+                  dbUrlPrecheck.put(a.attribs.href, a.attribs.href);
+                } else { alreadyVisited = true; }
+              });
+              if (alreadyVisited === false) {
+
+                const matchedSites = a.attribs.href.match(new RegExp('(jpeg)|(png)|(js)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)|(tel:)|(#carousel)'));
+                if (matchedSites === null) {
+                  const url = new URL(a.attribs.href, res.request.uri.href)
+                  if (c.queueSize < 1000) {
+                    urls.push(url.href);
                   }
-                }, 100);
-                counter++;
+                  setTimeout(() => {
+                    if (i < 20) {
+                      extractData($("body").text(), url.href);
+                    }
+                  }, 100);
+
+                  counter++;
+
+                }
               }
+
             }
+
+
           })
-        } else { console.log("waiting to retrieve data") };
+        }
+
         c.queue(urls);
+        // console.log(c.queueSize);
+
+        // console.log("size: " + c.queueSize);
       }
       done();
     }
   });
-
   c.queue(startURL);
+
+
 }
 
 function extractData(mdata, href) {
 
-  // if (mdata) {
-  dbUrl.get(href, function (err) {
-    if (err) {
-      let countryCode = href.split('.').splice(-2);
-      if (countryCode[1]) {
-        countryCode[1] = countryCode[1].substring(-4);
-        if (countryCode[1].includes('%')) {
-          countryCode = countryCode[1].split('%')[0];
-        } else {
-          countryCode = countryCode[1].split('/')[0];
-        }
-
-        let transferData = true;
-        for (let i = 0; i < blacklist.length; i++) {
-          if (countryCode.includes(blacklist[i])) {
-            transferData = false;
-          }
-        }
-        if (transferData === true) {
-          // console.log("ready to transfer data");
-          console.log("found data - wait");
-          searchForNames(href, countryCode, mdata);
-
-        } else {
-          console.log("search more")
-          ready = true;
-        }
-
-
-      }
-
+  let countryCode = href.split('.').splice(-2);
+  if (countryCode[1]) {
+    countryCode[1] = countryCode[1].substring(-4);
+    if (countryCode[1].includes('%')) {
+      countryCode = countryCode[1].split('%')[0];
     } else {
-      ready = true;
-      console.log("url already visited");
-      console.log(href);
-      console.log("*********")
-      // console.log(href + " already exists");
+      countryCode = countryCode[1].split('/')[0];
     }
-  });
-  dbUrl.put(href, href);
-  // }
 
+    let transferData = true;
+    for (let i = 0; i < blacklist.length; i++) {
+      if (countryCode.includes(blacklist[i])) {
+        transferData = false;
+      }
+    }
+    if (transferData === true) {
+      searchForNames(href, countryCode, mdata);
+    } else {
+      console.log("search more")
+      let dataObj = {
+        dataPage: []
+      };
+      dataObj.dataPage.push({ text: mdata, id: 0 });
+      saveToSDCard(false, dataObj);
+      ready = true;
+    }
+
+
+  }
 }
 
 
 function languageProcessing(doc, data, url, cc) {
-  let person = doc.match('#Person #Noun')
+  let person = doc.match('#Person #Noun');
   person = person.forEach(function (d, i) {
+
     let text = d.text();
     let textR = d.text('reduced');
     allURLS[i] += `url': `;
@@ -144,7 +158,7 @@ function languageProcessing(doc, data, url, cc) {
     const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
     if (matchedNames === null) {
       db.get(textR, function (err, key) {
-        // console.log("found a new name");
+
         if (err) {
           fullCounter++;
           let obj = {
@@ -153,11 +167,12 @@ function languageProcessing(doc, data, url, cc) {
           if (text.includes("’s")) {
             text = d.text().slice(0, -2);
           }
-
+          console.log("person")
           currentDate = getCurrentDate();
           obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: countUpID });
-          // writeToJsonFile(obj.person, 'names.json');
+          writeToJsonFile(obj.person, 'names.json');
           saveToSDCard(true, obj.person);
+
 
 
           // writeToJsonFile(text, 'namesAsString.json');
@@ -167,20 +182,19 @@ function languageProcessing(doc, data, url, cc) {
           // urlObj.url.push({ url: url, date: currentDate });
           countURLs++;
           // writeToJsonFile(urlObj, 'fullOutputURLs.json');
-
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
             inCurrentDataset++;
             countNames++;
           } else {
-
+            console.log("go to replace all names")
             replaceAllNames(data, tempSaveNames, countUpID);
             inCurrentDataset = 0;
             tempSaveNames = [];
             countUpID++;
             countNames++;
           }
-          writeLatestToTerminal(countNames, countURLs);
+          // writeLatestToTerminal(countNames, countURLs);
           latestData = data;
         } else {
         }
@@ -188,14 +202,16 @@ function languageProcessing(doc, data, url, cc) {
       db.put(textR, textR);
     }
   })
+
+  ready = true;
   doc.text()
 }
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
   currentLanguage = detectDataLanguage(data.substring(500, 5000));
-  console.log("searching for names " + currentLanguage);
-  ready = true;
+
+
   switch (currentLanguage) {
     case 'german':
       languageProcessing(deNlp(data), data, url, cc)

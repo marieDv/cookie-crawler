@@ -8,3 +8,5 @@ names.json
 namesAsString.json
 node_modules
 globalVariables.json
+dbUrlPrecheck
+urlsLevelPre
