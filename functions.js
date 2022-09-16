@@ -7,6 +7,7 @@ import sizeof from 'object-sizeof';
 
 let lastValidLanguage = '';
 let fullDataObj = { page: [] };
+let fullNamesObj = { name: [] };
 
 const { terminal, TextTable } = pkg;
 const term = pkg.terminal;
@@ -48,30 +49,33 @@ export function saveToSDCard(names, mData) {
   } else {
     currentPath += "/test-fulloutput-1.json";
   }
+  let dateObject = new Date();
+  let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "|" + dateObject.getMinutes() + "|" + dateObject.getSeconds();
 
 
-  /***** */
+
   let dataObj = {
     dataPage: []
   };
-
-
   if (names === false) {
     fullDataObj.page.push({ text: mData })
-    console.log(sizeof(fullDataObj)/ (1024 * 1024))
-    if (sizeof(fullDataObj) > 9000000 && sizeof(fullDataObj) > 14000000) {
-      console.log(sizeof(fullDataObj))
-      console.log("save it all");
-      writeToJsonFile(fullDataObj, currentPath);
+    // console.log(sizeof(fullDataObj) / (1024 * 1024))
+    if (sizeof(fullDataObj) > 8500000 && sizeof(fullDataObj) < 9000000) {
+      let currentFileName = timestampDate + "_full.json";
+      fs.writeFile('./full-output/' + currentFileName, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
+      fullDataObj = { page: [] }
     }
   } else {
-    dataObj.dataPage.push({ text: mData });
-    writeToJsonFile(dataObj, currentPath);
+    fullNamesObj.name.push({ mData });
+    console.log(sizeof(fullNamesObj));
+    if (sizeof(fullNamesObj) > 8500 && sizeof(fullNamesObj) < 9000) {
+      let currentFileName = timestampDate + "_names.json";
+      fs.writeFile('./names-output/' + currentFileName, JSON.stringify(fullNamesObj, null, 2), function () { });
+      fullNamesObj = { name: [] }
+    }
+    // dataObj.dataPage.push({ text: mData });
+    // writeToJsonFile(dataObj, currentPath);
   }
-
-
-
-
 
   /***** */
   // const file = fs.readFileSync(currentPath);

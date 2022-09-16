@@ -10,3 +10,6 @@ node_modules
 globalVariables.json
 dbUrlPrecheck
 urlsLevelPre
+fullOutput
+names-output
+full-output
