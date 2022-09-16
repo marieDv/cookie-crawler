@@ -11,7 +11,7 @@ import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, rep
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-const startURL = 'https://www.sacher.com/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'https://xn--hftgold-n2a.wien/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -88,7 +88,7 @@ function crawlerTest() {
                   counter++;
 
                 } else {
-                  
+
                   let dataObj = {
                     dataPage: []
                   };
@@ -149,46 +149,40 @@ function languageProcessing(doc, data, url, cc) {
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
 
-    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
+    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(^[0-9])|(/.)'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
+    console.log(matchedNames === null);
     if (matchedNames === null) {
       db.get(textR, function (err, key) {
-
         if (err) {
           fullCounter++;
           let obj = {
             person: []
           };
-          if (text.includes("’s")) {
+          if (text.includes("’s") || text.includes("'s")) {
             text = d.text().slice(0, -2);
           }
-          // console.log("person")
           currentDate = getCurrentDate();
           obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: countUpID });
           writeToJsonFile(obj.person, 'names.json');
           saveToSDCard(true, obj.person);
 
-
-
-          // writeToJsonFile(text, 'namesAsString.json');
           let urlObj = {
             url: []
           };
-          // urlObj.url.push({ url: url, date: currentDate });
           countURLs++;
-          // writeToJsonFile(urlObj, 'fullOutputURLs.json');
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
             inCurrentDataset++;
             countNames++;
+            console.log("same url")
           } else {
-            // console.log("go to replace all names")
+            console.log("new url")
             replaceAllNames(data, tempSaveNames, countUpID);
             inCurrentDataset = 0;
             tempSaveNames = [];
             countUpID++;
             countNames++;
           }
-          // writeLatestToTerminal(countNames, countURLs);
           latestData = data;
         } else {
         }
@@ -203,7 +197,7 @@ function languageProcessing(doc, data, url, cc) {
 
 // SEARCH FOR NAMES IN THE SAVED TEXT
 function searchForNames(url, cc, data) {
-  currentLanguage = detectDataLanguage(data.substring(500, 5000));
+  currentLanguage = detectDataLanguage(data.substring(500, 8000));
 
 
   switch (currentLanguage) {
@@ -223,7 +217,7 @@ function searchForNames(url, cc, data) {
       languageProcessing(esNlp(data), data, url, cc);
       break;
     case '':
-      // languageProcessing(enNlp(data), data, url, cc);
+
       break;
   }
 }
