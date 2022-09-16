@@ -3,8 +3,10 @@ import pkg from 'terminal-kit';
 import LanguageDetect from 'languagedetect';
 import { open, close, fstat } from 'node:fs';
 import { convert } from 'html-to-text';
+import sizeof from 'object-sizeof';
 
 let lastValidLanguage = '';
+let fullDataObj = { page: [] };
 
 const { terminal, TextTable } = pkg;
 const term = pkg.terminal;
@@ -52,11 +54,26 @@ export function saveToSDCard(names, mData) {
   let dataObj = {
     dataPage: []
   };
-  dataObj.dataPage.push({ text: mData });
-  writeToJsonFile(dataObj, currentPath);
-  /***** */
 
-  console.log("write to sd card");
+
+  if (names === false) {
+    fullDataObj.page.push({ text: mData })
+    console.log(sizeof(fullDataObj)/ (1024 * 1024))
+    if (sizeof(fullDataObj) > 9000000 && sizeof(fullDataObj) > 14000000) {
+      console.log(sizeof(fullDataObj))
+      console.log("save it all");
+      writeToJsonFile(fullDataObj, currentPath);
+    }
+  } else {
+    dataObj.dataPage.push({ text: mData });
+    writeToJsonFile(dataObj, currentPath);
+  }
+
+
+
+
+
+  /***** */
   // const file = fs.readFileSync(currentPath);
   // let json = JSON.parse(file.toString());
   // json.push(mData);

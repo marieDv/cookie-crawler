@@ -22,6 +22,7 @@
     "languagedetect": "^2.0.0",
     "level": "^8.0.0",
     "nodemon": "^2.0.19",
+    "object-sizeof": "^1.6.3",
     "terminal-kit": "^2.9.8"
   },
   "devDependencies": {

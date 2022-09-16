@@ -58,13 +58,9 @@ function crawlerTest() {
 
     callback: (error, res, done) => {
       if (error) {
-        // console.log(error);
       } else {
-        let usableLinks = 0;
         const $ = res.$;
-        console.log(res.headers['content-type'].split(';')[0])
         const urls = [];
-        // console.log($('a').length);
         if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
 
           $('a').each((i, a) => {
@@ -108,9 +104,6 @@ function crawlerTest() {
         }
 
         c.queue(urls);
-        // console.log(c.queueSize);
-
-        // console.log("size: " + c.queueSize);
       }
       done();
     }
@@ -140,7 +133,6 @@ function extractData(mdata, href) {
     if (transferData === true) {
       searchForNames(href, countryCode, mdata);
     } else {
-      console.log("search more")
     }
 
 
