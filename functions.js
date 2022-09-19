@@ -40,28 +40,23 @@ export function saveCurrentDataToFile() {
 
 
 export function saveToSDCard(names, mData) {
-  let pathOSX = "/Volumes/SDCard1/test.json";
+  let pathOSX = "/Volumes/FULL/output/";
   let pathRasp = "/media/process/SDCard1/test.json";
   let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
 /** PATH TO RASPB SD CARDS */
-let raspNames = "/Volumes/NAMES/output/";
-let raspFull = "/Volumes/FULL/output/";
+let raspNames = "/media/process/NAMES/output/";
+let raspFull = "/media/process/FULL/output/";
 
-  let currentPath = localPath;
-  if (names) {
-    currentPath += "/test-fullnames-1.json";
-  } else {
-    currentPath += "/test-fulloutput-1.json";
-  }
+  // let currentPath = localPath;
+  // if (names) {
+  //   currentPath += "/test-fullnames-1.json";
+  // } else {
+  //   currentPath += "/test-fulloutput-1.json";
+  // }
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "|" + dateObject.getMinutes() + "|" + dateObject.getSeconds();
 
-
-
-  let dataObj = {
-    dataPage: []
-  };
   if (names === false) {
     fullDataObj.page.push({ text: mData })
     // console.log(sizeof(fullDataObj) / (1024 * 1024))
@@ -69,7 +64,7 @@ let raspFull = "/Volumes/FULL/output/";
       let currentFileName = timestampDate + "_full.json";
       console.log("WRITE A FILE")
       console.log(raspFull + currentFileName)
-      let tempPath = raspFull + currentFileName;
+      let tempPath = pathOSX + currentFileName;
       fs.writeFile(tempPath, JSON.stringify(fullDataObj, null, 2), function () { console.log("done writing ")});//stringify(json, null, 2)
       fullDataObj = { page: [] }
     //}
