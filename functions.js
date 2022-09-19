@@ -40,45 +40,43 @@ export function saveCurrentDataToFile() {
 
 
 export function saveToSDCard(names, mData) {
-  let pathOSX = "/Volumes/FULL/output/";
-  let pathRasp = "/media/process/SDCard1/test.json";
-  let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
-/** PATH TO RASPB SD CARDS */
-let raspNames = "/media/process/NAMES/output/";
-let raspFull = "/media/process/FULL/output/";
+  // let pathOSX = "/Volumes/FULL/output/";
+  // let pathRasp = "/media/process/SDCard1/test.json";
+  // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
-  // let currentPath = localPath;
-  // if (names) {
-  //   currentPath += "/test-fullnames-1.json";
-  // } else {
-  //   currentPath += "/test-fulloutput-1.json";
-  // }
+  /** PATH TO RASPB SD CARDS */
+  let raspNames = "/media/process/NAMES/output/";
+  let raspFull = "/media/process/FULL/output/";
+
+
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = [raspNames, raspFull];
+
+
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
 
   if (names === false) {
     fullDataObj.page.push({ text: mData })
     // console.log(sizeof(fullDataObj) / (1024 * 1024))
-    //if (sizeof(fullDataObj) > 85000 && sizeof(fullDataObj) < 90000) {
+    if (sizeof(fullDataObj) > 8500000 && sizeof(fullDataObj) < 9000000) {
       let currentFileName = timestampDate + "_full.json";
-      console.log("WRITE A FILE")
-      currentFileName = timestampDate+".json"
-      console.log(raspFull + currentFileName)
-      let tempPath = "/media/process/FULL/output/" + currentFileName;
-      fs.writeFile(tempPath, JSON.stringify(fullDataObj, null, 2), function () { console.log("done writing ")});//stringify(json, null, 2)
+      currentFileName = timestampDate + ".json"
+      let tempPath = currentPath[1] + currentFileName;
+      fs.writeFile(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
       fullDataObj = { page: [] }
-    //}
+    }
   } else {
     fullNamesObj.name.push({ mData });
-    // console.log(sizeof(fullNamesObj));
-    if (sizeof(fullNamesObj) > 850000 && sizeof(fullNamesObj) < 900000) {
+    if (sizeof(fullNamesObj) > 8500 && sizeof(fullNamesObj) < 9000) {
       let currentFileName = timestampDate + "_names.json";
-      fs.writeFile(raspNames + currentFileName, JSON.stringify(fullNamesObj, null, 2), function () { });
+      let tempPath = currentPath[0] + currentFileName;
+      console.log(tempPath)
+      console.log("save names data")
+      fs.writeFile(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
       fullNamesObj = { name: [] }
     }
-    // dataObj.dataPage.push({ text: mData });
-    // writeToJsonFile(dataObj, currentPath);
   }
 
   /***** */

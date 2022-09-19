@@ -11,7 +11,7 @@ import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, rep
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-const startURL = 'https://xn--hftgold-n2a.wien/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.ait.ac.at/en/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -29,8 +29,7 @@ const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const dbUrlPrecheck = new Level('dbUrlPrecheck', { valueEncoding: 'json' })
 const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip", "0&"];
-
-const blacklistNames = ["ii", "=", "'s", "}", '#', ".", "{", "<", ">", "&", " i ", ",", "–", ":", "+", "|", "“", "span", ")", "(", "\t", "  "];
+const blockedSites = new RegExp('(google)|(paypal)|(raiffeisen)');
 
 
 init();
@@ -51,7 +50,7 @@ function crawlerTest() {
 
   // urls.push(starter)
   const c = new Crawler({
-    maxConnections: 20,
+    maxConnections: 30,
     queueSize: 100,
     retries: 0,
     // rateLimit: 1000,
@@ -74,7 +73,7 @@ function crawlerTest() {
               });
               if (alreadyVisited === false) {
 
-                const matchedSites = a.attribs.href.match(new RegExp('(jpeg)|(png)|(js)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)|(tel:)|(#carousel)'));
+                const matchedSites = a.attribs.href.match(new RegExp('(google)|(facebook)|(instagram)|(jpeg)|(png)|(js)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)|(tel:)|(#carousel)'));
                 if (matchedSites === null) {
                   const url = new URL(a.attribs.href, res.request.uri.href)
                   if (c.queueSize < 1000) {
