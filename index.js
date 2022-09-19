@@ -182,7 +182,7 @@ function languageProcessing(doc, data, url, cc) {
             countUpID++;
             countNames++;
           }
-          writeLatestToTerminal(countNames, countURLs);
+        //  writeLatestToTerminal(countNames, countURLs);
           latestData = data;
         } else {
         }
