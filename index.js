@@ -150,7 +150,6 @@ function languageProcessing(doc, data, url, cc) {
     allURLS[i] += "'" + url;
 
     const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(^[0-9])|(/.)'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
-    console.log(matchedNames === null);
     if (matchedNames === null) {
       db.get(textR, function (err, key) {
         if (err) {
@@ -174,15 +173,16 @@ function languageProcessing(doc, data, url, cc) {
             tempSaveNames[inCurrentDataset] = text;
             inCurrentDataset++;
             countNames++;
-            console.log("same url")
+            // console.log("same url");
           } else {
-            console.log("new url")
+            // console.log("new url")
             replaceAllNames(data, tempSaveNames, countUpID);
             inCurrentDataset = 0;
             tempSaveNames = [];
             countUpID++;
             countNames++;
           }
+          writeLatestToTerminal(countNames, countURLs);
           latestData = data;
         } else {
         }

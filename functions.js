@@ -67,7 +67,7 @@ export function saveToSDCard(names, mData) {
     }
   } else {
     fullNamesObj.name.push({ mData });
-    console.log(sizeof(fullNamesObj));
+    // console.log(sizeof(fullNamesObj));
     if (sizeof(fullNamesObj) > 8500 && sizeof(fullNamesObj) < 9000) {
       let currentFileName = timestampDate + "_names.json";
       fs.writeFile('./names-output/' + currentFileName, JSON.stringify(fullNamesObj, null, 2), function () { });
@@ -206,7 +206,7 @@ export function readJsonFile() {
 export function writeLatestToTerminal(id, urls) {
   const file = fs.readFileSync('names.json');
   var mydata = JSON.parse(file.toString());
-  // term.fullscreen(true);
+  term.fullscreen(true);
   term.table([
     ['name', 'countrycode', 'date', 'language'],
     [mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].name : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].countrycode : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].date : '', mydata[mydata.length - 1] ? mydata[mydata.length - 1][0].language : ''],// mydata[mydata.length - 5][0].countrycode, mydata[mydata.length - 9][0].date],
