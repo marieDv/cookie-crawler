@@ -55,7 +55,7 @@ let raspFull = "/media/process/FULL/output/";
   //   currentPath += "/test-fulloutput-1.json";
   // }
   let dateObject = new Date();
-  let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "|" + dateObject.getMinutes() + "|" + dateObject.getSeconds();
+  let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
 
   if (names === false) {
     fullDataObj.page.push({ text: mData })
@@ -63,15 +63,16 @@ let raspFull = "/media/process/FULL/output/";
     //if (sizeof(fullDataObj) > 85000 && sizeof(fullDataObj) < 90000) {
       let currentFileName = timestampDate + "_full.json";
       console.log("WRITE A FILE")
+      currentFileName = timestampDate+".json"
       console.log(raspFull + currentFileName)
-      let tempPath = pathOSX + currentFileName;
+      let tempPath = "/media/process/FULL/output/" + currentFileName;
       fs.writeFile(tempPath, JSON.stringify(fullDataObj, null, 2), function () { console.log("done writing ")});//stringify(json, null, 2)
       fullDataObj = { page: [] }
     //}
   } else {
     fullNamesObj.name.push({ mData });
     // console.log(sizeof(fullNamesObj));
-    if (sizeof(fullNamesObj) > 8500 && sizeof(fullNamesObj) < 9000) {
+    if (sizeof(fullNamesObj) > 850000 && sizeof(fullNamesObj) < 900000) {
       let currentFileName = timestampDate + "_names.json";
       fs.writeFile(raspNames + currentFileName, JSON.stringify(fullNamesObj, null, 2), function () { });
       fullNamesObj = { name: [] }
