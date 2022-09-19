@@ -53,6 +53,7 @@ function crawlerTest() {
   const c = new Crawler({
     maxConnections: 20,
     queueSize: 100,
+    retries: 0,
     // rateLimit: 1000,
     // priorityRange: 5,
 
