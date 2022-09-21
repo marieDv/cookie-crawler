@@ -50,8 +50,8 @@ export function saveToSDCard(names, mData) {
   let raspFull = "/media/process/FULL/output/";
 
 
-  let currentPath = ['./names-output/output/', './full-output/output/'];
-  // let currentPath = [raspNames, raspFull];
+  //let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = [raspNames, raspFull];
 
 
   let dateObject = new Date();
@@ -60,13 +60,13 @@ export function saveToSDCard(names, mData) {
   if (names === false) {
     fullDataObj.page.push({ text: mData })
     // console.log(sizeof(fullDataObj) / (1024 * 1024))
-    if (sizeof(fullDataObj) > 8500000 && sizeof(fullDataObj) < 9000000) {
+   //if (sizeof(fullDataObj) > 85000 && sizeof(fullDataObj) < 90000) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
       fs.writeFile(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
       fullDataObj = { page: [] }
-    }
+    //}
   } else {
     fullNamesObj.name.push({ mData });
     if (sizeof(fullNamesObj) > 8500 && sizeof(fullNamesObj) < 9000) {

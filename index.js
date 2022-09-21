@@ -11,7 +11,7 @@ import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, rep
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-const startURL = 'https://www.ait.ac.at/en/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+const startURL = 'https://www.amazon.de';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -50,8 +50,8 @@ function crawlerTest() {
 
   // urls.push(starter)
   const c = new Crawler({
-    maxConnections: 30,
-    queueSize: 100,
+    maxConnections: 20,
+    queueSize: 1000,
     retries: 0,
     // rateLimit: 1000,
     // priorityRange: 5,
