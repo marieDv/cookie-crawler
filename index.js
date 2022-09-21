@@ -11,7 +11,11 @@ import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, rep
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
+<<<<<<< HEAD
 const startURL = 'https://www.amazon.de';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+=======
+const startURL = 'https://altkatholische-heilandskirche-wien.at/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
+>>>>>>> 401a27dc0aef1e07e0be9f8fdb9c1a3dea9907a6
 var currentLanguage;
 var fullCounter = 0;
 var allURLS = [];
@@ -149,7 +153,11 @@ function languageProcessing(doc, data, url, cc) {
     allURLS[i] += `url': `;
     allURLS[i] += "'" + url;
 
-    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(^[0-9])|(/.)'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
+    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(^[0-9])'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
+    // const matchedNames = text.match(new RegExp('\[=}{=#&-_–,:©.()]\|(^[0-9])'));
+    if (matchedNames !== null) {
+      console.log(matchedNames);
+    }
     if (matchedNames === null) {
       db.get(textR, function (err, key) {
         if (err) {
@@ -182,7 +190,7 @@ function languageProcessing(doc, data, url, cc) {
             countUpID++;
             countNames++;
           }
-        //  writeLatestToTerminal(countNames, countURLs);
+          //  writeLatestToTerminal(countNames, countURLs);
           latestData = data;
         } else {
         }
