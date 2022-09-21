@@ -4,6 +4,7 @@ import LanguageDetect from 'languagedetect';
 import { open, close, fstat } from 'node:fs';
 import { convert } from 'html-to-text';
 import sizeof from 'object-sizeof';
+import { Console } from 'console';
 
 let lastValidLanguage = '';
 let fullDataObj = { page: [] };
@@ -49,24 +50,25 @@ export function saveToSDCard(names, mData) {
   let raspNames = "/media/process/NAMES/output/";
   let raspFull = "/media/process/FULL/output/";
 
-
-  //let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = [raspNames, raspFull];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = [raspNames, raspFull];
 
 
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
 
   if (names === false) {
-    fullDataObj.page.push({ text: mData })
-    // console.log(sizeof(fullDataObj) / (1024 * 1024))
-   //if (sizeof(fullDataObj) > 85000 && sizeof(fullDataObj) < 90000) {
+    console.log("NAMES IS FAAAAALSE");
+    fullDataObj.page.push({ text: mData });
+    console.log(sizeof(fullDataObj) / (1024 * 1024));
+   if (sizeof(fullDataObj) / (1024 * 1024) > 7 && sizeof(fullDataObj) / (1024 * 1024) < 8) {
+    console.log("save data")
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
       fs.writeFile(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
       fullDataObj = { page: [] }
-    //}
+    }
   } else {
     fullNamesObj.name.push({ mData });
     if (sizeof(fullNamesObj) > 8500 && sizeof(fullNamesObj) < 9000) {
@@ -183,7 +185,6 @@ export function replaceAllNames(mdata, savedNames, id) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
-    console.log("replace all names")
     saveToSDCard(false, dataObj);
   }
   safeOneDataset = mdata;

@@ -11,14 +11,8 @@ import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, rep
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 
-<<<<<<< HEAD
-const startURL = 'https://www.amazon.de';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
-=======
 const startURL = 'https://altkatholische-heilandskirche-wien.at/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
->>>>>>> 401a27dc0aef1e07e0be9f8fdb9c1a3dea9907a6
 var currentLanguage;
-var fullCounter = 0;
-var allURLS = [];
 var currentDate;
 let latestData = "";
 let tempSaveNames = [];
@@ -48,17 +42,18 @@ function init() {
   crawlerTest();
 
 }
+function check_mem() {
+  const mem = process.memoryUsage();
+  console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
+}
+
+
 function crawlerTest() {
   let counter = 0;
-  // const starter = new URL(startURL, startURL)
-
-  // urls.push(starter)
   const c = new Crawler({
     maxConnections: 20,
     queueSize: 1000,
     retries: 0,
-    // rateLimit: 1000,
-    // priorityRange: 5,
 
     callback: (error, res, done) => {
       if (error) {
@@ -118,7 +113,7 @@ function crawlerTest() {
 }
 
 function extractData(mdata, href) {
-
+  check_mem();
   let countryCode = href.split('.').splice(-2);
   if (countryCode[1]) {
     countryCode[1] = countryCode[1].substring(-4);
@@ -138,8 +133,6 @@ function extractData(mdata, href) {
       searchForNames(href, countryCode, mdata);
     } else {
     }
-
-
   }
 }
 
@@ -150,18 +143,17 @@ function languageProcessing(doc, data, url, cc) {
 
     let text = d.text();
     let textR = d.text('reduced');
-    allURLS[i] += `url': `;
-    allURLS[i] += "'" + url;
 
-    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(^[0-9])'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
+
+    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(^[0-9])'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
     // const matchedNames = text.match(new RegExp('\[=}{=#&-_–,:©.()]\|(^[0-9])'));
     if (matchedNames !== null) {
-      console.log(matchedNames);
+      // console.log(matchedNames);
     }
     if (matchedNames === null) {
       db.get(textR, function (err, key) {
         if (err) {
-          fullCounter++;
+
           let obj = {
             person: []
           };
