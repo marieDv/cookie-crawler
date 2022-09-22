@@ -18,28 +18,32 @@ let inCurrentDataset = 0;
 let lastProcessedURLs = [];
 let countLastProcessedURLs = 0;
 let i = 0;
-let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
-
+// let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
+let startingURLs = ['https://www.chinadaily.com.cn/', 'https://www.globaltimes.cn/', 'https://www.cgtn.com/', 'https://www.scmp.com/'];
 
 clearDataBases([db]);
-let savedToQueue = retrieveURLs();
+let savedToQueue = startingURLs;
+savedToQueue = savedToQueue.concat(startingURLs);
 // console.log(savedToQueue);
-if (savedToQueue.length > 1) {
+if (savedToQueue.length > 5) {
     const crawler = new CheerioCrawler({
         // maxRequestsPerCrawl: 20,
         async requestHandler({ $, request, enqueueLinks }) {
             extractData($("body").text(), request.loadedUrl);
             const queue = await RequestQueue.open();
-            // console.log(request);
-            if (i <= 20) {
+            if (i <= 100) {
                 let newUrl = new URL(request.loadedUrl);
-                console.log(newUrl)
-                lastProcessedURLs[i] = newUrl.hostname;
-                i++
+                // console.log(lastProcessedURLs.includes(newUrl.origin))
+                if (newUrl && newUrl.origin && lastProcessedURLs.includes(newUrl.origin) === false && !(newUrl.origin === null)) {
+                    console.log(newUrl)
+                    newUrl.origin !== null ? lastProcessedURLs[i] = newUrl.origin : '';
+                    i++
+                }
+
             } else {
                 i = 0;
             }
-            countLastProcessedURLs === 20 ? saveLastSession() : countLastProcessedURLs++;
+            countLastProcessedURLs === 200 ? saveLastSession() : countLastProcessedURLs++;
 
             await enqueueLinks({
                 // urls: queue,
