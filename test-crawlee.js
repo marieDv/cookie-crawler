@@ -1,4 +1,4 @@
-import { CheerioCrawler, ProxyConfiguration } from 'crawlee';
+import { CheerioCrawler, ProxyConfiguration, RequestQueue, Dataset } from 'crawlee';
 import { detectDataLanguage, saveToSDCard, clearDataBases, getCurrentDate, replaceAllNames } from './functions.js';
 import { Level } from 'level';
 import enNlp from 'compromise';
@@ -14,22 +14,34 @@ var currentDate;
 let currentLanguage = "";
 let latestData = "";
 let inCurrentDataset = 0;
+let lastProcessedURLs = [];
+let countLastProcessedURLs = 0;
 
 clearDataBases([db]);
 const crawler = new CheerioCrawler({
     // maxRequestsPerCrawl: 20,
     async requestHandler({ $, request, enqueueLinks }) {
-        const title = $('title').text();
         extractData($("body").text(), request.loadedUrl);
+        const queue = await RequestQueue.open();
+        // console.log(queue);
+        lastProcessedURLs[countLastProcessedURLs] = request.loadedUrl;
+        countLastProcessedURLs === 100 ? countLastProcessedURLs = 0 : countLastProcessedURLs ++;
+        // console.log(countLastProcessedURLs);
+        // await enqueueLinks({
+        //     strategy: 'all',
+        // });
         await enqueueLinks({
-            strategy: 'all',
+            // urls: queue,
+            strategy: 'all'
         });
     },
 });
+// await crawler.run();
+await crawler.run(['https://crawlee.dev/api/core/function/enqueueLinks']);
 
-await crawler.run(['https://altkatholische-heilandskirche-wien.at/']);
+function saveSession(){
 
-
+}
 
 
 function extractData(mdata, href) {
@@ -73,11 +85,16 @@ function languageProcessing(doc, data, url, cc) {
     let person = doc.match('#Person #Noun');
     person = person.forEach(function (d, i) {
 
-        let text = d.text();
+        let text = d.text('normal');
         let textR = d.text('reduced');
 
 
-        const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(^[0-9])'));
+        // const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(^[0-9])'));
+        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)'));//(\/)|(\\)|
+        // if (matchedNames !== null) {
+            console.log(matchedNames);
+        // }
+        // console.log(matchedNames);
         if (matchedNames === null) {
             db.get(textR, function (err) {
                 if (err) {
