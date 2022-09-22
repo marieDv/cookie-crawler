@@ -7,7 +7,7 @@ import esNlp from 'es-compromise';
 import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 
-
+ 
 let tempSaveNames = [];
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 var currentDate;

@@ -23,7 +23,7 @@
     "level": "^8.0.0",
     "nodemon": "^2.0.19",
     "object-sizeof": "^1.6.3",
-    "playwright": "^1.25.2",
+    "playwright": "^1.26.0",
     "terminal-kit": "^2.9.8"
   },
   "devDependencies": {
