@@ -58,11 +58,9 @@ export function saveToSDCard(names, mData) {
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
 
   if (names === false) {
-    console.log("NAMES IS FAAAAALSE");
     fullDataObj.page.push({ text: mData });
-    console.log(sizeof(fullDataObj) / (1024 * 1024));
-   if (sizeof(fullDataObj) / (1024 * 1024) > 7 && sizeof(fullDataObj) / (1024 * 1024) < 8) {
-    console.log("save data")
+    // console.log(sizeof(fullDataObj) / (1024 * 1024));
+    if (sizeof(fullDataObj) / (1024 * 1024) > 7) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
@@ -71,11 +69,11 @@ export function saveToSDCard(names, mData) {
     }
   } else {
     fullNamesObj.name.push({ mData });
-    if (sizeof(fullNamesObj) > 8500 && sizeof(fullNamesObj) < 9000) {
+    if (sizeof(fullNamesObj) > 8500) {
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
-      console.log(tempPath)
-      console.log("save names data")
+      // console.log(tempPath)
+      // console.log("save names data")
       fs.writeFile(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
       fullNamesObj = { name: [] }
     }

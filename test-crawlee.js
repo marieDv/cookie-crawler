@@ -1,6 +1,7 @@
 import { CheerioCrawler, ProxyConfiguration, RequestQueue, Dataset } from 'crawlee';
 import { detectDataLanguage, saveToSDCard, clearDataBases, getCurrentDate, replaceAllNames } from './functions.js';
 import { Level } from 'level';
+import * as fs from 'fs';
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
 import esNlp from 'es-compromise';
@@ -16,30 +17,59 @@ let latestData = "";
 let inCurrentDataset = 0;
 let lastProcessedURLs = [];
 let countLastProcessedURLs = 0;
+let i = 0;
+let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
+
 
 clearDataBases([db]);
-const crawler = new CheerioCrawler({
-    // maxRequestsPerCrawl: 20,
-    async requestHandler({ $, request, enqueueLinks }) {
-        extractData($("body").text(), request.loadedUrl);
-        const queue = await RequestQueue.open();
-        // console.log(queue);
-        lastProcessedURLs[countLastProcessedURLs] = request.loadedUrl;
-        countLastProcessedURLs === 100 ? countLastProcessedURLs = 0 : countLastProcessedURLs ++;
-        // console.log(countLastProcessedURLs);
-        // await enqueueLinks({
-        //     strategy: 'all',
-        // });
-        await enqueueLinks({
-            // urls: queue,
-            strategy: 'all'
-        });
-    },
-});
-// await crawler.run();
-await crawler.run(['https://crawlee.dev/api/core/function/enqueueLinks']);
+let savedToQueue = retrieveURLs();
+// console.log(savedToQueue);
+if (savedToQueue.length > 1) {
+    const crawler = new CheerioCrawler({
+        // maxRequestsPerCrawl: 20,
+        async requestHandler({ $, request, enqueueLinks }) {
+            extractData($("body").text(), request.loadedUrl);
+            const queue = await RequestQueue.open();
+            // console.log(request);
+            if (i <= 20) {
+                let newUrl = new URL(request.loadedUrl);
+                console.log(newUrl)
+                lastProcessedURLs[i] = newUrl.hostname;
+                i++
+            } else {
+                i = 0;
+            }
+            countLastProcessedURLs === 20 ? saveLastSession() : countLastProcessedURLs++;
 
-function saveSession(){
+            await enqueueLinks({
+                // urls: queue,
+                strategy: 'all'
+            });
+        },
+    });
+    await crawler.run(savedToQueue);//, 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame',
+}
+
+function retrieveURLs() {
+    let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
+    return totalNumberURLs.queued[0].lastProcessedURLs;
+}
+function saveLastSession() {
+    // writeToJsonFile(countLastProcessedURLs, 'recoverLastSession.json');
+    let mData = {
+        queued: []
+    };
+
+    mData.queued.push({ lastProcessedURLs });
+    fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
+    countLastProcessedURLs = 0
+}
+
+
+
+
+// 
+function saveSession() {
 
 }
 
@@ -87,14 +117,8 @@ function languageProcessing(doc, data, url, cc) {
 
         let text = d.text('normal');
         let textR = d.text('reduced');
-
-
-        // const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(^[0-9])'));
         const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)'));//(\/)|(\\)|
-        // if (matchedNames !== null) {
-            console.log(matchedNames);
-        // }
-        // console.log(matchedNames);
+
         if (matchedNames === null) {
             db.get(textR, function (err) {
                 if (err) {
