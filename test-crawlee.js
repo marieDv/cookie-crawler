@@ -8,7 +8,7 @@ import esNlp from 'es-compromise';
 import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 
- 
+
 let tempSaveNames = [];
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 var currentDate;
@@ -21,7 +21,7 @@ let i = 0;
 // let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
 let startingURLs = ['https://www.chinadaily.com.cn/', 'https://www.globaltimes.cn/', 'https://www.cgtn.com/', 'https://www.scmp.com/'];
 
-clearDataBases([db]);
+// clearDataBases([db]);
 let savedToQueue = startingURLs;
 savedToQueue = savedToQueue.concat(startingURLs);
 // console.log(savedToQueue);
@@ -29,13 +29,13 @@ if (savedToQueue.length > 5) {
     const crawler = new CheerioCrawler({
         // maxRequestsPerCrawl: 20,
         async requestHandler({ $, request, enqueueLinks }) {
-            extractData($("body").text(), request.loadedUrl);
+            extractData($("body").text(), new URL(request.loadedUrl));
             const queue = await RequestQueue.open();
             if (i <= 100) {
                 let newUrl = new URL(request.loadedUrl);
                 // console.log(lastProcessedURLs.includes(newUrl.origin))
                 if (newUrl && newUrl.origin && lastProcessedURLs.includes(newUrl.origin) === false && !(newUrl.origin === null)) {
-                    console.log(newUrl)
+                    // console.log(newUrl)
                     newUrl.origin !== null ? lastProcessedURLs[i] = newUrl.origin : '';
                     i++
                 }
@@ -79,15 +79,11 @@ function saveSession() {
 
 
 function extractData(mdata, href) {
-    let countryCode = href.split('.').splice(-2);
+
+
+    let countryCode = href.host.split('.').splice(-2);
     if (countryCode[1]) {
-        countryCode[1] = countryCode[1].substring(-4);
-        if (countryCode[1].includes('%')) {
-            countryCode = countryCode[1].split('%')[0];
-        } else {
-            countryCode = countryCode[1].split('/')[0];
-        }
-        searchForNames(href, countryCode, mdata);
+        searchForNames(href.href, countryCode[1], mdata);
     }
 }
 
@@ -118,10 +114,9 @@ function searchForNames(url, cc, data) {
 function languageProcessing(doc, data, url, cc) {
     let person = doc.match('#Person #Noun');
     person = person.forEach(function (d, i) {
-
         let text = d.text('normal');
         let textR = d.text('reduced');
-        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)'));//(\/)|(\\)|
+        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
 
         if (matchedNames === null) {
             db.get(textR, function (err) {
@@ -148,6 +143,8 @@ function languageProcessing(doc, data, url, cc) {
                 }
             })
             db.put(textR, textR);
+        } else {
+            console.log(matchedNames)
         }
     })
     doc.text()
