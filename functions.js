@@ -50,7 +50,7 @@ export function saveToSDCard(names, mData) {
   let raspNames = "/media/process/NAMES/output/";
   let raspFull = "/media/process/FULL/output/";
 
-  //let currentPath = ['./names-output/output/', './full-output/output/'];
+ // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = [raspNames, raspFull];
 
 
