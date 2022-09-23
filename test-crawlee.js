@@ -17,6 +17,7 @@ let latestData = "";
 let inCurrentDataset = 0;
 let lastProcessedURLs = [];
 let countLastProcessedURLs = 0;
+let idForNames = 0;
 let globalID = 0;
 let i = 0;
 let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
@@ -26,12 +27,19 @@ let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/co
 let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startingURLs);
 if (savedToQueue.length > 5) {
+
     const crawler = new CheerioCrawler({
+        // minConcurrency: 5,
+        // maxConcurrency: 50,
+        // maxRequestsPerMinute: 250,
+
         async requestHandler({ $, request, enqueueLinks }) {
+            // console.log($("body").text());
             const queue = await RequestQueue.open();
             // console.log((globalID + queue.assumedHandledCount));
             extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
-     
+            idForNames = globalID + queue.assumedHandledCount;
+            check_mem();
             if (i <= 100) {
                 let newUrl = new URL(request.loadedUrl);
                 if (newUrl && newUrl.origin && lastProcessedURLs.includes(newUrl.origin) === false && !(newUrl.origin === null)) {
@@ -109,13 +117,16 @@ function searchForNames(url, cc, data) {
             break;
     }
 }
-
+function check_mem() {
+    const mem = process.memoryUsage();
+    console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
+}
 function languageProcessing(doc, data, url, cc) {
     let person = doc.match('#Person #Noun');
     person = person.forEach(function (d, i) {
         let text = d.text('normal');
         let textR = d.text('reduced');
-        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|({)|(")|(ii)|(=)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
 
         if (matchedNames === null) {
             db.get(textR, function (err) {
@@ -126,9 +137,19 @@ function languageProcessing(doc, data, url, cc) {
                     if (text.includes("’s") || text.includes("'s")) {
                         text = d.text().slice(0, -2);
                     }
-                    currentDate = getCurrentDate();
-                    obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: 0 });
-                    // writeToJsonFile(obj.person, 'names.json');
+                    console.log(text);
+                    let uppercaseName = text.split(" ");
+                    if (uppercaseName[1]) {
+                        uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
+                        uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
+
+                        let tempNameString = uppercaseName[0].concat(uppercaseName[1])
+                        console.log(uppercaseName[0]);
+                        // console.log(tempNameString)
+                        currentDate = getCurrentDate();
+                        obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
+                        // writeToJsonFile(obj.person, 'names.json');
+                    }
                     saveToSDCard(true, obj.person);
                     if (data === latestData) {
                         tempSaveNames[inCurrentDataset] = text;
@@ -143,8 +164,7 @@ function languageProcessing(doc, data, url, cc) {
             })
             db.put(textR, textR);
         } else {
-
+            // console.log(matchedNames)
         }
     })
-    doc.text()
 }
