@@ -43,15 +43,10 @@ export function saveCurrentDataToFile() {
 export function saveToSDCard(names, mData) {
 
   // let pathOSX = "/Volumes/FULL/output/";
-  // let pathRasp = "/media/process/SDCard1/test.json";
   // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
-  /** PATH TO RASPB SD CARDS */
-  let raspNames = "/media/process/NAMES/output/";
-  let raspFull = "/media/process/FULL/output/";
-
- // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = [raspNames, raspFull];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
 
   let dateObject = new Date();

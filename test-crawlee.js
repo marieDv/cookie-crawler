@@ -8,7 +8,7 @@ import esNlp from 'es-compromise';
 import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 
- 
+
 let tempSaveNames = [];
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 var currentDate;
@@ -17,25 +17,32 @@ let latestData = "";
 let inCurrentDataset = 0;
 let lastProcessedURLs = [];
 let countLastProcessedURLs = 0;
+let idForNames = 0;
+let globalID = 0;
 let i = 0;
-// let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
-let startingURLs = ['https://www.chinadaily.com.cn/', 'https://www.globaltimes.cn/', 'https://www.cgtn.com/', 'https://www.scmp.com/'];
+let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
+// let startingURLs = ['https://www.chinadaily.com.cn/', 'https://www.globaltimes.cn/', 'https://www.cgtn.com/', 'https://www.scmp.com/'];
 
-clearDataBases([db]);
-let savedToQueue = startingURLs;
+// clearDataBases([db]);
+let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startingURLs);
-// console.log(savedToQueue);
 if (savedToQueue.length > 5) {
+
     const crawler = new CheerioCrawler({
-        // maxRequestsPerCrawl: 20,
+        // minConcurrency: 5,
+        // maxConcurrency: 50,
+        // maxRequestsPerMinute: 250,
+
         async requestHandler({ $, request, enqueueLinks }) {
-            extractData($("body").text(), request.loadedUrl);
+            // console.log($("body").text());
             const queue = await RequestQueue.open();
+            // console.log((globalID + queue.assumedHandledCount));
+            extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
+            idForNames = globalID + queue.assumedHandledCount;
+            check_mem();
             if (i <= 100) {
                 let newUrl = new URL(request.loadedUrl);
-                // console.log(lastProcessedURLs.includes(newUrl.origin))
                 if (newUrl && newUrl.origin && lastProcessedURLs.includes(newUrl.origin) === false && !(newUrl.origin === null)) {
-                    console.log(newUrl)
                     newUrl.origin !== null ? lastProcessedURLs[i] = newUrl.origin : '';
                     i++
                 }
@@ -43,7 +50,7 @@ if (savedToQueue.length > 5) {
             } else {
                 i = 0;
             }
-            countLastProcessedURLs === 200 ? saveLastSession() : countLastProcessedURLs++;
+            countLastProcessedURLs === 20 ? saveLastSession(globalID + queue.assumedHandledCount) : countLastProcessedURLs++;
 
             await enqueueLinks({
                 // urls: queue,
@@ -51,19 +58,21 @@ if (savedToQueue.length > 5) {
             });
         },
     });
-    await crawler.run(savedToQueue);//, 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame',
+    await crawler.run(savedToQueue);
 }
 
 function retrieveURLs() {
     let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
+    globalID = totalNumberURLs.lastHandled;
     return totalNumberURLs.queued[0].lastProcessedURLs;
 }
-function saveLastSession() {
+function saveLastSession(handledNumber) {
     // writeToJsonFile(countLastProcessedURLs, 'recoverLastSession.json');
     let mData = {
-        queued: []
+        queued: [],
+        lastHandled: handledNumber
     };
-
+    // mData.lastHandled.push({ handledNumber });
     mData.queued.push({ lastProcessedURLs });
     fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
     countLastProcessedURLs = 0
@@ -78,16 +87,10 @@ function saveSession() {
 }
 
 
-function extractData(mdata, href) {
-    let countryCode = href.split('.').splice(-2);
+function extractData(mdata, href, id) {
+    let countryCode = href.host.split('.').splice(-2);
     if (countryCode[1]) {
-        countryCode[1] = countryCode[1].substring(-4);
-        if (countryCode[1].includes('%')) {
-            countryCode = countryCode[1].split('%')[0];
-        } else {
-            countryCode = countryCode[1].split('/')[0];
-        }
-        searchForNames(href, countryCode, mdata);
+        searchForNames(href.href, countryCode[1], mdata);
     }
 }
 
@@ -114,14 +117,16 @@ function searchForNames(url, cc, data) {
             break;
     }
 }
-
+function check_mem() {
+    const mem = process.memoryUsage();
+    console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
+}
 function languageProcessing(doc, data, url, cc) {
     let person = doc.match('#Person #Noun');
     person = person.forEach(function (d, i) {
-
         let text = d.text('normal');
         let textR = d.text('reduced');
-        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)'));//(\/)|(\\)|
+        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|({)|(")|(ii)|(=)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
 
         if (matchedNames === null) {
             db.get(textR, function (err) {
@@ -132,9 +137,19 @@ function languageProcessing(doc, data, url, cc) {
                     if (text.includes("’s") || text.includes("'s")) {
                         text = d.text().slice(0, -2);
                     }
-                    currentDate = getCurrentDate();
-                    obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: 0 });
-                    // writeToJsonFile(obj.person, 'names.json');
+                    console.log(text);
+                    let uppercaseName = text.split(" ");
+                    if (uppercaseName[1]) {
+                        uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
+                        uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
+
+                        let tempNameString = uppercaseName[0].concat(uppercaseName[1])
+                        console.log(uppercaseName[0]);
+                        // console.log(tempNameString)
+                        currentDate = getCurrentDate();
+                        obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
+                        // writeToJsonFile(obj.person, 'names.json');
+                    }
                     saveToSDCard(true, obj.person);
                     if (data === latestData) {
                         tempSaveNames[inCurrentDataset] = text;
@@ -148,7 +163,8 @@ function languageProcessing(doc, data, url, cc) {
                 }
             })
             db.put(textR, textR);
+        } else {
+            // console.log(matchedNames)
         }
     })
-    doc.text()
 }
