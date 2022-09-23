@@ -17,25 +17,24 @@ let latestData = "";
 let inCurrentDataset = 0;
 let lastProcessedURLs = [];
 let countLastProcessedURLs = 0;
+let globalID = 0;
 let i = 0;
-// let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
-let startingURLs = ['https://www.chinadaily.com.cn/', 'https://www.globaltimes.cn/', 'https://www.cgtn.com/', 'https://www.scmp.com/'];
+let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame']
+// let startingURLs = ['https://www.chinadaily.com.cn/', 'https://www.globaltimes.cn/', 'https://www.cgtn.com/', 'https://www.scmp.com/'];
 
 // clearDataBases([db]);
-let savedToQueue = startingURLs;
+let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startingURLs);
-// console.log(savedToQueue);
 if (savedToQueue.length > 5) {
     const crawler = new CheerioCrawler({
-        // maxRequestsPerCrawl: 20,
         async requestHandler({ $, request, enqueueLinks }) {
-            extractData($("body").text(), new URL(request.loadedUrl));
             const queue = await RequestQueue.open();
+            // console.log((globalID + queue.assumedHandledCount));
+            extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
+     
             if (i <= 100) {
                 let newUrl = new URL(request.loadedUrl);
-                // console.log(lastProcessedURLs.includes(newUrl.origin))
                 if (newUrl && newUrl.origin && lastProcessedURLs.includes(newUrl.origin) === false && !(newUrl.origin === null)) {
-                    // console.log(newUrl)
                     newUrl.origin !== null ? lastProcessedURLs[i] = newUrl.origin : '';
                     i++
                 }
@@ -43,7 +42,7 @@ if (savedToQueue.length > 5) {
             } else {
                 i = 0;
             }
-            countLastProcessedURLs === 200 ? saveLastSession() : countLastProcessedURLs++;
+            countLastProcessedURLs === 20 ? saveLastSession(globalID + queue.assumedHandledCount) : countLastProcessedURLs++;
 
             await enqueueLinks({
                 // urls: queue,
@@ -51,19 +50,21 @@ if (savedToQueue.length > 5) {
             });
         },
     });
-    await crawler.run(savedToQueue);//, 'https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame',
+    await crawler.run(savedToQueue);
 }
 
 function retrieveURLs() {
     let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
+    globalID = totalNumberURLs.lastHandled;
     return totalNumberURLs.queued[0].lastProcessedURLs;
 }
-function saveLastSession() {
+function saveLastSession(handledNumber) {
     // writeToJsonFile(countLastProcessedURLs, 'recoverLastSession.json');
     let mData = {
-        queued: []
+        queued: [],
+        lastHandled: handledNumber
     };
-
+    // mData.lastHandled.push({ handledNumber });
     mData.queued.push({ lastProcessedURLs });
     fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
     countLastProcessedURLs = 0
@@ -78,9 +79,7 @@ function saveSession() {
 }
 
 
-function extractData(mdata, href) {
-
-
+function extractData(mdata, href, id) {
     let countryCode = href.host.split('.').splice(-2);
     if (countryCode[1]) {
         searchForNames(href.href, countryCode[1], mdata);
@@ -116,7 +115,7 @@ function languageProcessing(doc, data, url, cc) {
     person = person.forEach(function (d, i) {
         let text = d.text('normal');
         let textR = d.text('reduced');
-        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|({)|(ii)|(=)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
 
         if (matchedNames === null) {
             db.get(textR, function (err) {
@@ -144,7 +143,7 @@ function languageProcessing(doc, data, url, cc) {
             })
             db.put(textR, textR);
         } else {
-            console.log(matchedNames)
+
         }
     })
     doc.text()
