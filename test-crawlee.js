@@ -34,9 +34,7 @@ if (savedToQueue.length > 5) {
         // maxRequestsPerMinute: 250,
 
         async requestHandler({ $, request, enqueueLinks }) {
-            // console.log($("body").text());
             const queue = await RequestQueue.open();
-            // console.log((globalID + queue.assumedHandledCount));
             extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
             idForNames = globalID + queue.assumedHandledCount;
             check_mem();
@@ -137,15 +135,12 @@ function languageProcessing(doc, data, url, cc) {
                     if (text.includes("’s") || text.includes("'s")) {
                         text = d.text().slice(0, -2);
                     }
-                    console.log(text);
                     let uppercaseName = text.split(" ");
                     if (uppercaseName[1]) {
                         uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
                         uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
 
                         let tempNameString = uppercaseName[0].concat(uppercaseName[1])
-                        console.log(uppercaseName[0]);
-                        // console.log(tempNameString)
                         currentDate = getCurrentDate();
                         obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
                         // writeToJsonFile(obj.person, 'names.json');
