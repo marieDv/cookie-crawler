@@ -1,6 +1,9 @@
 import { CheerioCrawler } from 'crawlee';
 
 const crawler = new CheerioCrawler({
+          minConcurrency: 5,
+        maxConcurrency: 50,
+        maxRequestsPerMinute: 100,
   async requestHandler({ request, enqueueLinks, log }) {
     log.info(request.url);
     check_mem();
