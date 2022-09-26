@@ -1,3 +1,4 @@
 {
   "purgeOnStart": true
+  // "memoryMbytes": 80
 }

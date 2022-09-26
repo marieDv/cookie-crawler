@@ -29,12 +29,16 @@ savedToQueue = savedToQueue.concat(startingURLs);
 if (savedToQueue.length > 5) {
 
     const crawler = new CheerioCrawler({
-        // minConcurrency: 5,
-        // maxConcurrency: 50,
-        // maxRequestsPerMinute: 250,
+        minConcurrency: 5,
+        maxConcurrency: 20,
+        maxRequestsPerMinute: 20,
 
         async requestHandler({ $, request, enqueueLinks }) {
             const queue = await RequestQueue.open();
+            queue.requestsCache.maxLength = 2000;
+            queue.recentlyHandled.maxLength = 2000;
+            console.log(queue.requestsCache.maxLength);
+            console.log(queue);
             extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
             idForNames = globalID + queue.assumedHandledCount;
             check_mem();
@@ -49,11 +53,14 @@ if (savedToQueue.length > 5) {
                 i = 0;
             }
             countLastProcessedURLs === 20 ? saveLastSession(globalID + queue.assumedHandledCount) : countLastProcessedURLs++;
-
+            // if (queue.inProgress.size < 20) {
             await enqueueLinks({
                 // urls: queue,
+                limit: 20,
                 strategy: 'all'
             });
+            // }
+
         },
     });
     await crawler.run(savedToQueue);
@@ -124,7 +131,7 @@ function languageProcessing(doc, data, url, cc) {
     person = person.forEach(function (d, i) {
         let text = d.text('normal');
         let textR = d.text('reduced');
-        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|({)|(")|(ii)|(=)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+        const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(=)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
 
         if (matchedNames === null) {
             db.get(textR, function (err) {
