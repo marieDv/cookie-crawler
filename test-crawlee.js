@@ -30,15 +30,15 @@ if (savedToQueue.length > 5) {
 
     const crawler = new CheerioCrawler({
         minConcurrency: 5,
-        maxConcurrency: 20,
-        maxRequestsPerMinute: 20,
+        maxConcurrency: 50,
+        maxRequestsPerMinute: 150,
 
         async requestHandler({ $, request, enqueueLinks }) {
             const queue = await RequestQueue.open();
             queue.requestsCache.maxLength = 2000;
             queue.recentlyHandled.maxLength = 2000;
-            console.log(queue.requestsCache.maxLength);
-            console.log(queue);
+          //  console.log(queue.requestsCache.maxLength);
+           // console.log(queue);
             extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
             idForNames = globalID + queue.assumedHandledCount;
             check_mem();
@@ -50,7 +50,7 @@ if (savedToQueue.length > 5) {
                 }
 
             } else {
-                i = 0;
+                i = 0; 
             }
             countLastProcessedURLs === 20 ? saveLastSession(globalID + queue.assumedHandledCount) : countLastProcessedURLs++;
             // if (queue.inProgress.size < 20) {
