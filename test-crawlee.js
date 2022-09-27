@@ -34,11 +34,14 @@ if (savedToQueue.length > 5) {
         maxRequestsPerMinute: 20,
 
         async requestHandler({ $, request, enqueueLinks }) {
-            const queue = await RequestQueue.open();
-            queue.requestsCache.maxLength = 2000;
-            queue.recentlyHandled.maxLength = 2000;
-            console.log(queue.requestsCache.maxLength);
-            console.log(queue);
+            // const queue = await RequestQueue.open();
+            // queue.requestsCache.maxLength = 2000;
+            // queue.recentlyHandled.maxLength = 2000;
+            const queue = crawler.requestQueue;
+
+
+            // console.log(queue.requestsCache.maxLength);
+            console.log(crawler.requestQueue.getInfo());
             extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
             idForNames = globalID + queue.assumedHandledCount;
             check_mem();
@@ -53,13 +56,18 @@ if (savedToQueue.length > 5) {
                 i = 0;
             }
             countLastProcessedURLs === 20 ? saveLastSession(globalID + queue.assumedHandledCount) : countLastProcessedURLs++;
-            // if (queue.inProgress.size < 20) {
-            await enqueueLinks({
-                // urls: queue,
-                limit: 20,
-                strategy: 'all'
-            });
-            // }
+
+
+            
+            const info = await queue.getInfo();
+            console.log(info.pendingRequestCount);
+            if (info.pendingRequestCount < 2000) {
+                await enqueueLinks({
+                    // urls: queue,
+                    limit: 20,
+                    strategy: 'all'
+                });
+            }
 
         },
     });
