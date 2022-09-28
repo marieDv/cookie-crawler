@@ -25,8 +25,8 @@ let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/co
 
 // clearDataBases([db]);
 let savedToQueue = retrieveURLs();
-savedToQueue = savedToQueue.concat(startingURLs);
-if (savedToQueue.length > 5) {
+//savedToQueue = savedToQueue.concat(startingURLs);
+if (savedToQueue.length > 0) {
 
     const crawler = new CheerioCrawler({
         minConcurrency: 5,
@@ -41,7 +41,7 @@ if (savedToQueue.length > 5) {
 
 
             // console.log(queue.requestsCache.maxLength);
-            console.log(crawler.requestQueue.getInfo());
+           // console.log(crawler.requestQueue.getInfo());
             extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
             idForNames = globalID + queue.assumedHandledCount;
             check_mem();
@@ -61,13 +61,14 @@ if (savedToQueue.length > 5) {
             
             const info = await queue.getInfo();
             console.log(info.pendingRequestCount);
-            if (info.pendingRequestCount < 2000) {
-                await enqueueLinks({
+           // if (info.pendingRequestCount < 10) {
+             //   console.log("inside the function");
+           /**    await enqueueLinks({
                     // urls: queue,
                     limit: 20,
                     strategy: 'all'
-                });
-            }
+                }); */ 
+          //  }
 
         },
     });
