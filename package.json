@@ -10,6 +10,8 @@
   "author": "Marie Dvorzak",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.27.2",
+    "cheerio": "^1.0.0-rc.12",
     "compromise": "^14.5.0",
     "crawlee": "^3.0.4",
     "crawler": "^1.3.0",

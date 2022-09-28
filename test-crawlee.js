@@ -7,8 +7,9 @@ import deNlp from 'de-compromise';
 import esNlp from 'es-compromise';
 import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
+import { URL } from 'node:url';
 
-
+let countcurrentlyProcessedURLS = 0;
 let tempSaveNames = [];
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 var currentDate;
@@ -25,7 +26,7 @@ let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/co
 
 // clearDataBases([db]);
 let savedToQueue = retrieveURLs();
-//savedToQueue = savedToQueue.concat(startingURLs);
+savedToQueue = savedToQueue.concat(startingURLs);
 if (savedToQueue.length > 0) {
 
     const crawler = new CheerioCrawler({
@@ -35,13 +36,13 @@ if (savedToQueue.length > 0) {
 
         async requestHandler({ $, request, enqueueLinks }) {
             // const queue = await RequestQueue.open();
-            // queue.requestsCache.maxLength = 2000;
-            // queue.recentlyHandled.maxLength = 2000;
-            const queue = crawler.requestQueue;
 
+            const queue = crawler.requestQueue;
+            queue.requestsCache.maxLength = 2000;
+            queue.recentlyHandled.maxLength = 2000;
 
             // console.log(queue.requestsCache.maxLength);
-           // console.log(crawler.requestQueue.getInfo());
+            // console.log(crawler.requestQueue.getInfo());
             extractData($("body").text(), new URL(request.loadedUrl), (globalID + queue.assumedHandledCount));
             idForNames = globalID + queue.assumedHandledCount;
             check_mem();
@@ -53,25 +54,36 @@ if (savedToQueue.length > 0) {
                 }
 
             } else {
-                i = 0; 
+                i = 0;
             }
             countLastProcessedURLs === 20 ? saveLastSession(globalID + queue.assumedHandledCount) : countLastProcessedURLs++;
 
 
-            
+
             const info = await queue.getInfo();
-            console.log(info.pendingRequestCount);
-           // if (info.pendingRequestCount < 10) {
-             //   console.log("inside the function");
-           /**    await enqueueLinks({
-                    // urls: queue,
-                    limit: 20,
-                    strategy: 'all'
-                }); */ 
-          //  }
+            // console.log(countcurrentlyProcessedURLS);
+            // if (info.pendingRequestCount < 10) {
+            console.log(queue.assumedHandledCount);
+            if (queue.assumedHandledCount > 10) {
+                console.log(crawler)
+                purgeDefaultStorages;
+            }
+            console.log(crawler.requestQueue.inProgress.size)
+            countcurrentlyProcessedURLS < 30 ? countcurrentlyProcessedURLS = info.pendingRequestCount : countcurrentlyProcessedURLS = 0;
+            // if (info.pendingRequestCount < 20) {
+            await enqueueLinks({
+                // urls: queue,
+                limit: 100,
+                // strategy: info.pendingRequestCount < 230 ? 'all' : 'same-hostname',
+                strategy: 'all',
+            });
+            // enqueueLinks.strategy = info.pendingRequestCount < 20 ? 'all' : 'same-hostname';
+
+            //  }
 
         },
     });
+
     await crawler.run(savedToQueue);
 }
 
