@@ -23,7 +23,7 @@ let countLastProcessedURLs = 0;
 let globalID = 0;
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
-savedToQueue = savedToQueue.concat(startURL);
+// savedToQueue = savedToQueue.concat(startURL);
 let found = false;
 let countcurrentlyProcessedURLS = 0;
 let tempSaveNames = [];
@@ -45,6 +45,7 @@ const c = new Crawler({
 
   callback: async (error, res, done) => {
     if (error) {
+      console.log(error);
     } else {
       const $ = res.$;
       const urls = [];
@@ -53,26 +54,36 @@ const c = new Crawler({
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
-            const url = new URL(a.attribs.href, res.request.uri.href);
-            let value = await dbUrlPrecheck.get(url.origin, function (err) {
-              if (err) {
-                oldWebsite = true;
-              } else {
-                oldWebsite = false;
+            try {
+              const url = new URL(a.attribs.href, res.request.uri.href);
+              let value = await dbUrlPrecheck.get(url.origin, function (err) {
+                if (err) {
+                  oldWebsite = true;
+                } else {
+                  oldWebsite = false;
+                }
+              });
+              await dbUrlPrecheck.put(url.origin, url.origin);
+              if (oldWebsite === true) {
+                check_mem();
+                if (c.queueSize <= 2000) {
+                  urls.push(url.href);
+                }
+                console.log(c.queueSize);
+                countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
+                lastProcessedURLs[countSavedURLs] = url.origin;
+                console.log(url)
+                extractData($("body").text(), url, (globalID + c.queueSize));
+                countSavedURLs++;
+                if (countSavedURLs === 100) {
+                  countSavedURLs = 0;
+                }
               }
-            });
-            await dbUrlPrecheck.put(url.origin, url.origin);
-            if (oldWebsite === true) {
-              urls.push(url.href);
-              countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
-              lastProcessedURLs[countSavedURLs] = url.origin;
-              console.log(url)
-              extractData($("body").text(), url, (globalID + c.queueSize));
-              countSavedURLs++;
-              if (countSavedURLs === 100) {
-                countSavedURLs = 0;
-              }
+            } catch (err) {
+              console.log("invalid url error")
             }
+
+
           }
         }
       }
