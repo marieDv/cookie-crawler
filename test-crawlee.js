@@ -27,6 +27,8 @@ let startingURLs = ['https://cn.chinadaily.com.cn/', 'https://crawlee.dev/api/co
 // clearDataBases([db]);
 let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startingURLs);
+
+
 if (savedToQueue.length > 0) {
 
     const crawler = new CheerioCrawler({

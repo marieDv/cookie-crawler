@@ -9,6 +9,8 @@ import esNlp from 'es-compromise';
 import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 import { URL } from 'node:url';
+import WebSocket from 'ws';
+
 
 const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 const startURL = ['https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
@@ -23,7 +25,7 @@ let countLastProcessedURLs = 0;
 let globalID = 0;
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
-// savedToQueue = savedToQueue.concat(startURL);
+savedToQueue = savedToQueue.concat(startURL);
 let found = false;
 let countcurrentlyProcessedURLS = 0;
 let tempSaveNames = [];
@@ -32,20 +34,26 @@ let currentLanguage = "";
 let latestData = "";
 let inCurrentDataset = 0;
 let idForNames = 0;
-
+let awaitNameSafe = false;
 let i = 0;
 
 
-clearDataBases([db, dbUrl, dbUrlPrecheck]);
+// clearDataBases([db, dbUrl, dbUrlPrecheck]);
+
+
+// const ws = new WebSocket('ws://localhost:9898/');
+// ws.on('open', function open() {
+//   ws.send('something');
+// });
+
 const c = new Crawler({
-  maxConnections: 30,
-  queueSize: 1000,
+  maxConnections: 10,
+  queueSize: 200,
   retries: 0,
-  rateLimit: 500,
+  rateLimit: 2000,
 
   callback: async (error, res, done) => {
     if (error) {
-      console.log(error);
     } else {
       const $ = res.$;
       const urls = [];
@@ -65,15 +73,15 @@ const c = new Crawler({
               });
               await dbUrlPrecheck.put(url.origin, url.origin);
               if (oldWebsite === true) {
-                check_mem();
+                // check_mem();
                 if (c.queueSize <= 2000) {
                   urls.push(url.href);
                 }
-                console.log(c.queueSize);
+                // console.log(c.queueSize);
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
                 lastProcessedURLs[countSavedURLs] = url.origin;
-              //  console.log(url)
-                extractData($("body").text(), url, (globalID + c.queueSize));
+
+                await extractData($("body").text(), url, (globalID + c.queueSize));
                 countSavedURLs++;
                 if (countSavedURLs === 100) {
                   countSavedURLs = 0;
@@ -95,10 +103,14 @@ const c = new Crawler({
 c.queue(savedToQueue);
 
 
-function extractData(mdata, href, id) {
+async function extractData(mdata, href, id) {
+  //   ws.on('open', function open() {
+  //     ws.send('something');
+  //   });
+
   let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
-    searchForNames(href.href, countryCode[1], mdata);
+    await searchForNames(href.href, countryCode[1], mdata);
   }
 }
 
@@ -118,23 +130,23 @@ function retrieveURLs() {
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
 
-function searchForNames(url, cc, data) {
+async function searchForNames(url, cc, data) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
   switch (currentLanguage) {
     case 'german':
-      languageProcessing(deNlp(data), data, url, cc)
+      await languageProcessing(deNlp(data), data, url, cc)
       break;
     case 'english':
-      languageProcessing(enNlp(data), data, url, cc);
+      await languageProcessing(enNlp(data), data, url, cc);
       break;
     case 'french':
-      languageProcessing(frNlp(data), data, url, cc);
+      await languageProcessing(frNlp(data), data, url, cc);
       break;
     case 'italian':
-      languageProcessing(itNlp(data), data, url, cc);
+      await languageProcessing(itNlp(data), data, url, cc);
       break;
     case 'spanish':
-      languageProcessing(esNlp(data), data, url, cc);
+      await languageProcessing(esNlp(data), data, url, cc);
       break;
     case '':
       break;
@@ -144,33 +156,44 @@ function check_mem() {
   const mem = process.memoryUsage();
   console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
 }
-function languageProcessing(doc, data, url, cc) {
-  let person = doc.match('#Person #Noun');
-  person = person.forEach(function (d, i) {
-    let text = d.text('normal');
-    let textR = d.text('reduced');
-    const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(=)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
- 
-    if (matchedNames === null) {
-      db.get(textR, function (err) {
-        if (err) {
-          let obj = {
-            person: []
-          };
-          if (text.includes("’s") || text.includes("'s")) {
-            text = d.text().slice(0, -2);
-          }
-          let uppercaseName = text.split(" ");
-          if (uppercaseName[1]) {
-            uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
-            uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
 
-            let tempNameString = uppercaseName[0].concat(uppercaseName[1])
-            currentDate = getCurrentDate();
-            obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
-            // writeToJsonFile(obj.person, 'names.json');
-          }
+async function checkNamesDatabase(name) {
+  try {
+    let value = await db.get(name);
+    return true;
+  } catch (err) {
+    await db.put(name, name);
+    console.log(name);
+    return false;
+  }
+
+}
+async function languageProcessing(doc, data, url, cc) {
+  let person = doc.match('#Person #Noun').out('array');
+  console.log(person)
+  for (const a of person) {
+    let text = a;
+    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(“)|(=)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+    if (matchedNames === null) {
+      if (text.includes("’s") || text.includes("'s")) {
+        text = a.slice(0, -2);
+      }
+      const checkedDataBase = await checkNamesDatabase(text);
+      if (checkedDataBase === false) {
+        let obj = {
+          person: []
+        };
+        let uppercaseName = text.split(" ");
+        if (uppercaseName[1]) {
+          uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
+          uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
+          let tempNameString = uppercaseName[0].concat(uppercaseName[1])
+          currentDate = getCurrentDate();
+          obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
+          // writeToJsonFile(obj.person, 'names.json');
+
           saveToSDCard(true, obj.person);
+
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
             inCurrentDataset++;
@@ -181,10 +204,8 @@ function languageProcessing(doc, data, url, cc) {
           }
           latestData = data;
         }
-      })
-      db.put(textR, textR);
-    } else {
-      // console.log(matchedNames)
+
+      }
     }
-  })
+  }
 }

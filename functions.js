@@ -54,12 +54,11 @@ export function saveToSDCard(names, mData) {
 
   if (names === false) { 
     fullDataObj.page.push({ text: mData });
-    // console.log(sizeof(fullDataObj) / (1024 * 1024));
     if (sizeof(fullDataObj) / (1024 * 1024) > 4) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
-      fs.writeFile (tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
+      fs.writeFileSync(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
       fullDataObj = { page: [] }
     }
   } else {
@@ -67,9 +66,7 @@ export function saveToSDCard(names, mData) {
     if (sizeof(fullNamesObj) > 8500) {
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
-      // console.log(tempPath)
-      // console.log("save names data")
-      fs.writeFile(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
+      fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
       fullNamesObj = { name: [] }
     }
   }
