@@ -10,41 +10,41 @@ import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 import { URL } from 'node:url';
 import WebSocket from 'ws';
-
-
-const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
 const startURL = ['https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
-let alreadyVisited = false;
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const dbUrlPrecheck = new Level('dbUrlPrecheck', { valueEncoding: 'json' })
 
 let lastProcessedURLs = [];
+let lastProcessedNames = [];
 let countLastProcessedURLs = 0;
+let countLastProcessedNames = 0;
 let globalID = 0;
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
-let found = false;
-let countcurrentlyProcessedURLS = 0;
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
 let latestData = "";
 let inCurrentDataset = 0;
 let idForNames = 0;
-let awaitNameSafe = false;
-let i = 0;
 
 
-// clearDataBases([db, dbUrl, dbUrlPrecheck]);
+clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
 
 // const ws = new WebSocket('ws://localhost:9898/');
-// ws.on('open', function open() {
-//   ws.send('something');
-// });
+const ws = new WebSocket('wss://ait-residency.herokuapp.com/');
+
+
+ws.on('open', function open() {
+  ws.send(JSON.stringify(retrieveNames()));
+});
+
+
+console.log(retrieveNames());
 
 const c = new Crawler({
   maxConnections: 15,
@@ -77,7 +77,6 @@ const c = new Crawler({
                 if (c.queueSize <= 2000) {
                   urls.push(url.href);
                 }
-                // console.log(c.queueSize);
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
                 lastProcessedURLs[countSavedURLs] = url.origin;
 
@@ -104,10 +103,6 @@ c.queue(savedToQueue);
 
 
 async function extractData(mdata, href, id) {
-  //   ws.on('open', function open() {
-  //     ws.send('something');
-  //   });
-
   let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
     await searchForNames(href.href, countryCode[1], mdata);
@@ -124,6 +119,19 @@ function saveLastSession(handledNumber) {
   fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
   countLastProcessedURLs = 0
 }
+function saveLastNames(url) {
+  let mData = {
+    queued: []
+  };
+  mData.queued.push({ lastProcessedNames });
+  fs.writeFileSync('./latest-names.json', JSON.stringify(mData));
+  countLastProcessedNames = 0
+}
+function retrieveNames() {
+  let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
+  console.log(totalNumberNames.queued[0]);
+  return totalNumberNames.queued[0].lastProcessedNames;
+}
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
   globalID = totalNumberURLs.lastHandled;
@@ -131,6 +139,7 @@ function retrieveURLs() {
 }
 
 async function searchForNames(url, cc, data) {
+
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
   switch (currentLanguage) {
     case 'german':
@@ -163,17 +172,21 @@ async function checkNamesDatabase(name) {
     return true;
   } catch (err) {
     await db.put(name, name);
-    console.log(name);
     return false;
   }
 
 }
 async function languageProcessing(doc, data, url, cc) {
   let person = doc.match('#Person #Noun').out('array');
-  console.log(person)
+  // console.log(person)
   for (const a of person) {
+
+    // ws.on('open', function open() {
+    // });
+
+
     let text = a;
-    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(“)|(=)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(—)|([)|(])|(“)|(=)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -190,8 +203,12 @@ async function languageProcessing(doc, data, url, cc) {
           let tempNameString = uppercaseName[0].concat(uppercaseName[1])
           currentDate = getCurrentDate();
           obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
-          // writeToJsonFile(obj.person, 'names.json');
 
+          countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
+          lastProcessedNames[countLastProcessedNames] = tempNameString;
+
+          // writeToJsonFile(obj.person, 'names.json');
+          ws.send(JSON.stringify(tempNameString));
           saveToSDCard(true, obj.person);
 
           if (data === latestData) {
