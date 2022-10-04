@@ -59,6 +59,7 @@ const c = new Crawler({
       const urls = [];
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
         let array = $('a').toArray();
+        console.log(`number of found urls: `+array.length);
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -73,7 +74,9 @@ const c = new Crawler({
               });
               await dbUrlPrecheck.put(url.origin, url.origin);
               if (oldWebsite === true) {
-                // check_mem();
+                check_mem();
+                console.log(`queueSize: `+queueSize);
+
                 if (c.queueSize <= 2000) {
                   urls.push(url.href);
                 }
@@ -129,7 +132,7 @@ function saveLastNames(url) {
 }
 function retrieveNames() {
   let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
-  console.log(totalNumberNames.queued[0]);
+  // console.log(totalNumberNames.queued[0]);
   return totalNumberNames.queued[0].lastProcessedNames;
 }
 function retrieveURLs() {
@@ -206,6 +209,10 @@ async function languageProcessing(doc, data, url, cc) {
 
           countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
           lastProcessedNames[countLastProcessedNames] = tempNameString;
+          console.log(`found: `*tempNameString +`at `+currentDate);
+          
+          // lastProcessedNames[countLastProcessedNames][1] = currentDate;
+          // lastProcessedNames[countLastProcessedNames][2] = url;
 
           // writeToJsonFile(obj.person, 'names.json');
           ws.send(JSON.stringify(tempNameString));
