@@ -38,10 +38,10 @@ let i = 0;
 
 clearDataBases([db, dbUrl, dbUrlPrecheck]);
 const c = new Crawler({
-  maxConnections: 10,
+  maxConnections: 30,
   queueSize: 1000,
   retries: 0,
-  rateLimit: 3000,
+  rateLimit: 500,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -72,7 +72,7 @@ const c = new Crawler({
                 console.log(c.queueSize);
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
                 lastProcessedURLs[countSavedURLs] = url.origin;
-                console.log(url)
+              //  console.log(url)
                 extractData($("body").text(), url, (globalID + c.queueSize));
                 countSavedURLs++;
                 if (countSavedURLs === 100) {
@@ -150,7 +150,7 @@ function languageProcessing(doc, data, url, cc) {
     let text = d.text('normal');
     let textR = d.text('reduced');
     const matchedNames = text.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(=)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
-
+ 
     if (matchedNames === null) {
       db.get(textR, function (err) {
         if (err) {
