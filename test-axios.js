@@ -30,7 +30,8 @@ let currentLanguage = "";
 let latestData = "";
 let inCurrentDataset = 0;
 let idForNames = 0;
-
+let mQueueSize = 0;
+let currentURL = '';
 
 clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
@@ -41,25 +42,18 @@ let ws;
 
 ws = new WebSocket('wss://ait-residency.herokuapp.com/');
 ws.on('open', function open() {
-  console.log("****")
-  ws.send(JSON.stringify("REQUEST INITAL NAME OBJECT"));
-  // let fullDataArray = JSON.stringify(retrieveNames());
-  // ws.send(fullDataArray);
+  
 });
-// ws.on('close', function close() {
-//   console.log('disconnected');
-// });
 ws.on('error', (error) => {
   console.log(error)
 })
 
-console.log(retrieveNames());
 
 const c = new Crawler({
   maxConnections: 15,
   queueSize: 1000,
   retries: 0,
-  rateLimit: 2000,
+  rateLimit: 200,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -68,7 +62,9 @@ const c = new Crawler({
       const urls = [];
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
         let array = $('a').toArray();
-        console.log(`number of found urls: ` + array.length);
+
+        currentURL = res.request.uri.href;
+        console.log(`\n... ${res.request.uri.href}\n`)
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -83,16 +79,14 @@ const c = new Crawler({
               });
               await dbUrlPrecheck.put(url.origin, url.origin);
               if (oldWebsite === true) {
-                check_mem();
-                console.log(`queueSize: ` + c.queueSize);
-
+                mQueueSize = c.queueSize;
                 if (c.queueSize <= 2000) {
                   urls.push(url.href);
                 }
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
                 lastProcessedURLs[countSavedURLs] = url.origin;
 
-                await extractData($("body").text(), url, (globalID + c.queueSize));
+                await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
                 countSavedURLs++;
                 if (countSavedURLs === 100) {
                   countSavedURLs = 0;
@@ -115,10 +109,10 @@ const c = new Crawler({
 c.queue(savedToQueue);
 
 
-async function extractData(mdata, href, id) {
+async function extractData(mdata, href, id, foundLinks) {
   let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
-    await searchForNames(href.href, countryCode[1], mdata);
+    await searchForNames(href.href, countryCode[1], mdata, foundLinks);
   }
 }
 
@@ -142,8 +136,6 @@ function saveLastNames(url) {
 }
 async function retrieveNames() {
   let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
-  console.log("****");
-  console.log(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames))
   return totalNumberNames.queued[0].lastProcessedNames;
 }
 
@@ -157,24 +149,24 @@ function retrieveURLs() {
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
 
-async function searchForNames(url, cc, data) {
+async function searchForNames(url, cc, data, foundLinks) {
 
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
   switch (currentLanguage) {
     case 'german':
-      await languageProcessing(deNlp(data), data, url, cc)
+      await languageProcessing(deNlp(data), data, url, cc, foundLinks)
       break;
     case 'english':
-      await languageProcessing(enNlp(data), data, url, cc);
+      await languageProcessing(enNlp(data), data, url, cc, foundLinks);
       break;
     case 'french':
-      await languageProcessing(frNlp(data), data, url, cc);
+      await languageProcessing(frNlp(data), data, url, cc, foundLinks);
       break;
     case 'italian':
-      await languageProcessing(itNlp(data), data, url, cc);
+      await languageProcessing(itNlp(data), data, url, cc, foundLinks);
       break;
     case 'spanish':
-      await languageProcessing(esNlp(data), data, url, cc);
+      await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
       break;
@@ -182,7 +174,8 @@ async function searchForNames(url, cc, data) {
 }
 function check_mem() {
   const mem = process.memoryUsage();
-  console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
+  return (mem.heapUsed / 1024 / 1024).toFixed(2);
+  // console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
 }
 
 async function checkNamesDatabase(name) {
@@ -195,15 +188,10 @@ async function checkNamesDatabase(name) {
   }
 
 }
-async function languageProcessing(doc, data, url, cc) {
+async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#Person #Noun').out('array');
   // console.log(person)
   for (const a of person) {
-
-    // ws.on('open', function open() {
-    // });
-
-
     let text = a;
     const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(—)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
     if (matchedNames === null) {
@@ -225,28 +213,22 @@ async function languageProcessing(doc, data, url, cc) {
 
           countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
           lastProcessedNames[countLastProcessedNames] = tempNameString;
-          console.log(`found: ` * tempNameString + `at ` + currentDate);
-
-          // lastProcessedNames[countLastProcessedNames][1] = currentDate;
-          // lastProcessedNames[countLastProcessedNames][2] = url;
-
-          // writeToJsonFile(obj.person, 'names.json');
-          // if (ws.open) {
-          //   console.log("??")
+          saveToSDCard(true, obj.person);
           const mUrl = new URL(url);
           let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
           ws.send(toSend);
 
           // }
-          saveToSDCard(true, obj.person);
+  
 
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
             inCurrentDataset++;
           } else {
             replaceAllNames(data, tempSaveNames, 0);
-            inCurrentDataset = 0;
             tempSaveNames = [];
+            console.log(`\n\n${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`)
+            inCurrentDataset = 0;
           }
           latestData = data;
         }
@@ -254,4 +236,7 @@ async function languageProcessing(doc, data, url, cc) {
       }
     }
   }
+ 
+  // console.log("current names number" + inCurrentDataset);
+
 }
