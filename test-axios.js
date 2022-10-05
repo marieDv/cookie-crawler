@@ -57,7 +57,7 @@ console.log(retrieveNames());
 
 const c = new Crawler({
   maxConnections: 15,
-  queueSize: 1000,
+  queueSize: 350,
   retries: 0,
   rateLimit: 2000,
 
