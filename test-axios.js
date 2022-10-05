@@ -36,13 +36,22 @@ clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
 
 // const ws = new WebSocket('ws://localhost:9898/');
-const ws = new WebSocket('wss://ait-residency.herokuapp.com/');
+let ws;
 
 
+ws = new WebSocket('wss://ait-residency.herokuapp.com/');
 ws.on('open', function open() {
-  ws.send(JSON.stringify(retrieveNames()));
+  console.log("****")
+  ws.send(JSON.stringify("REQUEST INITAL NAME OBJECT"));
+  // let fullDataArray = JSON.stringify(retrieveNames());
+  // ws.send(fullDataArray);
 });
-
+// ws.on('close', function close() {
+//   console.log('disconnected');
+// });
+ws.on('error', (error) => {
+  console.log(error)
+})
 
 console.log(retrieveNames());
 
@@ -89,7 +98,7 @@ const c = new Crawler({
                   countSavedURLs = 0;
                 }
               }
-            } 
+            }
             catch (err) {
               console.log(err)
             }
@@ -131,11 +140,17 @@ function saveLastNames(url) {
   fs.writeFileSync('./latest-names.json', JSON.stringify(mData));
   countLastProcessedNames = 0
 }
-function retrieveNames() {
+async function retrieveNames() {
   let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
-  // console.log(totalNumberNames.queued[0]);
+  console.log("****");
+  console.log(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames))
   return totalNumberNames.queued[0].lastProcessedNames;
 }
+
+
+
+
+
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
   globalID = totalNumberURLs.lastHandled;
@@ -190,7 +205,7 @@ async function languageProcessing(doc, data, url, cc) {
 
 
     let text = a;
-    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(—)|([)|(])|(“)|(=)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(—)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -216,7 +231,13 @@ async function languageProcessing(doc, data, url, cc) {
           // lastProcessedNames[countLastProcessedNames][2] = url;
 
           // writeToJsonFile(obj.person, 'names.json');
-          ws.send(JSON.stringify(tempNameString));
+          // if (ws.open) {
+          //   console.log("??")
+          const mUrl = new URL(url);
+          let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
+          ws.send(toSend);
+
+          // }
           saveToSDCard(true, obj.person);
 
           if (data === latestData) {
