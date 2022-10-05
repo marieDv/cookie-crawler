@@ -59,7 +59,7 @@ const c = new Crawler({
       const urls = [];
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
         let array = $('a').toArray();
-        console.log(`number of found urls: `+array.length);
+        console.log(`number of found urls: ` + array.length);
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -75,7 +75,7 @@ const c = new Crawler({
               await dbUrlPrecheck.put(url.origin, url.origin);
               if (oldWebsite === true) {
                 check_mem();
-                console.log(`queueSize: `+queueSize);
+                console.log(`queueSize: ` + c.queueSize);
 
                 if (c.queueSize <= 2000) {
                   urls.push(url.href);
@@ -89,8 +89,9 @@ const c = new Crawler({
                   countSavedURLs = 0;
                 }
               }
-            } catch (err) {
-              console.log("invalid url error")
+            } 
+            catch (err) {
+              console.log(err)
             }
 
 
@@ -209,8 +210,8 @@ async function languageProcessing(doc, data, url, cc) {
 
           countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
           lastProcessedNames[countLastProcessedNames] = tempNameString;
-          console.log(`found: `*tempNameString +`at `+currentDate);
-          
+          console.log(`found: ` * tempNameString + `at ` + currentDate);
+
           // lastProcessedNames[countLastProcessedNames][1] = currentDate;
           // lastProcessedNames[countLastProcessedNames][2] = url;
 
