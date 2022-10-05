@@ -42,18 +42,24 @@ let ws;
 
 ws = new WebSocket('wss://ait-residency.herokuapp.com/');
 ws.on('open', function open() {
-  
+  ws.send(JSON.stringify("connected"));
 });
 ws.on('error', (error) => {
   console.log(error)
 })
 
+function start() {
+  ws.onclose = function () {
+    setTimeout(function () { start('wss://ait-residency.herokuapp.com/') }, 1000);
+  };
+}
+
 
 const c = new Crawler({
   maxConnections: 15,
-  queueSize: 1000,
+  queueSize: 300,
   retries: 0,
-  rateLimit: 200,
+  rateLimit: 10,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -216,10 +222,12 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           saveToSDCard(true, obj.person);
           const mUrl = new URL(url);
           let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
+          // start();
           ws.send(toSend);
 
+
           // }
-  
+
 
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
@@ -227,7 +235,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           } else {
             replaceAllNames(data, tempSaveNames, 0);
             tempSaveNames = [];
-            console.log(`\n\n${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`)
+            console.log(`\n\n${getCurrentDate()}`)
+            console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`)
             inCurrentDataset = 0;
           }
           latestData = data;
@@ -236,7 +245,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
- 
+
   // console.log("current names number" + inCurrentDataset);
 
 }
