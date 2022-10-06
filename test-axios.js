@@ -32,15 +32,16 @@ let inCurrentDataset = 0;
 let idForNames = 0;
 let mQueueSize = 0;
 let currentURL = '';
-
+let sendOnLaunch = true;
 clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
 
-// const ws = new WebSocket('ws://localhost:9898/');
+
 let ws;
 
 function startWS() {
-  ws = new WebSocket('wss://ait-residency.herokuapp.com/');
+  // ws = new WebSocket('wss://ait-residency.herokuapp.com/');
+  ws = new WebSocket('ws://localhost:9898/');
   if (ws) {
     ws.on('open', function open() {
       setInterval(() => {
@@ -74,7 +75,7 @@ startWS();
 
 const c = new Crawler({
   maxConnections: 15,
-  queueSize: 300,
+  queueSize: 100,
   retries: 0,
   rateLimit: 10,
 
@@ -241,7 +242,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
           // start();
           if (ws) {
-            // ws.send(toSend);
+            ws.send(toSend);
           }
 
 
