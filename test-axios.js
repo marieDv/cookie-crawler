@@ -40,8 +40,8 @@ clearDataBases([db, dbUrl, dbUrlPrecheck]);
 let ws;
 
 function startWS() {
-  // ws = new WebSocket('wss://ait-residency.herokuapp.com/');
-  ws = new WebSocket('ws://localhost:9898/');
+  ws = new WebSocket('wss://ait-residency.herokuapp.com/');
+  // ws = new WebSocket('ws://localhost:9898/');
   if (ws) {
     ws.on('open', function open() {
       setInterval(() => {
@@ -239,9 +239,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           lastProcessedNames[countLastProcessedNames] = tempNameString;
           saveToSDCard(true, obj.person);
           const mUrl = new URL(url);
-          let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
           // start();
           if (ws) {
+            let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
+
             ws.send(toSend);
           }
 
