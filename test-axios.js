@@ -32,27 +32,45 @@ let inCurrentDataset = 0;
 let idForNames = 0;
 let mQueueSize = 0;
 let currentURL = '';
-
+let sendOnLaunch = true;
 clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
 
-// const ws = new WebSocket('ws://localhost:9898/');
+
 let ws;
 
-
-ws = new WebSocket('wss://ait-residency.herokuapp.com/');
-ws.on('open', function open() {
-  ws.send(JSON.stringify("connected"));
-});
-ws.on('error', (error) => {
-  console.log(error)
-})
-
-function start() {
-  ws.onclose = function () {
-    setTimeout(function () { start('wss://ait-residency.herokuapp.com/') }, 1000);
-  };
+function startWS() {
+  ws = new WebSocket('wss://ait-residency.herokuapp.com/');
+  // ws = new WebSocket('ws://localhost:9898/');
+  if (ws) {
+    ws.on('open', function open() {
+      setInterval(() => {
+        ws.send(JSON.stringify("ping"));
+      }, 3000);
+    });
+    ws.on('error', (error) => {
+      console.log(error)
+    })
+    ws.onclose = function () {
+      setTimeout(function () { console.log("closed connection"); startWS(); }, 3000)
+    };
+    ws.onmessage = function (event) {
+      console.log('************');
+      console.log(event.data);
+      let currentData = JSON.parse(event.data);
+      if (currentData === 'REQUESTCURRENTSTATE') {
+        let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
+        console.log(totalNumberNames.queued[0].lastProcessedNames.length)
+        for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
+          ws.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+        }
+      }
+      console.log('************');
+    }
+  }
 }
+startWS();
+
 
 
 const c = new Crawler({
@@ -91,7 +109,7 @@ const c = new Crawler({
                 }
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
                 lastProcessedURLs[countSavedURLs] = url.origin;
-                console.log($("body").text().length + ' ' + check_mem()+'MB');
+                console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
                 countSavedURLs++;
                 if (countSavedURLs === 100) {
@@ -140,7 +158,7 @@ function saveLastNames(url) {
   fs.writeFileSync('./latest-names.json', JSON.stringify(mData));
   countLastProcessedNames = 0
 }
-async function retrieveNames() {
+function retrieveNames() {
   let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
   return totalNumberNames.queued[0].lastProcessedNames;
 }
@@ -221,10 +239,14 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           lastProcessedNames[countLastProcessedNames] = tempNameString;
           saveToSDCard(true, obj.person);
           const mUrl = new URL(url);
-          let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
           // start();
-          ws.send(toSend);
- 
+          if (ws) {
+            let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
+
+            ws.send(toSend);
+          }
+
+
           // }
 
 
