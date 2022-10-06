@@ -1,4 +1,4 @@
 {
-  "purgeOnStart": true
-  // "memoryMbytes": 80
+  "purgeOnStart": true,
+  "memoryMbytes": 380
 }

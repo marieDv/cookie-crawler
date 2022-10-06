@@ -52,9 +52,10 @@ export function saveToSDCard(names, mData) {
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
 
-  if (names === false) { 
+  if (names === false) {
     fullDataObj.page.push({ text: mData });
-    if (sizeof(fullDataObj) / (1024 * 1024) > 4) {
+    console.log(`size full data object: ${sizeof(fullDataObj)}`)
+    if (sizeof(fullDataObj) / (1024 * 1024) > 2) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
