@@ -86,12 +86,12 @@ const c = new Crawler({
               await dbUrlPrecheck.put(url.origin, url.origin);
               if (oldWebsite === true) {
                 mQueueSize = c.queueSize;
-                if (c.queueSize <= 2000) {
+                if (c.queueSize <= 1000) {
                   urls.push(url.href);
                 }
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
                 lastProcessedURLs[countSavedURLs] = url.origin;
-
+                console.log($("body").text().length + ' ' + check_mem()+'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
                 countSavedURLs++;
                 if (countSavedURLs === 100) {

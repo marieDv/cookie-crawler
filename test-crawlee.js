@@ -75,7 +75,7 @@ if (savedToQueue.length > 0) {
             // if (info.pendingRequestCount < 20) {
             await enqueueLinks({
                 // urls: queue,
-                limit: 100,
+                limit: 50,
                 // strategy: info.pendingRequestCount < 230 ? 'all' : 'same-hostname',
                 strategy: 'all',
             });
