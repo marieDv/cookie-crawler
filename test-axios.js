@@ -33,73 +33,71 @@ let idForNames = 0;
 let mQueueSize = 0;
 let currentURL = '';
 let sendOnLaunch = true;
+let needReconnect = false;
 clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
-
-
-let ws;
-
-function startWS() {
-  // ws = new WebSocket('wss://ait-residency.herokuapp.com/');
-  ws = new WebSocket('ws://localhost:9898/');
-  if (ws) {
-    ws.on('open', function open() {
-      setInterval(() => {
-        if (ws) {
-          ws.send(JSON.stringify("ping"));
-        }
-      }, 8000);
-    });
-    ws.on('error', (error) => {
-      console.log(error)
-    })
-    ws.onclose = function () {
-      setTimeout(function () { console.log("closed connection"); startWS(); }, 3000)
-    };
-    ws.onmessage = function (event) {
-      console.log(event.data);
-      if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
-        let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
-        for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
-          ws.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
-        }
-      }
-    }
-  } else {
-    console.log(`ws is gone`)
-  }
-}
-// startWS();
-
-
-
-
 function heartbeat() {
-this.send(JSON.stringify('into the void'));
   clearTimeout(this.pingTimeout);
   this.pingTimeout = setTimeout(() => {
+    console.log("!!! terminated !!!")
     this.terminate();
   }, 30000 + 1000);
 }
 
-const client = new WebSocket('ws://localhost:9898/');
-if (client) {
-  client.on('open', heartbeat);
-  client.on('ping', heartbeat);
-  client.onmessage = function (event) {
-    console.log(event.data);
-    if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
-      let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
-      for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
-        client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+let client;
+function connect() {
+  // client = new WebSocket('ws://localhost:9898/');
+  client = new WebSocket('wss://ait-residency.herokuapp.com/');
+  console.log(`...... connect`);
+  if (client) {
+    client.on('open', function(){
+      console.log("CONNECTION IS OPEN")
+      needReconnect = false;
+      heartbeat
+    });
+    client.on('error', (error) => {
+      needReconnect = true;
+      console.log(error)
+    })
+    client.on('ping', heartbeat);
+    client.onmessage = function (event) {
+      console.log(event.data);
+      if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
+        let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
+        for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
+          client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+        }
       }
     }
+    client.on('close', function clear() {
+      console.log("CONNECTION WAS CLOSED")
+      clearTimeout(this.pingTimeout);
+      needReconnect = true;
+      // setTimeout(connect, 30000 + 1000);
+
+
+    });
   }
-  client.on('close', function clear() {
-    clearTimeout(this.pingTimeout);
-  });
+}
+connect();
+
+
+async function reconnect() {
+  try {
+    await connect()
+  } catch (err) {
+    console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
+  }
 }
 
+setInterval(() => {
+  console.log(`...`);
+  if (needReconnect === true) {
+    console.log(`... trying to reconnect ...`)
+    reconnect();
+  }
+
+}, 30000);
 
 
 
@@ -126,7 +124,7 @@ const c = new Crawler({
         let array = $('a').toArray();
 
         currentURL = res.request.uri.href;
-        console.log(`\n... ${res.request.uri.href}\n`)
+        console.log(`\n... ${res.request.uri.href}\n`);
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -252,10 +250,16 @@ async function checkNamesDatabase(name) {
 }
 async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#Person #Noun').out('array');
-  // console.log(person)
+  if (person.length === 0) {
+    let dataObj = {
+      dataPage: []
+    };
+    dataObj.dataPage.push({ text: data, id: 0 });
+    saveToSDCard(false, dataObj);
+  }
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(\\*)|(ii)|(—)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(=)|(})|(•)|(·)|({)|(\\")|(\\')|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -272,19 +276,15 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           let tempNameString = uppercaseName[0].concat(uppercaseName[1])
           currentDate = getCurrentDate();
           obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
-
-          countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
-          lastProcessedNames[countLastProcessedNames] = tempNameString;
-          saveToSDCard(true, obj.person);
           const mUrl = new URL(url);
-          // start();
+          let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
           if (client) {
-            let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
             client.send(toSend);
           }
-
-
-          // }
+          countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
+          lastProcessedNames[countLastProcessedNames] = tempNameString + '............' + currentDate + '............' + mUrl.host;
+          saveToSDCard(true, obj.person);
+   
 
 
           if (data === latestData) {
