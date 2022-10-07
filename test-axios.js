@@ -50,25 +50,32 @@ function connect() {
   client = new WebSocket('wss://ait-residency.herokuapp.com/');
   console.log(`...... connect`);
   if (client) {
-    client.on('open', function(){
+    client.on('open', function () {
       console.log("CONNECTION IS OPEN")
       needReconnect = false;
       heartbeat
     });
+    client.onmessage = function (event) {
+      console.log(event.data);
+      if (event.data !== undefined && client.readyState === 1) {
+        console.log(`READY STATE: ${client.readyState}`);
+        if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
+          let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
+          for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
+            if (client && (needReconnect === false)) {
+              client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+            }
+          }
+        }
+      }
+    };
+
     client.on('error', (error) => {
       needReconnect = true;
       console.log(error)
     })
     client.on('ping', heartbeat);
-    client.onmessage = function (event) {
-      console.log(event.data);
-      if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
-        let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
-        for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
-          client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
-        }
-      }
-    }
+
     client.on('close', function clear() {
       console.log("CONNECTION WAS CLOSED")
       clearTimeout(this.pingTimeout);
@@ -91,7 +98,7 @@ async function reconnect() {
 }
 
 setInterval(() => {
-  console.log(`...`);
+
   if (needReconnect === true) {
     console.log(`... trying to reconnect ...`)
     reconnect();
@@ -194,6 +201,9 @@ function saveLastNames(url) {
   fs.writeFileSync('./latest-names.json', JSON.stringify(mData));
   countLastProcessedNames = 0
 }
+
+
+
 function retrieveNames() {
   let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
   return totalNumberNames.queued[0].lastProcessedNames;
@@ -259,7 +269,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   }
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(=)|(})|(•)|(·)|({)|(\\")|(\\')|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(=)|(})|(\\;)|(•)|(·)|({)|(\\")|(\\')|(\\„)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -271,6 +281,17 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         };
         let uppercaseName = text.split(" ");
         if (uppercaseName[1]) {
+          if ((uppercaseName[0].charAt(1) && uppercaseName[1].charAt(1).toUpperCase() === uppercaseName[0].charAt(1)) || (uppercaseName[1].charAt(1) && uppercaseName[1].charAt(1).toUpperCase() === uppercaseName[1].charAt(1))) {
+            if (client) {
+              console.log(uppercaseName[1]);
+              client.send(JSON.stringify("ALL UPPERCASE D:"));
+              uppercaseName[0] = uppercaseName[0].toLowerCase();
+              uppercaseName[1] = uppercaseName[1].toLowerCase();
+            }
+          }
+
+
+
           uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
           uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
           let tempNameString = uppercaseName[0].concat(uppercaseName[1])
@@ -278,13 +299,15 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
           const mUrl = new URL(url);
           let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
-          if (client) {
+          if (client && client.readyState === 1) {
+            console.log(`READY STATE: ${client.readyState}`);
             client.send(toSend);
           }
           countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
+          // saveLastNames(url);
           lastProcessedNames[countLastProcessedNames] = tempNameString + '............' + currentDate + '............' + mUrl.host;
           saveToSDCard(true, obj.person);
-   
+
 
 
           if (data === latestData) {
