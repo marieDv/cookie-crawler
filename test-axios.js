@@ -40,13 +40,15 @@ clearDataBases([db, dbUrl, dbUrlPrecheck]);
 let ws;
 
 function startWS() {
-  ws = new WebSocket('wss://ait-residency.herokuapp.com/');
-  // ws = new WebSocket('ws://localhost:9898/');
+  // ws = new WebSocket('wss://ait-residency.herokuapp.com/');
+  ws = new WebSocket('ws://localhost:9898/');
   if (ws) {
     ws.on('open', function open() {
       setInterval(() => {
-        ws.send(JSON.stringify("ping"));
-      }, 3000);
+        if (ws) {
+          ws.send(JSON.stringify("ping"));
+        }
+      }, 8000);
     });
     ws.on('error', (error) => {
       console.log(error)
@@ -55,21 +57,57 @@ function startWS() {
       setTimeout(function () { console.log("closed connection"); startWS(); }, 3000)
     };
     ws.onmessage = function (event) {
-      console.log('************');
       console.log(event.data);
-      let currentData = JSON.parse(event.data);
-      if (currentData === 'REQUESTCURRENTSTATE') {
+      if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
         let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
-        console.log(totalNumberNames.queued[0].lastProcessedNames.length)
         for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
           ws.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
         }
       }
-      console.log('************');
     }
+  } else {
+    console.log(`ws is gone`)
   }
 }
-startWS();
+// startWS();
+
+
+
+
+function heartbeat() {
+this.send(JSON.stringify('into the void'));
+  clearTimeout(this.pingTimeout);
+  this.pingTimeout = setTimeout(() => {
+    this.terminate();
+  }, 30000 + 1000);
+}
+
+const client = new WebSocket('ws://localhost:9898/');
+if (client) {
+  client.on('open', heartbeat);
+  client.on('ping', heartbeat);
+  client.onmessage = function (event) {
+    console.log(event.data);
+    if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
+      let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
+      for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
+        client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+      }
+    }
+  }
+  client.on('close', function clear() {
+    clearTimeout(this.pingTimeout);
+  });
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -109,7 +147,7 @@ const c = new Crawler({
                 }
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
                 lastProcessedURLs[countSavedURLs] = url.origin;
-                console.log($("body").text().length + ' ' + check_mem() + 'MB');
+                // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
                 countSavedURLs++;
                 if (countSavedURLs === 100) {
@@ -217,7 +255,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   // console.log(person)
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(ii)|(—)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp('(\s+\S\s)|(=)|(})|(•)|(·)|({)|(")|(\\*)|(ii)|(—)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)'));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -240,10 +278,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           saveToSDCard(true, obj.person);
           const mUrl = new URL(url);
           // start();
-          if (ws) {
+          if (client) {
             let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
-
-            ws.send(toSend);
+            client.send(toSend);
           }
 
 
