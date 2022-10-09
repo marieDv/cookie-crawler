@@ -54,7 +54,7 @@ export function saveToSDCard(names, mData) {
 
   if (names === false) {
     fullDataObj.page.push({ text: mData });
-    console.log(`size full data object: ${sizeof(fullDataObj)}`)
+    // console.log(`size full data object: ${sizeof(fullDataObj)}`)
     if (sizeof(fullDataObj) / (1024 * 1024) > 2) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
@@ -176,7 +176,7 @@ export function replaceAllNames(mdata, savedNames, id) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
   }
   safeOneDataset = mdata;
 }

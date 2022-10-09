@@ -43,6 +43,14 @@ function heartbeat() {
     this.terminate();
   }, 30000 + 1000);
 }
+function isJsonString(str) {
+  try {
+      JSON.parse(str);
+  } catch (e) {
+      return false;
+  }
+  return true;
+}
 
 let client;
 function connect() {
@@ -57,8 +65,9 @@ function connect() {
     });
     client.onmessage = function (event) {
       console.log(event.data);
-      if (event.data !== undefined && client.readyState === 1) {
+      if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
         console.log(`READY STATE: ${client.readyState}`);
+        
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
           for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
@@ -72,7 +81,7 @@ function connect() {
 
     client.on('error', (error) => {
       needReconnect = true;
-      console.log(error)
+      console.log(`error: ${error}`)
     })
     client.on('ping', heartbeat);
 
@@ -265,7 +274,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
   }
   for (const a of person) {
     let text = a;
@@ -284,7 +293,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           if ((uppercaseName[0].charAt(1) && uppercaseName[1].charAt(1).toUpperCase() === uppercaseName[0].charAt(1)) || (uppercaseName[1].charAt(1) && uppercaseName[1].charAt(1).toUpperCase() === uppercaseName[1].charAt(1))) {
             if (client) {
               console.log(uppercaseName[1]);
-              client.send(JSON.stringify("ALL UPPERCASE D:"));
+              // client.send(JSON.stringify("ALL UPPERCASE D:"));
               uppercaseName[0] = uppercaseName[0].toLowerCase();
               uppercaseName[1] = uppercaseName[1].toLowerCase();
             }
@@ -300,13 +309,13 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           const mUrl = new URL(url);
           let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
           if (client && client.readyState === 1) {
-            console.log(`READY STATE: ${client.readyState}`);
+            // console.log(`READY STATE: ${client.readyState}`);
             client.send(toSend);
           }
           countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
           // saveLastNames(url);
           lastProcessedNames[countLastProcessedNames] = tempNameString + '............' + currentDate + '............' + mUrl.host;
-          saveToSDCard(true, obj.person);
+          // saveToSDCard(true, obj.person);
 
 
 
