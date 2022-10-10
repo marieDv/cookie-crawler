@@ -45,8 +45,8 @@ export function saveToSDCard(names, mData) {
   // let pathOSX = "/Volumes/FULL/output/";
   // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
-//  let currentPath = ['./names-output/output/', './full-output/output/'];
-   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  //  let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
 
   let dateObject = new Date();
@@ -54,7 +54,7 @@ export function saveToSDCard(names, mData) {
 
   if (names === false) {
     fullDataObj.page.push({ text: mData });
-    console.log(`size full data object: ${sizeof(fullDataObj)}`)
+    // console.log(`size full data object: ${sizeof(fullDataObj)}`)
     if (sizeof(fullDataObj) / (1024 * 1024) > 2) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
