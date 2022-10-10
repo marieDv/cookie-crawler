@@ -10,7 +10,7 @@ import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 import { URL } from 'node:url';
 import WebSocket from 'ws';
-const startURL = ['https://crawlee.dev/api/core/function/enqueueLinks', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
+const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
@@ -22,8 +22,9 @@ let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
 let countSavedURLs = 0;
-let savedToQueue = retrieveURLs();
+let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
+// savedToQueue = ['https://tos885.ç§»å\x8A']
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
@@ -45,9 +46,9 @@ function heartbeat() {
 }
 function isJsonString(str) {
   try {
-      JSON.parse(str);
+    JSON.parse(str);
   } catch (e) {
-      return false;
+    return false;
   }
   return true;
 }
@@ -67,7 +68,6 @@ function connect() {
       console.log(event.data);
       if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
         console.log(`READY STATE: ${client.readyState}`);
-        
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
           for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
@@ -114,15 +114,6 @@ setInterval(() => {
   }
 
 }, 30000);
-
-
-
-
-
-
-
-
-
 
 
 const c = new Crawler({
@@ -207,14 +198,14 @@ function saveLastNames(url) {
     queued: []
   };
   mData.queued.push({ lastProcessedNames });
-  fs.writeFileSync('./latest-names.json', JSON.stringify(mData));
+  fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
   countLastProcessedNames = 0
 }
 
 
 
 function retrieveNames() {
-  let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
+  let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
   return totalNumberNames.queued[0].lastProcessedNames;
 }
 
@@ -274,7 +265,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
-    // saveToSDCard(false, dataObj);
+    saveToSDCard(false, dataObj);
   }
   for (const a of person) {
     let text = a;
@@ -315,7 +306,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
           // saveLastNames(url);
           lastProcessedNames[countLastProcessedNames] = tempNameString + '............' + currentDate + '............' + mUrl.host;
-          // saveToSDCard(true, obj.person);
+          saveToSDCard(true, obj.person);
 
 
 
