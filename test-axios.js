@@ -298,7 +298,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           currentDate = getCurrentDate();
           obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
           const mUrl = new URL(url);
-          console.log(`COUNTRYCODE: ${cc}`);
+          // console.log(`COUNTRYCODE: ${cc}`);
           let dateObject = new Date();
 
           let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${dateObject.getMonth()}-${dateObject.getDate()}&nbsp;&nbsp;${dateObject.getHours()}:${dateObject.getMinutes()}:${dateObject.getSeconds()}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
