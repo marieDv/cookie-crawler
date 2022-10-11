@@ -55,8 +55,8 @@ function isJsonString(str) {
 
 let client;
 function connect() {
-  client = new WebSocket('ws://localhost:9898/');
-  // client = new WebSocket('wss://ait-residency.herokuapp.com/');
+  // client = new WebSocket('ws://localhost:9898/');
+  client = new WebSocket('wss://ait-residency.herokuapp.com/');
   console.log(`...... connect`);
   if (client) {
     client.on('open', function () {
@@ -297,7 +297,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           // console.log(`COUNTRYCODE: ${cc}`);
           function returnWithZero(obj) {
             if (obj < 10) {
-              console.log("smaller than 10");
               return '0' + obj;
             } else {
               return obj;
