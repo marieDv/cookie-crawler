@@ -55,8 +55,8 @@ function isJsonString(str) {
 
 let client;
 function connect() {
-  // client = new WebSocket('ws://localhost:9898/');
-  client = new WebSocket('wss://ait-residency.herokuapp.com/');
+  client = new WebSocket('ws://localhost:9898/');
+  // client = new WebSocket('wss://ait-residency.herokuapp.com/');
   console.log(`...... connect`);
   if (client) {
     client.on('open', function () {
@@ -70,9 +70,11 @@ function connect() {
         // console.log(`READY STATE: ${client.readyState}`);
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
-          for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
-            if (client && (needReconnect === false)) {
-              client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+          if (totalNumberNames.queued !== undefined) {
+            for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
+              if (client && (needReconnect === false)) {
+                client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+              }
             }
           }
         }
@@ -293,20 +295,22 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
           const mUrl = new URL(url);
           // console.log(`COUNTRYCODE: ${cc}`);
+          function returnWithZero(obj) {
+            if (obj < 10) {
+              console.log("smaller than 10");
+              return '0' + obj;
+            } else {
+              return obj;
+            }
+          }
           let dateObject = new Date();
+          let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
-          let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${dateObject.getMonth()}-${dateObject.getDate()}&nbsp;&nbsp;${dateObject.getHours()}:${dateObject.getMinutes()}:${dateObject.getSeconds()}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-      
-          // return (monthNames[dateObject.getMonth()] + ", " + dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds() + ", " + dateObject.getMilliseconds();
           if (client && client.readyState === 1) {
-            // console.log(`READY STATE: ${client.readyState}`);
             client.send(toSend);
-            // client.send(JSON.stringify(currentDate));
           }
           countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
-          // saveLastNames(url);
-          lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${dateObject.getMonth()}-${dateObject.getDate()}&nbsp;&nbsp;${dateObject.getHours()}:${dateObject.getMinutes()}:${dateObject.getSeconds()}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-          // saveToSDCard(true, obj.person);
+          lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
