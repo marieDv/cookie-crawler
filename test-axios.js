@@ -55,8 +55,8 @@ function isJsonString(str) {
 
 let client;
 function connect() {
-  client = new WebSocket('ws://localhost:9898/');
-  // client = new WebSocket('wss://ait-residency.herokuapp.com/');
+  // client = new WebSocket('ws://localhost:9898/');
+  client = new WebSocket('wss://ait-residency.herokuapp.com/');
   console.log(`...... connect`);
   if (client) {
     client.on('open', function () {
@@ -265,7 +265,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
   }
   for (const a of person) {
     let text = a;
@@ -312,7 +312,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
           // saveLastNames(url);
           lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${dateObject.getMonth()}-${dateObject.getDate()}&nbsp;&nbsp;${dateObject.getHours()}:${dateObject.getMinutes()}:${dateObject.getSeconds()}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-          saveToSDCard(true, obj.person);
+          // saveToSDCard(true, obj.person);
 
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;

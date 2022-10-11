@@ -176,7 +176,7 @@ export function replaceAllNames(mdata, savedNames, id) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
   }
   safeOneDataset = mdata;
 }
