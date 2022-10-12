@@ -198,7 +198,7 @@ c.queue(savedToQueue);
 
 
 function getSDCardSize(i) {
-  let currentPath = ["./media/process/NAMES/output/", "./media/process/FULL/output/"];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   fs.open(currentPath[i], 'r', (err, fd) => {
     if (err) throw err;
     try {
