@@ -201,16 +201,22 @@ c.queue(savedToQueue);
 
 async function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+let tempTest = '';
+let options = {
+  file: i === 0 ? '/media/process/NAMES' : '/media/process/FULL',
+  prefixMultiplier: 'GB',
+  isDisplayMultiplier: true,
+  precision: 2
+}
 
 
-
-
-  df(function (error, response) {
+  df(options, function (error, response) {
     if (error) { throw error; }
-
-    console.log(JSON.stringify(response, null, 2));
+  //  console.log(JSON.stringify(response, null, 2));
+  tempTest = response.size;
+    //console.log(tempTest[0].size)
   });
-
+  cardFilled[i] = tempTest;
 
   // const size = await getFolderSize.loose(currentPath[i]);
   // cardFilled[i] = (size / 1000 / 1000).toFixed(2);
