@@ -320,6 +320,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     let text = a;
     const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(dr)|(Dr)|(ceo)|(Ceo)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
+      if (client && client.readyState === 1) {
+        await getSDCardSize(0);
+        await getSDCardSize(1);
+        client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}`));
+      }
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
       }
@@ -390,12 +395,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         }
       }
     }
-  }
-
-  if (client && client.readyState === 1) {
-    getSDCardSize(0);
-    getSDCardSize(1);
-    client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}`));
   }
 }
 
