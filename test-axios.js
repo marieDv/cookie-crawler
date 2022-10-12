@@ -298,63 +298,64 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         };
         let uppercaseName = text.split(" ");
         if (uppercaseName[1]) {
-          uppercaseName[0] = uppercaseName[0].toLowerCase();
-          uppercaseName[1] = uppercaseName[1].toLowerCase();
+          if (uppacercasName[0][1] && uppacercasName[1][1]) {
+            uppercaseName[0] = uppercaseName[0].toLowerCase();
+            uppercaseName[1] = uppercaseName[1].toLowerCase();
 
 
 
-          uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
-          uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
-          let tempNameString = uppercaseName[0].concat(uppercaseName[1])
-          currentDate = getCurrentDate();
-          obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
+            uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
+            uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
+            let tempNameString = uppercaseName[0].concat(uppercaseName[1])
+            currentDate = getCurrentDate();
+            obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
 
 
-          // mData.queued.push({ lastProcessedURLs });
-          // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
+            // mData.queued.push({ lastProcessedURLs });
+            // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
 
 
-          const mUrl = new URL(url);
-          function returnWithZero(obj) {
-            if (obj < 10) {
-              return '0' + obj;
-            } else {
-              return obj;
+            const mUrl = new URL(url);
+            function returnWithZero(obj) {
+              if (obj < 10) {
+                return '0' + obj;
+              } else {
+                return obj;
+              }
             }
-          }
-          let dateObject = new Date();
-          let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-
-          if (client && client.readyState === 1) {
-            client.send(toSend);
-          }
-          countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
-          lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-
-          if (data === latestData) {
-            tempSaveNames[inCurrentDataset] = text;
-            inCurrentDataset++;
-          } else {
-            replaceAllNames(data, tempSaveNames, 0);
-            tempSaveNames = [];
-            console.log(`\n\n${getCurrentDate()}`)
-            console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`);
-
-
-            let totalNumberNames = await getabsoluteNumberNames(db);
-            let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-
-
-
+            let dateObject = new Date();
+            let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
             if (client && client.readyState === 1) {
-              client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
+              client.send(toSend);
             }
-            inCurrentDataset = 0;
-          }
-          latestData = data;
-        }
+            countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
+            lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
+            if (data === latestData) {
+              tempSaveNames[inCurrentDataset] = text;
+              inCurrentDataset++;
+            } else {
+              replaceAllNames(data, tempSaveNames, 0);
+              tempSaveNames = [];
+              console.log(`\n\n${getCurrentDate()}`)
+              console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`);
+
+
+              let totalNumberNames = await getabsoluteNumberNames(db);
+              let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+
+
+
+
+              if (client && client.readyState === 1) {
+                client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
+              }
+              inCurrentDataset = 0;
+            }
+            latestData = data;
+          }
+        }
       }
     }
   }
