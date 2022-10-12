@@ -28,6 +28,7 @@ let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
 let cardFilled = [0, 0];
+let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
@@ -199,25 +200,27 @@ const c = new Crawler({
 c.queue(savedToQueue);
 
 
-async function getSDCardSize(i) {
+function getSDCardSize(i) {
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
-let tempTest = '';
-let options = {
-  file: i === 0 ? '/media/process/NAMES' : '/media/process/FULL',
-  prefixMultiplier: 'GB',
-  isDisplayMultiplier: true,
-  precision: 2
-}
+
+  let options = {
+    file: currentPath[i],
+    prefixMultiplier: 'GB',
+    isDisplayPrefixMultiplier: true,
+    precision: 2
+  };
+
 
 
   df(options, function (error, response) {
     if (error) { throw error; }
-  //  console.log(JSON.stringify(response, null, 2));
-  tempTest = response.size;
-    //console.log(tempTest[0].size)
+    tempTest = response[0].size;
+    console.log(response[0].size)
+    cardFilled[i] = tempTest;
+    cardRemaining[i] = response[0].available;
   });
-  cardFilled[i] = tempTest;
-
   // const size = await getFolderSize.loose(currentPath[i]);
   // cardFilled[i] = (size / 1000 / 1000).toFixed(2);
 
@@ -326,9 +329,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(dr)|(Dr)|(ceo)|(Ceo)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (client && client.readyState === 1) {
-        await getSDCardSize(0);
-        await getSDCardSize(1);
-        client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}`));
+        getSDCardSize(0);
+        getSDCardSize(1);
+        client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
       }
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
