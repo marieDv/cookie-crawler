@@ -206,7 +206,7 @@ function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
   let options = {
-    file: '/media/process/NAMES/output/',
+    file: currentPath[i],
     prefixMultiplier: 'GB',
     isDisplayPrefixMultiplier: true,
     precision: 2
@@ -216,8 +216,8 @@ function getSDCardSize(i) {
 
   df(options, function (error, response) {
     if (error) { throw error; }
-    console.log(response[0].size)
-    cardFilled[i] = response[0].size;
+    console.log(response[0].used)
+    cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
   });
   // const size = await getFolderSize.loose(currentPath[i]);
