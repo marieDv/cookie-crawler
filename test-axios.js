@@ -70,13 +70,14 @@ function connect() {
   if (client) {
     client.on('open', function () {
       console.log("CONNECTION IS OPEN")
-      needReconnect = false;
-      heartbeat
+      if (client.readyState === 1) {
+        needReconnect = false;
+        heartbeat
+      }
     });
     client.onmessage = function (event) {
-      // console.log(event.data);
+
       if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
-        // console.log(`READY STATE: ${client.readyState}`);
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
           if (totalNumberNames.queued !== undefined) {
@@ -130,9 +131,9 @@ setInterval(() => {
 
 const c = new Crawler({
   maxConnections: 10,
-  queueSize: 200,
+  // queueSize: 200,
   retries: 0,
-  rateLimit: 0,
+  rateLimit:1,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -195,7 +196,7 @@ const c = new Crawler({
 
           }
         }
-    
+
 
 
       }

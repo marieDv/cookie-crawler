@@ -63,7 +63,8 @@ export function saveToSDCard(names, mData) {
     }
   } else {
     fullNamesObj.name.push({ mData });
-    if (sizeof(fullNamesObj) > 3500) {
+    console.log(sizeof(fullNamesObj))
+    if (sizeof(fullNamesObj) > 1500) {
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
       fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
