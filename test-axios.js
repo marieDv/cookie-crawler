@@ -280,7 +280,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
-    // saveToSDCard(false, dataObj);
+    saveToSDCard(false, dataObj);
 
   }
   for (const a of person) {
