@@ -319,7 +319,7 @@ async function checkNamesDatabase(name) {
 
 }
 async function languageProcessing(doc, data, url, cc, foundLinks) {
-  let person = doc.match('#Person' ).out('array');
+  let person = doc.match('#FirstName #LastName' ).out('array');
   console.log(person)
   console.log("*******");
   // let personNoune = doc.match('#Noun #Person').out('array');
