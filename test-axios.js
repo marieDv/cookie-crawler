@@ -322,11 +322,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#Person' ).out('array');
   console.log(person)
   console.log("*******");
-  let personNoune = doc.match('#Noun #Person' ).out('array');
+  let personNoune = doc.match('#Noun #Person').out('array');
   console.log(personNoune);
   console.log("*******")
   console.log(doc.people().normalize().text());
-  
+  console.log("***NEWROW****")
 
   if (person.length === 0) {
     let dataObj = {
