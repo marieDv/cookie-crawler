@@ -181,7 +181,7 @@ const c = new Crawler({
         }
         if (client && client.readyState === 1) {
           let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}}`));
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
 
