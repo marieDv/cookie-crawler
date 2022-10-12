@@ -294,6 +294,7 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
+      saveToSDCard(false, dataObj);
       break;
   }
 }
@@ -393,8 +394,14 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             }
             latestData = data;
           }
+        }else {
+          saveToSDCard(false, dataObj);
         }
+      }else {
+        saveToSDCard(false, dataObj);
       }
+    }else {
+      saveToSDCard(false, dataObj);
     }
   }
 }
