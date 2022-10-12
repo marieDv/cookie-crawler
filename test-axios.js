@@ -313,11 +313,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     };
     dataObj.dataPage.push({ text: data, id: 0 });
     saveToSDCard(false, dataObj);
-    if (client && client.readyState === 1) {
-      getSDCardSize(0);
-      getSDCardSize(1);
-      client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
-    }
+    // if (client && client.readyState === 1) {
+    //   getSDCardSize(0);
+    //   getSDCardSize(1);
+    //   client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+    // }
   }
   for (const a of person) {
     let text = a;
