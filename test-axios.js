@@ -74,7 +74,8 @@ function connect() {
           if (totalNumberNames.queued !== undefined) {
             for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
               if (client && (needReconnect === false)) {
-                client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+                // client.send(JSON.stringify("SENDFULLFILE"));
+                // client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
               }
             }
           }
@@ -120,10 +121,10 @@ setInterval(() => {
 
 
 const c = new Crawler({
-  maxConnections: 15,
-  queueSize: 100,
+  maxConnections: 25,
+  queueSize: 1000,
   retries: 0,
-  rateLimit: 10,
+  rateLimit: 0,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -138,7 +139,7 @@ const c = new Crawler({
 
 
 
-      
+
 
 
         for (const a of array) {
@@ -322,7 +323,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             }
           }
           let dateObject = new Date();
-          let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+          let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
           if (client && client.readyState === 1) {
             client.send(toSend);
@@ -340,11 +341,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`);
 
 
-           let totalNumberNames = await getabsoluteNumberNames(db);
+            let totalNumberNames = await getabsoluteNumberNames(db);
             let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
 
 
-         
+
 
             if (client && client.readyState === 1) {
               client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
