@@ -112,7 +112,7 @@ function connect() {
 connect();
 
 
-function reconnect() {
+async function reconnect() {
   try {
     connect()
   } catch (err) {
@@ -124,7 +124,7 @@ setInterval(() => {
 
   if (needReconnect === true) {
     console.log(`... trying to reconnect ...`)
-    reconnect();
+    await reconnect();
   }
 
 }, 30000);
