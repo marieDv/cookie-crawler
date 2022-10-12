@@ -341,7 +341,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         };
         let uppercaseName = text.split(" ");
         if (uppercaseName[1]) {
-          if (uppercaseName[0][1] && uppercaseName[1][1]) {
+          if (uppercaseName[0][2] && uppercaseName[1][2]) {
             uppercaseName[0] = uppercaseName[0].toLowerCase();
             uppercaseName[1] = uppercaseName[1].toLowerCase();
 
