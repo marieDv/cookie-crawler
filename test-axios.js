@@ -321,13 +321,6 @@ async function checkNamesDatabase(name) {
 async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#FirstName #LastName' ).out('array');
   console.log(person)
-  console.log("*******");
-  // let personNoune = doc.match('#Noun #Person').out('array');
-  // console.log(personNoune);
-  // console.log("*******")
-  // console.log(doc.people().normalize().text());
-  // console.log("***NEWROW****")
-
   if (person.length === 0) {
     let dataObj = {
       dataPage: []
@@ -365,7 +358,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             // mData.queued.push({ lastProcessedURLs });
             // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
 
-            saveToSDCard(true, tempNameString);
+            
             const mUrl = new URL(url);
             function returnWithZero(obj) {
               if (obj < 10) {
@@ -380,6 +373,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             if (client && client.readyState === 1 && cc !== undefined) {
               client.send(toSend);
             }
+            console.log(tempNameString)
+            saveToSDCard(true, tempNameString);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
