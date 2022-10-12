@@ -294,6 +294,10 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
+      let dataObj = {
+        dataPage: []
+      };
+      dataObj.dataPage.push({ text: data, id: 0 });
       saveToSDCard(false, dataObj);
       break;
   }
@@ -395,12 +399,24 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             latestData = data;
           }
         }else {
+          let dataObj = {
+            dataPage: []
+          };
+          dataObj.dataPage.push({ text: data, id: 0 });
           saveToSDCard(false, dataObj);
         }
       }else {
+        let dataObj = {
+          dataPage: []
+        };
+        dataObj.dataPage.push({ text: data, id: 0 });
         saveToSDCard(false, dataObj);
       }
     }else {
+      let dataObj = {
+        dataPage: []
+      };
+      dataObj.dataPage.push({ text: data, id: 0 });
       saveToSDCard(false, dataObj);
     }
   }
