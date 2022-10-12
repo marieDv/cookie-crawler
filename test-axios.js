@@ -202,7 +202,6 @@ c.queue(savedToQueue);
 
 function getSDCardSize(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
-
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
   let options = {
@@ -211,18 +210,11 @@ function getSDCardSize(i) {
     isDisplayPrefixMultiplier: true,
     precision: 2
   };
-
-
-
   df(options, function (error, response) {
     if (error) { throw error; }
-    console.log(response[0].used)
     cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
   });
-  // const size = await getFolderSize.loose(currentPath[i]);
-  // cardFilled[i] = (size / 1000 / 1000).toFixed(2);
-
 }
 
 function closeFd(fd) {
