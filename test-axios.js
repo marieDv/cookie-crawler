@@ -1,7 +1,8 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
+import { checkBlacklist, clearDataBases, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
+import { open, close, fstat } from 'node:fs';
 import * as fs from 'fs';
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
@@ -21,7 +22,7 @@ let lastProcessedNames = [];
 let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
-let cardFilled = 0;
+let cardFilled = [0,0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
@@ -180,9 +181,10 @@ const c = new Crawler({
         }
         if (client && client.readyState === 1) {
           let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-          getSDCardSize();
-          console.log()
-          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}%${cardFilled}`));
+          getSDCardSize(0);
+          getSDCardSize(1);
+          console.log(cardFilled)
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}%${cardFilled[0]}%${cardFilled[1]}`));
         }
 
 
@@ -195,9 +197,9 @@ const c = new Crawler({
 c.queue(savedToQueue);
 
 
-function getSDCardSize() {
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
-  fs.open(currentPath[0], 'r', (err, fd) => {
+function getSDCardSize(i) {
+  let currentPath = ["./media/process/NAMES/output/", "./media/process/FULL/output/"];
+  fs.open(currentPath[i], 'r', (err, fd) => {
     if (err) throw err;
     try {
       fstat(fd, (err, stat) => {
@@ -205,7 +207,7 @@ function getSDCardSize() {
           closeFd(fd);
           throw err;
         }
-        cardFilled = roundToTwo(stat.size / (1024 * 1024));
+        cardFilled[i] = roundToTwo(stat.size / (1024 * 1024));
         closeFd(fd);
       });
     } catch (err) {
@@ -215,6 +217,11 @@ function getSDCardSize() {
   });
 }
 
+function closeFd(fd) {
+  close(fd, (err) => {
+    if (err) throw err;
+  });
+}
 
 async function extractData(mdata, href, id, foundLinks) {
   let countryCode = href.host.split('.').splice(-2);

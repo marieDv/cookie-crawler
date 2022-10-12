@@ -216,6 +216,6 @@ export function clearDataBases(databases) {
   }
 }
 
-function roundToTwo(num) {
+export function roundToTwo(num) {
   return +(Math.round(num + "e+5") + "e-5");
 }
