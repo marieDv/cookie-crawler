@@ -45,7 +45,7 @@ let currentURL = '';
 let sendOnLaunch = true;
 let needReconnect = false;
 // clearDataBases([db, dbUrl, dbUrlPrecheck]);
-
+clearDataBases([db, dbUrl, dbUrlPrecheck]);
 function heartbeat() {
   clearTimeout(this.pingTimeout);
   this.pingTimeout = setTimeout(() => {
@@ -133,7 +133,7 @@ const c = new Crawler({
   maxConnections: 10,
   // queueSize: 200,
   retries: 0,
-  rateLimit:1,
+  rateLimit: 1,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -398,21 +398,21 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             }
             latestData = data;
           }
-        }else {
-          let dataObj = {
-            dataPage: []
-          };
-          dataObj.dataPage.push({ text: data, id: 0 });
-          saveToSDCard(false, dataObj);
+        } else {
+          // let dataObj = {
+          //   dataPage: []
+          // };
+          // dataObj.dataPage.push({ text: data, id: 0 });
+          // saveToSDCard(false, dataObj);
         }
-      }else {
-        let dataObj = {
-          dataPage: []
-        };
-        dataObj.dataPage.push({ text: data, id: 0 });
-        saveToSDCard(false, dataObj);
+      } else {
+        // let dataObj = {
+        //   dataPage: []
+        // };
+        // dataObj.dataPage.push({ text: data, id: 0 });
+        // saveToSDCard(false, dataObj);
       }
-    }else {
+    } else {
       let dataObj = {
         dataPage: []
       };
