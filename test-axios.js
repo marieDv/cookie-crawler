@@ -22,7 +22,7 @@ let lastProcessedNames = [];
 let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
-let cardFilled = [0,0];
+let cardFilled = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
@@ -181,10 +181,7 @@ const c = new Crawler({
         }
         if (client && client.readyState === 1) {
           let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-          getSDCardSize(0);
-          getSDCardSize(1);
-          console.log(cardFilled)
-          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}%${cardFilled[0]}%${cardFilled[1]}`));
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}}`));
         }
 
 
@@ -345,7 +342,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             // mData.queued.push({ lastProcessedURLs });
             // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
 
-
+            saveToSDCard(true, tempNameString);
             const mUrl = new URL(url);
             function returnWithZero(obj) {
               if (obj < 10) {
@@ -391,8 +388,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     }
   }
 
-  // console.log("current names number" + inCurrentDataset);
-
+  if (client && client.readyState === 1) {
+    getSDCardSize(0);
+    getSDCardSize(1);
+    client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}`));
+  }
 }
 
 async function getabsoluteNumberNames(mdb) {
