@@ -64,7 +64,7 @@ function isJsonString(str) {
 }
 
 let client;
-function connect() {
+async function connect() {
   // client = new WebSocket('ws://localhost:9898/');
   client = new WebSocket('wss://ait-residency.herokuapp.com/');
   console.log(`...... connect`);
@@ -114,7 +114,7 @@ connect();
 
 async function reconnect() {
   try {
-    connect()
+    await connect()
   } catch (err) {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
@@ -124,7 +124,7 @@ setInterval(() => {
 
   if (needReconnect === true) {
     console.log(`... trying to reconnect ...`)
-    await reconnect();
+     reconnect();
   }
 
 }, 30000);
