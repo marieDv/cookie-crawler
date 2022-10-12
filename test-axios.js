@@ -216,9 +216,8 @@ function getSDCardSize(i) {
 
   df(options, function (error, response) {
     if (error) { throw error; }
-    tempTest = response[0].size;
     console.log(response[0].size)
-    cardFilled[i] = tempTest;
+    cardFilled[i] = response[0].size;
     cardRemaining[i] = response[0].available;
   });
   // const size = await getFolderSize.loose(currentPath[i]);
