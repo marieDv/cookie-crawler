@@ -129,7 +129,7 @@ setInterval(() => {
 
 
 const c = new Crawler({
-  maxConnections: 20,
+  maxConnections: 10,
   queueSize: 200,
   retries: 0,
   rateLimit: 0,
