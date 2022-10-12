@@ -51,7 +51,7 @@ function heartbeat() {
   this.pingTimeout = setTimeout(() => {
     console.log("!!! terminated !!!")
     this.terminate();
-  }, 30000 + 1000);
+  }, 10000 + 1000);
 }
 function isJsonString(str) {
   try {
@@ -129,8 +129,8 @@ setInterval(() => {
 
 
 const c = new Crawler({
-  maxConnections: 25,
-  queueSize: 1000,
+  maxConnections: 20,
+  queueSize: 200,
   retries: 0,
   rateLimit: 0,
 
@@ -190,11 +190,11 @@ const c = new Crawler({
         if (countLastProcessedURLs === 20 && client && client.readyState === 1) {
           getSDCardSize(0);
           getSDCardSize(1);
-          // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+          client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
         }
         if (client && client.readyState === 1) {
           let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-          // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
 
@@ -364,7 +364,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
             if (client && client.readyState === 1) {
-              // client.send(toSend);
+              client.send(toSend);
             }
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
@@ -386,7 +386,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
 
               if (client && client.readyState === 1) {
-                // client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
+                client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
               }
               inCurrentDataset = 0;
             }
