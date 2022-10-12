@@ -214,9 +214,9 @@ function getSDCardSize(i) {
 
   let options = {
     file: currentPath[i],
-    prefixMultiplier: 'GB',
+    prefixMultiplier: 'MB',
     isDisplayPrefixMultiplier: true,
-    precision: 2
+    precision: 4
   };
   df(options, function (error, response) {
     if (error) { throw error; }
