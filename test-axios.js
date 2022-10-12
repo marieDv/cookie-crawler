@@ -206,7 +206,7 @@ function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
   let options = {
-    file: currentPath[i],
+    file: '/media/process/NAMES/output/',
     prefixMultiplier: 'GB',
     isDisplayPrefixMultiplier: true,
     precision: 2
