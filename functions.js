@@ -45,8 +45,8 @@ export function saveToSDCard(names, mData) {
   // let pathOSX = "/Volumes/FULL/output/";
   // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
-  //  let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+   let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
 
   let dateObject = new Date();
@@ -176,7 +176,7 @@ export function replaceAllNames(mdata, savedNames, id) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
   }
   safeOneDataset = mdata;
 }

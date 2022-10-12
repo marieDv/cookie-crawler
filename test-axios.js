@@ -30,12 +30,13 @@ var currentDate;
 let currentLanguage = "";
 let latestData = "";
 let inCurrentDataset = 0;
+let linksFound = 0;
 let idForNames = 0;
 let mQueueSize = 0;
 let currentURL = '';
 let sendOnLaunch = true;
 let needReconnect = false;
-clearDataBases([db, dbUrl, dbUrlPrecheck]);
+// clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
 function heartbeat() {
   clearTimeout(this.pingTimeout);
@@ -65,14 +66,16 @@ function connect() {
       heartbeat
     });
     client.onmessage = function (event) {
-      console.log(event.data);
+      // console.log(event.data);
       if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
-        console.log(`READY STATE: ${client.readyState}`);
+        // console.log(`READY STATE: ${client.readyState}`);
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
-          for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
-            if (client && (needReconnect === false)) {
-              client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+          if (totalNumberNames.queued !== undefined) {
+            for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
+              if (client && (needReconnect === false)) {
+                client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+              }
             }
           }
         }
@@ -98,9 +101,9 @@ function connect() {
 connect();
 
 
-async function reconnect() {
+function reconnect() {
   try {
-    await connect()
+    connect()
   } catch (err) {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
@@ -129,9 +132,15 @@ const c = new Crawler({
       const urls = [];
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
         let array = $('a').toArray();
-
+        linksFound = array.length;
         currentURL = res.request.uri.href;
         console.log(`\n... ${res.request.uri.href}\n`);
+
+
+
+      
+
+
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -167,6 +176,12 @@ const c = new Crawler({
 
           }
         }
+        if (client && client.readyState === 1) {
+          let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+        }
+
+
       }
       c.queue(urls);
     }
@@ -265,11 +280,12 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
+
   }
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(=)|(})|(\\;)|(•)|(·)|({)|(\\")|(\\')|(\\„)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(dr)|(Dr)|(ceo)|(Ceo)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -281,14 +297,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         };
         let uppercaseName = text.split(" ");
         if (uppercaseName[1]) {
-          if ((uppercaseName[0].charAt(1) && uppercaseName[1].charAt(1).toUpperCase() === uppercaseName[0].charAt(1)) || (uppercaseName[1].charAt(1) && uppercaseName[1].charAt(1).toUpperCase() === uppercaseName[1].charAt(1))) {
-            if (client) {
-              console.log(uppercaseName[1]);
-              // client.send(JSON.stringify("ALL UPPERCASE D:"));
-              uppercaseName[0] = uppercaseName[0].toLowerCase();
-              uppercaseName[1] = uppercaseName[1].toLowerCase();
-            }
-          }
+          uppercaseName[0] = uppercaseName[0].toLowerCase();
+          uppercaseName[1] = uppercaseName[1].toLowerCase();
 
 
 
@@ -297,18 +307,28 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           let tempNameString = uppercaseName[0].concat(uppercaseName[1])
           currentDate = getCurrentDate();
           obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
+
+
+          // mData.queued.push({ lastProcessedURLs });
+          // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
+
+
           const mUrl = new URL(url);
-          let toSend = JSON.stringify(tempNameString + '............' + currentDate + '............' + mUrl.host);
+          function returnWithZero(obj) {
+            if (obj < 10) {
+              return '0' + obj;
+            } else {
+              return obj;
+            }
+          }
+          let dateObject = new Date();
+          let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+
           if (client && client.readyState === 1) {
-            // console.log(`READY STATE: ${client.readyState}`);
             client.send(toSend);
           }
-          countLastProcessedNames === 20 ? saveLastNames(url) : countLastProcessedNames++;
-          // saveLastNames(url);
-          lastProcessedNames[countLastProcessedNames] = tempNameString + '............' + currentDate + '............' + mUrl.host;
-          saveToSDCard(true, obj.person);
-
-
+          countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
+          lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
           if (data === latestData) {
             tempSaveNames[inCurrentDataset] = text;
@@ -317,7 +337,18 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             replaceAllNames(data, tempSaveNames, 0);
             tempSaveNames = [];
             console.log(`\n\n${getCurrentDate()}`)
-            console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`)
+            console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`);
+
+
+           let totalNumberNames = await getabsoluteNumberNames(db);
+            let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+
+
+         
+
+            if (client && client.readyState === 1) {
+              client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
+            }
             inCurrentDataset = 0;
           }
           latestData = data;
@@ -329,4 +360,23 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
   // console.log("current names number" + inCurrentDataset);
 
+}
+
+async function getabsoluteNumberNames(mdb) {
+  const iterator = mdb.iterator()
+  let counter = 0;
+  while (true) {
+    const entries = await iterator.nextv(100)
+
+    if (entries.length === 0) {
+      break
+    }
+
+    for (const [key, value] of entries) {
+      counter++;
+    }
+  }
+
+  await iterator.close()
+  return counter;
 }
