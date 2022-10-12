@@ -169,6 +169,8 @@ const c = new Crawler({
                   urls.push(url.href);
                 }
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
+
+
                 lastProcessedURLs[countSavedURLs] = url.origin;
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
@@ -185,9 +187,14 @@ const c = new Crawler({
 
           }
         }
+        if (countLastProcessedURLs === 20 && client && client.readyState === 1) {
+          getSDCardSize(0);
+          getSDCardSize(1);
+          // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+        }
         if (client && client.readyState === 1) {
           let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+          // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
 
@@ -313,11 +320,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     };
     dataObj.dataPage.push({ text: data, id: 0 });
     saveToSDCard(false, dataObj);
-    // if (client && client.readyState === 1) {
-    //   getSDCardSize(0);
-    //   getSDCardSize(1);
-    //   client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
-    // }
   }
   for (const a of person) {
     let text = a;
@@ -362,7 +364,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
             if (client && client.readyState === 1) {
-              client.send(toSend);
+              // client.send(toSend);
             }
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
@@ -384,7 +386,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
 
               if (client && client.readyState === 1) {
-                client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
+                // client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
               }
               inCurrentDataset = 0;
             }
