@@ -16,6 +16,7 @@ import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 import { URL } from 'node:url';
 import WebSocket from 'ws';
+import nlp from 'compromise';
 const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
@@ -318,7 +319,15 @@ async function checkNamesDatabase(name) {
 
 }
 async function languageProcessing(doc, data, url, cc, foundLinks) {
-  let person = doc.match('#Person').out('array');
+  let person = doc.match('#Person' ).out('array');
+  console.log(person)
+  console.log("*******");
+  let personNoune = doc.match('#Noun #Person' ).out('array');
+  console.log(personNoune);
+  console.log("*******")
+  console.log(doc.people().normalize().text());
+  
+
   if (person.length === 0) {
     let dataObj = {
       dataPage: []
