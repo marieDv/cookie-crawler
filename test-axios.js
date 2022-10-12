@@ -146,7 +146,7 @@ const c = new Crawler({
         currentURL = res.request.uri.href;
         console.log(`\n... ${res.request.uri.href}\n`);
 
-        if (countLastProcessedURLs === 20 && client && client.readyState === 1) {
+        if (client && client.readyState === 1) {
           getSDCardSize(0);
           getSDCardSize(1);
           client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
