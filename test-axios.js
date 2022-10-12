@@ -3,6 +3,9 @@ import Crawler from 'crawler';
 import { Level } from 'level';
 import { checkBlacklist, clearDataBases, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
 import { open, close, fstat } from 'node:fs';
+
+
+import df from 'node-df';
 import * as fs from 'fs';
 import getFolderSize from 'get-folder-size';
 
@@ -198,24 +201,20 @@ c.queue(savedToQueue);
 
 async function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
-  const size = await getFolderSize.loose(currentPath[i]);
-  cardFilled[i] = (size / 1000 / 1000).toFixed(2);
-  // fs.open(currentPath[i], 'r', (err, fd) => {
-  //   if (err) throw err;
-  //   try {
-  //     fstat(fd, (err, stat) => {
-  //       if (err) {
-  //         closeFd(fd);
-  //         throw err;
-  //       }
-  //       cardFilled[i] = roundToTwo(stat.size / (1024 * 1024));
-  //       closeFd(fd);
-  //     });
-  //   } catch (err) {
-  //     closeFd(fd);
-  //     throw err;
-  //   }
-  // });
+
+
+
+
+  df(function (error, response) {
+    if (error) { throw error; }
+
+    console.log(JSON.stringify(response, null, 2));
+  });
+
+
+  // const size = await getFolderSize.loose(currentPath[i]);
+  // cardFilled[i] = (size / 1000 / 1000).toFixed(2);
+
 }
 
 function closeFd(fd) {
