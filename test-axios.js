@@ -4,6 +4,8 @@ import { Level } from 'level';
 import { checkBlacklist, clearDataBases, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
 import { open, close, fstat } from 'node:fs';
 import * as fs from 'fs';
+import getFolderSize from 'get-folder-size';
+
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
 import esNlp from 'es-compromise';
@@ -194,24 +196,26 @@ const c = new Crawler({
 c.queue(savedToQueue);
 
 
-function getSDCardSize(i) {
+async function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
-  fs.open(currentPath[i], 'r', (err, fd) => {
-    if (err) throw err;
-    try {
-      fstat(fd, (err, stat) => {
-        if (err) {
-          closeFd(fd);
-          throw err;
-        }
-        cardFilled[i] = roundToTwo(stat.size / (1024 * 1024));
-        closeFd(fd);
-      });
-    } catch (err) {
-      closeFd(fd);
-      throw err;
-    }
-  });
+  const size = await getFolderSize.loose(currentPath[i]);
+  cardFilled[i] = (size / 1000 / 1000).toFixed(2);
+  // fs.open(currentPath[i], 'r', (err, fd) => {
+  //   if (err) throw err;
+  //   try {
+  //     fstat(fd, (err, stat) => {
+  //       if (err) {
+  //         closeFd(fd);
+  //         throw err;
+  //       }
+  //       cardFilled[i] = roundToTwo(stat.size / (1024 * 1024));
+  //       closeFd(fd);
+  //     });
+  //   } catch (err) {
+  //     closeFd(fd);
+  //     throw err;
+  //   }
+  // });
 }
 
 function closeFd(fd) {

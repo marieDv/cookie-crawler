@@ -19,6 +19,7 @@
     "es-compromise": "^0.1.2",
     "express": "^4.18.1",
     "fr-compromise": "^0.1.2",
+    "get-folder-size": "^4.0.0",
     "html-to-text": "^8.2.1",
     "it-compromise": "^0.0.6",
     "languagedetect": "^2.0.0",
