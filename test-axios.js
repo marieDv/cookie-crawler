@@ -69,7 +69,7 @@ function connect() {
       if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
         console.log(`READY STATE: ${client.readyState}`);
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
-          let totalNumberNames = JSON.parse(fs.readFileSync("./latest-names.json").toString());
+          let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
           for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
             if (client && (needReconnect === false)) {
               client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
