@@ -21,6 +21,7 @@ let lastProcessedNames = [];
 let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
+let cardFilled = 0;
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
@@ -179,7 +180,9 @@ const c = new Crawler({
         }
         if (client && client.readyState === 1) {
           let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+          getSDCardSize();
+          console.log()
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}%${cardFilled}`));
         }
 
 
@@ -190,6 +193,27 @@ const c = new Crawler({
   }
 });
 c.queue(savedToQueue);
+
+
+function getSDCardSize() {
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  fs.open(currentPath[0], 'r', (err, fd) => {
+    if (err) throw err;
+    try {
+      fstat(fd, (err, stat) => {
+        if (err) {
+          closeFd(fd);
+          throw err;
+        }
+        cardFilled = roundToTwo(stat.size / (1024 * 1024));
+        closeFd(fd);
+      });
+    } catch (err) {
+      closeFd(fd);
+      throw err;
+    }
+  });
+}
 
 
 async function extractData(mdata, href, id, foundLinks) {

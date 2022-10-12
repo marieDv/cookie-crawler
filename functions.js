@@ -41,7 +41,6 @@ export function saveCurrentDataToFile() {
 
 
 export function saveToSDCard(names, mData) {
-
   // let pathOSX = "/Volumes/FULL/output/";
   // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
@@ -72,27 +71,7 @@ export function saveToSDCard(names, mData) {
     }
   }
 
-  /***** */
-  // const file = fs.readFileSync(currentPath);
-  // let json = JSON.parse(file.toString());
-  // json.push(mData);
-  // fs.writeFileSync(currentPath, JSON.stringify(json));
-  // fs.open(currentPath, 'r', (err, fd) => {
-  //   if (err) throw err;
-  //   try {
-  //     fstat(fd, (err, stat) => {
-  //       if (err) {
-  //         closeFd(fd);
-  //         throw err;
-  //       }
-  //       cardFilled = roundToTwo(stat.size / (1024 * 1024));
-  //       closeFd(fd);
-  //     });
-  //   } catch (err) {
-  //     closeFd(fd);
-  //     throw err;
-  //   }
-  // });
+  /***** READ OUT SIZE OF SD CARD ***/
 }
 export function emptyFile(file) {
   let result = {}
