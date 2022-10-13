@@ -376,6 +376,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               let savedName = await getExistingNames(rand(0, (await getabsoluteNumberNames(db))));
               toSend = JSON.stringify(`recycledName: ${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
               client.send(toSend);
+              countTimeSinceLastName = 0;
             } else {
               if (client && client.readyState === WebSocket.OPEN) {
                 console.log(toSend)
