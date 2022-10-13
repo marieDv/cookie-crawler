@@ -33,7 +33,6 @@ let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
-// savedToQueue = ['https://tos885.ç§»å\x8A']
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
@@ -45,14 +44,18 @@ let mQueueSize = 0;
 let currentURL = '';
 let sendOnLaunch = true;
 let needReconnect = false;
-// clearDataBases([db, dbUrl, dbUrlPrecheck]);
+
+
 clearDataBases([db, dbUrl, dbUrlPrecheck]);
 function heartbeat() {
+  console.log("... ping")
   clearTimeout(this.pingTimeout);
+
   this.pingTimeout = setTimeout(() => {
     console.log("!!! terminated !!!")
     this.terminate();
-  }, 10000 + 1000);
+  }, 30000 + 1000);
+
 }
 function isJsonString(str) {
   try {
@@ -85,7 +88,7 @@ async function connect() {
             for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
               if (client && (needReconnect === false)) {
                 // client.send(JSON.stringify("SENDFULLFILE"));
-                // client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+                client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
               }
             }
           }
@@ -124,17 +127,17 @@ setInterval(() => {
 
   if (needReconnect === true) {
     console.log(`... trying to reconnect ...`)
-     reconnect();
+    reconnect();
   }
 
 }, 30000);
 
 
 const c = new Crawler({
-  maxConnections: 10,
-  // queueSize: 200,
+  maxConnections: 30,
+  queueSize: 500,
   retries: 0,
-  rateLimit: 1,
+  rateLimit: 0,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -148,9 +151,9 @@ const c = new Crawler({
         console.log(`\n... ${res.request.uri.href}\n`);
 
         if (client && client.readyState === 1) {
-          getSDCardSize(0);
-          getSDCardSize(1);
-          client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+          // getSDCardSize(0);
+          // getSDCardSize(1);
+          // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
         }
         if (client && client.readyState === 1) {
           let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
@@ -298,7 +301,7 @@ async function searchForNames(url, cc, data, foundLinks) {
         dataPage: []
       };
       dataObj.dataPage.push({ text: data, id: 0 });
-      saveToSDCard(false, dataObj);
+      // saveToSDCard(false, dataObj);
       break;
   }
 }
@@ -319,14 +322,16 @@ async function checkNamesDatabase(name) {
 
 }
 async function languageProcessing(doc, data, url, cc, foundLinks) {
-  let person = doc.match('#FirstName #LastName' ).out('array');
-  console.log(person)
+  let person = doc.match('#FirstName #LastName').out('array');
+
   if (person.length === 0) {
     let dataObj = {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
+  } else {
+    console.log(person)
   }
   for (const a of person) {
     let text = a;
@@ -358,7 +363,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             // mData.queued.push({ lastProcessedURLs });
             // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
 
-            
+
             const mUrl = new URL(url);
             function returnWithZero(obj) {
               if (obj < 10) {
@@ -368,14 +373,14 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               }
             }
             let dateObject = new Date();
-            let toSend = JSON.stringify(`${tempNameString}`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-
+            let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+            console.log(tempNameString)
             if (client && client.readyState === 1 && cc !== undefined) {
               console.log(toSend)
               client.send(toSend);
             }
             console.log(tempNameString)
-            saveToSDCard(true, tempNameString);
+            // saveToSDCard(true, tempNameString);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
@@ -421,7 +426,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         dataPage: []
       };
       dataObj.dataPage.push({ text: data, id: 0 });
-      saveToSDCard(false, dataObj);
+      // saveToSDCard(false, dataObj);
     }
   }
 }
