@@ -74,14 +74,14 @@ async function connect() {
   if (client) {
     client.on('open', function () {
       console.log("CONNECTION IS OPEN")
-      if (client.readyState === 1) {
+      if (client.readyState === WebSocket.OPEN) {
         needReconnect = false;
         heartbeat
       }
     });
     client.onmessage = function (event) {
 
-      if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
+      if (event.data !== undefined && client && client.readyState === WebSocket.OPEN && (isJsonString(event.data) === true)) {
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
           if (totalNumberNames.queued !== undefined) {
@@ -150,14 +150,15 @@ const c = new Crawler({
         currentURL = res.request.uri.href;
         console.log(`\n... ${res.request.uri.href}\n`);
 
-        if (client && client.readyState === 1) {
+        if (client && client.readyState === WebSocket.OPEN) {
           // getSDCardSize(0);
           // getSDCardSize(1);
           // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
         }
 
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-        if (client && client.readyState === 1) {
+      
+        if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
@@ -376,7 +377,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             console.log(tempNameString)
-            if (client && client.readyState === 1 && cc !== undefined) {
+            if (client && client.readyState === WebSocket.OPEN && cc !== undefined) {
               console.log(toSend)
               client.send(toSend);
             }
@@ -401,7 +402,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
 
 
-              if (client && client.readyState === 1) {
+              if (client && client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
               }
               inCurrentDataset = 0;
