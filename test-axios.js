@@ -353,8 +353,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             uppercaseName[0] = uppercaseName[0].toLowerCase();
             uppercaseName[1] = uppercaseName[1].toLowerCase();
 
-
-
             uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
@@ -365,8 +363,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             // mData.queued.push({ lastProcessedURLs });
             // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
 
-
-            const mUrl = new URL(url);
             function returnWithZero(obj) {
               if (obj < 10) {
                 return '0' + obj;
@@ -377,7 +373,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             console.log(tempNameString)
-            if (client && client.readyState === WebSocket.OPEN && cc !== undefined) {
+            if (client && client.readyState === WebSocket.OPEN) {
               console.log(toSend)
               client.send(toSend);
             }
@@ -417,6 +413,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           // saveToSDCard(false, dataObj);
         }
       } else {
+        console.log(`${a} is already in database!`)
         // let dataObj = {
         //   dataPage: []
         // };
