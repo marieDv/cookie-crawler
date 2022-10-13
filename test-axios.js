@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { checkBlacklist, clearDataBases, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
+import { checkBlacklist, clearDataBases, rand, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
 import { open, close, fstat } from 'node:fs';
 
 
@@ -44,9 +44,9 @@ let mQueueSize = 0;
 let currentURL = '';
 let sendOnLaunch = true;
 let needReconnect = false;
+let countTimeSinceLastName = 0;
 
-
-clearDataBases([db, dbUrl, dbUrlPrecheck]);
+clearDataBases([dbUrl, dbUrlPrecheck]);//db
 function heartbeat() {
   console.log("... ping")
   clearTimeout(this.pingTimeout);
@@ -87,7 +87,6 @@ async function connect() {
           if (totalNumberNames.queued !== undefined) {
             for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
               if (client && (needReconnect === false)) {
-                // client.send(JSON.stringify("SENDFULLFILE"));
                 client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
               }
             }
@@ -156,15 +155,16 @@ const c = new Crawler({
           // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
         }
 
+        // console.log(allNames[rand])
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-      
+
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
 
-
-
+        console.log(countTimeSinceLastName)
+        countTimeSinceLastName++;
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -352,7 +352,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           if (uppercaseName[0][2] && uppercaseName[1][2]) {
             uppercaseName[0] = uppercaseName[0].toLowerCase();
             uppercaseName[1] = uppercaseName[1].toLowerCase();
-
             uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
@@ -373,9 +372,17 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             console.log(tempNameString)
-            if (client && client.readyState === WebSocket.OPEN) {
-              console.log(toSend)
+            if (countTimeSinceLastName > 40 && client && client.readyState === WebSocket.OPEN) {
+              let savedName = await getExistingNames(rand(0, (await getabsoluteNumberNames(db))-22));
+              console.log(`!!!!!!!!!!!!!!!!!!!! ${savedName}`)
+              toSend = JSON.stringify(`IAMAFAKENAME:)${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
               client.send(toSend);
+            } else {
+              if (client && client.readyState === WebSocket.OPEN) {
+                console.log(toSend)
+                client.send(toSend);
+                countTimeSinceLastName = 0;
+              }
             }
             console.log(tempNameString)
             // saveToSDCard(true, tempNameString);
@@ -429,6 +436,33 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     }
   }
 }
+async function getExistingNames(random) {
+  const iterator = db.iterator()
+  let counter = 0;
+  let allNames = [];
+  let returnValue;
+  while (true) {
+    const entries = await iterator.nextv(100)
+
+    if (entries.length === 0) {
+      break
+    }
+
+    for (const [key, value] of entries) {
+      allNames[counter] = value;
+      counter++;
+    }
+    returnValue = allNames[random];
+    // console.log(`my random name: ${allNames[rand(0, entries.length)]}`)
+  }
+
+  await iterator.close()
+  return returnValue;
+}
+
+
+
+
 
 async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
