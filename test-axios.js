@@ -155,8 +155,9 @@ const c = new Crawler({
           // getSDCardSize(1);
           // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
         }
+
+        let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
         if (client && client.readyState === 1) {
-          let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
