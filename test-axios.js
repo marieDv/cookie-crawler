@@ -373,8 +373,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             console.log(tempNameString)
             if (countTimeSinceLastName > 40 && client && client.readyState === WebSocket.OPEN) {
-              let savedName = await getExistingNames(rand(0, (await getabsoluteNumberNames(db))-22));
-              console.log(`!!!!!!!!!!!!!!!!!!!! ${savedName}`)
+              let savedName = await getExistingNames(rand(0, (await getabsoluteNumberNames(db))));
               toSend = JSON.stringify(`recycledName: ${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
               client.send(toSend);
             } else {
