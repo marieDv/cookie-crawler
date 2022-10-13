@@ -1,8 +1,14 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
+import { checkBlacklist, clearDataBases, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
+import { open, close, fstat } from 'node:fs';
+
+
+import df from 'node-df';
 import * as fs from 'fs';
+import getFolderSize from 'get-folder-size';
+
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
 import esNlp from 'es-compromise';
@@ -10,6 +16,7 @@ import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 import { URL } from 'node:url';
 import WebSocket from 'ws';
+import nlp from 'compromise';
 const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
@@ -21,28 +28,34 @@ let lastProcessedNames = [];
 let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
+let cardFilled = [0, 0];
+let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
-// savedToQueue = ['https://tos885.ç§»å\x8A']
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
 let latestData = "";
 let inCurrentDataset = 0;
+let linksFound = 0;
 let idForNames = 0;
 let mQueueSize = 0;
 let currentURL = '';
 let sendOnLaunch = true;
 let needReconnect = false;
-clearDataBases([db, dbUrl, dbUrlPrecheck]);
 
+
+clearDataBases([db, dbUrl, dbUrlPrecheck]);
 function heartbeat() {
+  console.log("... ping")
   clearTimeout(this.pingTimeout);
+
   this.pingTimeout = setTimeout(() => {
     console.log("!!! terminated !!!")
     this.terminate();
   }, 30000 + 1000);
+
 }
 function isJsonString(str) {
   try {
@@ -54,25 +67,27 @@ function isJsonString(str) {
 }
 
 let client;
-function connect() {
+async function connect() {
   // client = new WebSocket('ws://localhost:9898/');
   client = new WebSocket('wss://ait-residency.herokuapp.com/');
   console.log(`...... connect`);
   if (client) {
     client.on('open', function () {
       console.log("CONNECTION IS OPEN")
-      needReconnect = false;
-      heartbeat
+      if (client.readyState === 1) {
+        needReconnect = false;
+        heartbeat
+      }
     });
     client.onmessage = function (event) {
-      // console.log(event.data);
+
       if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
-        // console.log(`READY STATE: ${client.readyState}`);
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
           if (totalNumberNames.queued !== undefined) {
             for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
               if (client && (needReconnect === false)) {
+                // client.send(JSON.stringify("SENDFULLFILE"));
                 client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
               }
             }
@@ -100,9 +115,9 @@ function connect() {
 connect();
 
 
-function reconnect() {
+async function reconnect() {
   try {
-    connect()
+    await connect()
   } catch (err) {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
@@ -119,10 +134,10 @@ setInterval(() => {
 
 
 const c = new Crawler({
-  maxConnections: 15,
-  queueSize: 100,
+  maxConnections: 30,
+  queueSize: 500,
   retries: 0,
-  rateLimit: 10,
+  rateLimit: 0,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -131,9 +146,23 @@ const c = new Crawler({
       const urls = [];
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
         let array = $('a').toArray();
-
+        linksFound = array.length;
         currentURL = res.request.uri.href;
         console.log(`\n... ${res.request.uri.href}\n`);
+
+        if (client && client.readyState === 1) {
+          // getSDCardSize(0);
+          // getSDCardSize(1);
+          // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+        }
+        if (client && client.readyState === 1) {
+          let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+        }
+
+
+
+
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -153,6 +182,8 @@ const c = new Crawler({
                   urls.push(url.href);
                 }
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
+
+
                 lastProcessedURLs[countSavedURLs] = url.origin;
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
@@ -169,6 +200,9 @@ const c = new Crawler({
 
           }
         }
+
+
+
       }
       c.queue(urls);
     }
@@ -177,6 +211,29 @@ const c = new Crawler({
 });
 c.queue(savedToQueue);
 
+
+function getSDCardSize(i) {
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+
+  let options = {
+    file: currentPath[i],
+    prefixMultiplier: 'MB',
+    isDisplayPrefixMultiplier: true,
+    precision: 4
+  };
+  df(options, function (error, response) {
+    if (error) { throw error; }
+    cardFilled[i] = response[0].used;
+    cardRemaining[i] = response[0].available;
+  });
+}
+
+function closeFd(fd) {
+  close(fd, (err) => {
+    if (err) throw err;
+  });
+}
 
 async function extractData(mdata, href, id, foundLinks) {
   let countryCode = href.host.split('.').splice(-2);
@@ -222,7 +279,6 @@ function retrieveURLs() {
 }
 
 async function searchForNames(url, cc, data, foundLinks) {
-
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
   switch (currentLanguage) {
     case 'german':
@@ -241,6 +297,11 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
+      let dataObj = {
+        dataPage: []
+      };
+      dataObj.dataPage.push({ text: data, id: 0 });
+      // saveToSDCard(false, dataObj);
       break;
   }
 }
@@ -261,17 +322,20 @@ async function checkNamesDatabase(name) {
 
 }
 async function languageProcessing(doc, data, url, cc, foundLinks) {
-  let person = doc.match('#Person #Noun').out('array');
+  let person = doc.match('#FirstName #LastName').out('array');
+
   if (person.length === 0) {
     let dataObj = {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
     // saveToSDCard(false, dataObj);
+  } else {
+    console.log(person)
   }
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(dr)|(Dr)|(ceo)|(Ceo)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -283,51 +347,105 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         };
         let uppercaseName = text.split(" ");
         if (uppercaseName[1]) {
-          uppercaseName[0] = uppercaseName[0].toLowerCase();
-          uppercaseName[1] = uppercaseName[1].toLowerCase();
+          if (uppercaseName[0][2] && uppercaseName[1][2]) {
+            uppercaseName[0] = uppercaseName[0].toLowerCase();
+            uppercaseName[1] = uppercaseName[1].toLowerCase();
 
 
 
-          uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
-          uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
-          let tempNameString = uppercaseName[0].concat(uppercaseName[1])
-          currentDate = getCurrentDate();
-          obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
-          const mUrl = new URL(url);
-          // console.log(`COUNTRYCODE: ${cc}`);
-          function returnWithZero(obj) {
-            if (obj < 10) {
-              return '0' + obj;
-            } else {
-              return obj;
+            uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
+            uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
+            let tempNameString = uppercaseName[0].concat(uppercaseName[1])
+            currentDate = getCurrentDate();
+            obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
+
+
+            // mData.queued.push({ lastProcessedURLs });
+            // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
+
+
+            const mUrl = new URL(url);
+            function returnWithZero(obj) {
+              if (obj < 10) {
+                return '0' + obj;
+              } else {
+                return obj;
+              }
             }
-          }
-          let dateObject = new Date();
-          let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+            let dateObject = new Date();
+            let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+            console.log(tempNameString)
+            if (client && client.readyState === 1 && cc !== undefined) {
+              console.log(toSend)
+              client.send(toSend);
+            }
+            console.log(tempNameString)
+            // saveToSDCard(true, tempNameString);
+            countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
+            lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
-          if (client && client.readyState === 1) {
-            client.send(toSend);
-          }
-          countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
-          lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+            if (data === latestData) {
+              tempSaveNames[inCurrentDataset] = text;
+              inCurrentDataset++;
+            } else {
+              replaceAllNames(data, tempSaveNames, 0);
+              tempSaveNames = [];
+              console.log(`\n\n${getCurrentDate()}`)
+              console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`);
 
-          if (data === latestData) {
-            tempSaveNames[inCurrentDataset] = text;
-            inCurrentDataset++;
-          } else {
-            replaceAllNames(data, tempSaveNames, 0);
-            tempSaveNames = [];
-            console.log(`\n\n${getCurrentDate()}`)
-            console.log(`${url}\n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()}MB`)
-            inCurrentDataset = 0;
+
+              let totalNumberNames = await getabsoluteNumberNames(db);
+              let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+
+
+
+
+              if (client && client.readyState === 1) {
+                client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
+              }
+              inCurrentDataset = 0;
+            }
+            latestData = data;
           }
-          latestData = data;
+        } else {
+          // let dataObj = {
+          //   dataPage: []
+          // };
+          // dataObj.dataPage.push({ text: data, id: 0 });
+          // saveToSDCard(false, dataObj);
         }
-
+      } else {
+        // let dataObj = {
+        //   dataPage: []
+        // };
+        // dataObj.dataPage.push({ text: data, id: 0 });
+        // saveToSDCard(false, dataObj);
       }
+    } else {
+      let dataObj = {
+        dataPage: []
+      };
+      dataObj.dataPage.push({ text: data, id: 0 });
+      // saveToSDCard(false, dataObj);
+    }
+  }
+}
+
+async function getabsoluteNumberNames(mdb) {
+  const iterator = mdb.iterator()
+  let counter = 0;
+  while (true) {
+    const entries = await iterator.nextv(100)
+
+    if (entries.length === 0) {
+      break
+    }
+
+    for (const [key, value] of entries) {
+      counter++;
     }
   }
 
-  // console.log("current names number" + inCurrentDataset);
-
+  await iterator.close()
+  return counter;
 }

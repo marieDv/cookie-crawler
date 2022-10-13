@@ -41,12 +41,11 @@ export function saveCurrentDataToFile() {
 
 
 export function saveToSDCard(names, mData) {
-
   // let pathOSX = "/Volumes/FULL/output/";
   // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
 
-   let currentPath = ['./names-output/output/', './full-output/output/'];
-  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
 
   let dateObject = new Date();
@@ -64,7 +63,8 @@ export function saveToSDCard(names, mData) {
     }
   } else {
     fullNamesObj.name.push({ mData });
-    if (sizeof(fullNamesObj) > 8500) {
+    console.log(sizeof(fullNamesObj))
+    if (sizeof(fullNamesObj) > 500) {
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
       fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
@@ -72,27 +72,7 @@ export function saveToSDCard(names, mData) {
     }
   }
 
-  /***** */
-  // const file = fs.readFileSync(currentPath);
-  // let json = JSON.parse(file.toString());
-  // json.push(mData);
-  // fs.writeFileSync(currentPath, JSON.stringify(json));
-  // fs.open(currentPath, 'r', (err, fd) => {
-  //   if (err) throw err;
-  //   try {
-  //     fstat(fd, (err, stat) => {
-  //       if (err) {
-  //         closeFd(fd);
-  //         throw err;
-  //       }
-  //       cardFilled = roundToTwo(stat.size / (1024 * 1024));
-  //       closeFd(fd);
-  //     });
-  //   } catch (err) {
-  //     closeFd(fd);
-  //     throw err;
-  //   }
-  // });
+  /***** READ OUT SIZE OF SD CARD ***/
 }
 export function emptyFile(file) {
   let result = {}
@@ -237,6 +217,6 @@ export function clearDataBases(databases) {
   }
 }
 
-function roundToTwo(num) {
+export function roundToTwo(num) {
   return +(Math.round(num + "e+5") + "e-5");
 }
