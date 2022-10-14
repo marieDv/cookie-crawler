@@ -116,7 +116,7 @@ export function deleteFileContent(mfile) {
 
 
 
-export function replaceAllNames(mdata, savedNames, id) {
+export function replaceAllNames(mdata, savedNames, save) {
 
   let replacedNames = '';
   if (safeOneDataset) {
@@ -130,10 +130,12 @@ export function replaceAllNames(mdata, savedNames, id) {
     let dataObj = {
       dataPage: []
     };
-    dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
+    dataObj.dataPage.push({ text: dataStringWithoutNames });
     saveToSDCard(false, dataObj);
   }
-  safeOneDataset = mdata;
+  if (save !== 2) {
+    safeOneDataset = mdata;
+  }
 }
 
 export function readJsonFile() {

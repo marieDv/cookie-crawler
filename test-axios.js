@@ -43,7 +43,7 @@ let currentURL = '';
 let needReconnect = false;
 let startTime = new Date();
 let client;
-
+let stopSendingData = 3;
 
 async function sendEmail(sdCardToChange) {
   let transporter = nodemailer.createTransport({
@@ -239,7 +239,9 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
-      saveFullFile(data);
+      if (stopSendingData !== 1) {
+        saveFullFile(data);
+      }
       break;
   }
 }
@@ -291,7 +293,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               getSDCardSize(1);
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
-            saveToSDCard(true, obj);
+            if (stopSendingData !== 0) {
+              saveToSDCard(true, obj);
+            }
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
@@ -299,7 +303,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               tempSaveNames[inCurrentDataset] = text;
               inCurrentDataset++;
             } else {
-              replaceAllNames(data, tempSaveNames, 0);
+              replaceAllNames(data, tempSaveNames, stopSendingData);
               tempSaveNames = [];
               console.log(`\n\n${getCurrentDate()} `)
               console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
@@ -316,10 +320,14 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         }
       } else {
 
-        saveFullFile(data);
+        if (stopSendingData !== 1) {
+          saveFullFile(data);
+        }
       }
     } else {
-      saveFullFile(data);
+      if (stopSendingData !== 1) {
+        saveFullFile(data);
+      }
     }
   }
   console.log(passedTime);
@@ -353,9 +361,12 @@ function getSDCardSize(i) {
   if (cardRemaining[i]) {
     let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
     console.log(numericValue[0] / 1);
-    if ((numericValue[0] / 1) < 10.0) {
+    if ((numericValue[0] / 1) < 50.0) {
       console.log("!SD CARD ABOUT TO BE FULL!")
       i === 0 ? sendEmail("NAME").catch(console.error) : sendEmail("FULL").catch(console.error);
+      stopSendingData = i;
+    } else {
+      stopSendingData = 3;
     }
   }
 
