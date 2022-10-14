@@ -50,6 +50,7 @@ let securityCheckIsCardFull = true;
 
 
 async function sendEmail() {
+  emailSend = true;
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
     port: 587,
@@ -67,7 +68,7 @@ async function sendEmail() {
     text: `${sdCardToChange} card should be changed`, // plain text body
     html: `${sdCardToChange} card should be changed`, // html body
   });
-  emailSend = true;
+
   console.log("Message sent: %s", info.messageId);
   console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
 }
@@ -309,7 +310,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               tempSaveNames[inCurrentDataset] = text;
               inCurrentDataset++;
             } else {
-              if (securityCheckIsCardFull === false) {
+              if (securityCheckIsCardFull === false && stopSendingData !== 1) {
                 replaceAllNames(data, tempSaveNames, stopSendingData);
               }
               tempSaveNames = [];

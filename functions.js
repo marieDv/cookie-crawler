@@ -133,7 +133,7 @@ export function replaceAllNames(mdata, savedNames, save) {
     dataObj.dataPage.push({ text: dataStringWithoutNames });
     saveToSDCard(false, dataObj);
   }
-  if (save !== 2) {
+  if (save !== 1) {
     safeOneDataset = mdata;
   }
 }
