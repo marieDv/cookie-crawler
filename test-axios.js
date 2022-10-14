@@ -28,7 +28,7 @@ let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
 let cardFilled = [0, 0];
-let cardResendEmailing = [0, 0];
+let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
@@ -289,7 +289,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             if (client && client.readyState === WebSocket.OPEN) {
               getSDCardSize(0);
               getSDCardSize(1);
-              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardResendEmailing[0]}%${cardResendEmailing[1]}`));
+              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
             saveToSDCard(true, obj);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
@@ -347,10 +347,10 @@ function getSDCardSize(i) {
   df(options, function (error, response) {
     if (error) { throw error; }
     cardFilled[i] = response[0].used;
-    cardResendEmailing[i] = response[0].available;
+    cardRemaining[i] = response[0].available;
   });
-  console.log(`CARD AVAILABLE ${i} ${cardResendEmailing[i]}`)
-  let numericValue = cardResendEmailing[i].includes('MB') ? cardResendEmailing[i].split('MB') : '';
+  console.log(`CARD AVAILABLE ${i} ${cardRemaining[i]}`)
+  let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
   console.log(numericValue[0] / 1);
   if ((numericValue[0] / 1) < 10.0) {
     console.log("!SD CARD ABOUT TO BE FULL!")
