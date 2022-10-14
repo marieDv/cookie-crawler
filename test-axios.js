@@ -46,6 +46,7 @@ let client;
 let stopSendingData = 3;
 let sdCardToChange = "";
 let emailSend = false;
+let securityCheckIsCardFull = true;
 
 
 async function sendEmail() {
@@ -244,7 +245,7 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
-      if (stopSendingData !== 1) {
+      if (stopSendingData !== 1 && securityCheckIsCardFull === false) {
         saveFullFile(data);
       }
       break;
@@ -255,7 +256,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#FirstName #LastName').out('array');
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-  if (person.length === 0 && stopSendingData !== 1) {
+  if (person.length === 0 && stopSendingData !== 1 && securityCheckIsCardFull === false) {
     saveFullFile(data);
   }
 
@@ -298,7 +299,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               await getSDCardSize(1);
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
-            if (stopSendingData !== 0) {
+            if (stopSendingData !== 0 && securityCheckIsCardFull === false) {
               saveToSDCard(true, obj);
             }
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
@@ -308,7 +309,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               tempSaveNames[inCurrentDataset] = text;
               inCurrentDataset++;
             } else {
-              replaceAllNames(data, tempSaveNames, stopSendingData);
+              if (securityCheckIsCardFull === false) {
+                replaceAllNames(data, tempSaveNames, stopSendingData);
+              }
               tempSaveNames = [];
               // console.log(`\n\n${getCurrentDate()} `)
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
@@ -375,8 +378,10 @@ async function getSDCardSize(i) {
         sdCardToChange = "FULL";
         await sendEmail().catch(console.error)
       }
+      securityCheckIsCardFull = false;
       stopSendingData = i;
     } else {
+      securityCheckIsCardFull = false;
       stopSendingData = 3;
       emailSend = false;
     }
