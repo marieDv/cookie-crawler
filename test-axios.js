@@ -147,6 +147,8 @@ connect();
 //*************************************************** */
 
 // clearDataBases([dbUrl, dbUrlPrecheck]);//db
+getSDCardSize(0);
+getSDCardSize(1);
 
 const c = new Crawler({
   maxConnections: 30,
