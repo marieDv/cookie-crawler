@@ -44,8 +44,8 @@ let needReconnect = false;
 let startTime = new Date();
 let client;
 let stopSendingData = 3;
-
-async function sendEmail(sdCardToChange) {
+let sdCardToChange = "";
+async function sendEmail() {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
     port: 587,
@@ -58,7 +58,7 @@ async function sendEmail(sdCardToChange) {
   // send mail with defined transport object
   let info = await transporter.sendMail({
     from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
-    to: "dvorzak.marie@gmx.at, hello@process.studio", // list of receivers
+    to: "dvorzak.marie@gmx.at", // list of receivers
     subject: "TIME TO CHANGE SD", // Subject line
     text: `${sdCardToChange} card should be changed`, // plain text body
     html: `${sdCardToChange} card should be changed`, // html body
@@ -363,10 +363,12 @@ function getSDCardSize(i) {
     console.log(numericValue[0] / 1);
     if ((numericValue[0] / 1) < 50.0) {
       console.log("!SD CARD ABOUT TO BE FULL!")
-      if(i === 0){
-        sendEmail("NAME").catch(console.error);
-      }else {
-        sendEmail("FULL").catch(console.error)
+      if (i === 0) {
+        sdCardToChange = "NAME";
+        sendEmail().catch(console.error);
+      } else {
+        sdCardToChange = "FULL";
+        sendEmail().catch(console.error)
       }
       stopSendingData = i;
     } else {
