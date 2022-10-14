@@ -5,6 +5,9 @@ import { clearDataBases, rand, isJsonString, check_mem, retrieveNames, getExisti
 import { close } from 'node:fs';
 import df from 'node-df';
 import * as fs from 'fs';
+import nodemailer from 'nodemailer';
+
+
 
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
@@ -25,7 +28,7 @@ let countLastProcessedURLs = 0;
 let countLastProcessedNames = 0;
 let globalID = 0;
 let cardFilled = [0, 0];
-let cardRemaining = [0, 0];
+let cardResendEmailing = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
@@ -40,6 +43,30 @@ let currentURL = '';
 let needReconnect = false;
 let startTime = new Date();
 let client;
+
+
+async function sendEmail(sdCardToChange) {
+  let transporter = nodemailer.createTransport({
+    host: "mail.gmx.net",
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: "ait-crawler@gmx.at", // generated ethereal user
+      pass: "9izAYkkqLjWYtQJ", // generated ethereal password
+    },
+  });
+  // send mail with defined transport object
+  let info = await transporter.sendMail({
+    from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
+    to: "dvorzak.marie@gmx.at, hello@process.studio", // list of receivers
+    subject: "TIME TO CHANGE SD", // Subject line
+    text: `${sdCardToChange} card should be changed`, // plain text body
+    html: `${sdCardToChange} card should be changed`, // html body
+  });
+
+  console.log("Message sent: %s", info.messageId);
+  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+}
 
 //*************************************************** */
 // START WEBSOCKET
@@ -262,7 +289,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             if (client && client.readyState === WebSocket.OPEN) {
               getSDCardSize(0);
               getSDCardSize(1);
-              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardResendEmailing[0]}%${cardResendEmailing[1]}`));
             }
             saveToSDCard(true, obj);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
@@ -320,8 +347,17 @@ function getSDCardSize(i) {
   df(options, function (error, response) {
     if (error) { throw error; }
     cardFilled[i] = response[0].used;
-    cardRemaining[i] = response[0].available;
+    cardResendEmailing[i] = response[0].available;
   });
+  console.log(`CARD AVAILABLE ${i} ${cardResendEmailing[i]}`)
+  let numericValue = cardResendEmailing[i].includes('MB') ? cardResendEmailing[i].split('MB') : '';
+  console.log(numericValue[0] / 1);
+  if ((numericValue[0] / 1) < 10.0) {
+    console.log("!SD CARD ABOUT TO BE FULL!")
+    i === 0 ? sendEmail("NAME").catch(console.error) : sendEmail("FULL").catch(console.error);
+  }
+
+
 }
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
