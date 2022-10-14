@@ -41,7 +41,13 @@ export function saveCurrentDataToFile() {
 export function rand(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
-
+export function returnWithZero(obj) {
+  if (obj < 10) {
+    return '0' + obj;
+  } else {
+    return obj;
+  }
+}
 export function saveToSDCard(names, mData) {
   // let pathOSX = "/Volumes/FULL/output/";
   // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
