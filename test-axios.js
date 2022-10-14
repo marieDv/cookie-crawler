@@ -253,7 +253,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (person.length === 0) {
     saveFullFile(data);
   }
-  console.log(person)
+
   for (const a of person) {
 
     let text = a;
@@ -283,7 +283,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-            console.log(toSend)
+
             if (client && client.readyState === WebSocket.OPEN && passedTime < 59) {
               client.send(toSend);
               startTime = new Date();
@@ -305,8 +305,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             } else {
               replaceAllNames(data, tempSaveNames, stopSendingData);
               tempSaveNames = [];
-              console.log(`\n\n${getCurrentDate()} `)
-              console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
+              // console.log(`\n\n${getCurrentDate()} `)
+              // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
               let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
               if (client && client.readyState === WebSocket.OPEN) {
@@ -363,7 +363,11 @@ function getSDCardSize(i) {
     console.log(numericValue[0] / 1);
     if ((numericValue[0] / 1) < 50.0) {
       console.log("!SD CARD ABOUT TO BE FULL!")
-      i === 0 ? sendEmail("NAME").catch(console.error) : sendEmail("FULL").catch(console.error);
+      if(i === 0){
+        sendEmail("NAME").catch(console.error);
+      }else {
+        sendEmail("FULL").catch(console.error)
+      }
       stopSendingData = i;
     } else {
       stopSendingData = 3;
