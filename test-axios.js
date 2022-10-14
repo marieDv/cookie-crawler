@@ -147,8 +147,8 @@ connect();
 //*************************************************** */
 
 // clearDataBases([dbUrl, dbUrlPrecheck]);//db
-getSDCardSize(0);
-getSDCardSize(1);
+await getSDCardSize(0);
+await getSDCardSize(1);
 
 const c = new Crawler({
   maxConnections: 30,
@@ -255,7 +255,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#FirstName #LastName').out('array');
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-  if (person.length === 0) {
+  if (person.length === 0 && stopSendingData !== 1) {
     saveFullFile(data);
   }
 
@@ -294,8 +294,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               startTime = new Date();
             }
             if (client && client.readyState === WebSocket.OPEN) {
-              getSDCardSize(0);
-              getSDCardSize(1);
+              await getSDCardSize(0);
+              await getSDCardSize(1);
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
             if (stopSendingData !== 0) {
@@ -348,7 +348,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 //*************************************************** */
 // HELPER FUNCTIONS
 //*************************************************** */
-function getSDCardSize(i) {
+async function getSDCardSize(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let options = {
@@ -370,10 +370,10 @@ function getSDCardSize(i) {
       console.log("!SD CARD ABOUT TO BE FULL!")
       if (i === 0) {
         sdCardToChange = "NAME";
-        sendEmail().catch(console.error);
+        await sendEmail().catch(console.error);
       } else {
         sdCardToChange = "FULL";
-        sendEmail().catch(console.error)
+        await sendEmail().catch(console.error)
       }
       stopSendingData = i;
     } else {
