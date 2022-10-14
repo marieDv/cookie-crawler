@@ -23,17 +23,12 @@ let numberSDcards = 1;
 let totalURLs = 0;
 
 export function saveCurrentDataToFile() {
-
-  var totalNumberNames = JSON.parse(fs.readFileSync("names.json").toString());
-  var totalNumberURLs = JSON.parse(fs.readFileSync("fullOutputURLs.json").toString());
-
-
   let data = {
     keydata: []
   };
 
   numberSDcards = 1;
-  totalURLs = Object.keys(totalNumberURLs).length;
+  // let totalNumberNames = getabsoluteNumberNames;
   data.keydata.push({ totalNames: Object.keys(totalNumberNames).length, totalURLs: Object.keys(totalNumberURLs).length, numberSDcards: 1, });
   fs.writeFileSync('./globalVariables.json', JSON.stringify(data));
   return [Object.keys(totalNumberNames).length, totalURLs];
@@ -49,16 +44,10 @@ export function returnWithZero(obj) {
   }
 }
 export function saveToSDCard(names, mData) {
-  // let pathOSX = "/Volumes/FULL/output/";
-  // let localPath = "/Users/marie/Documents/Work/PROCESS/AIT-Residency"
-
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
-
-
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
-
   if (names === false) {
     fullDataObj.page.push({ text: mData });
     // console.log(`size full data object: ${sizeof(fullDataObj)}`)
@@ -82,18 +71,6 @@ export function saveToSDCard(names, mData) {
 
   /***** READ OUT SIZE OF SD CARD ***/
 }
-export function emptyFile(file) {
-  let result = {}
-  // fs.writeFile(file, []);
-  // writeToJsonFile(dataObj, 'outputNoNames.json');
-
-
-  let mfile = fs.readFileSync(file);
-  var json = [];
-  fs.writeFileSync(mfile, JSON.stringify(json));
-
-}
-
 
 
 function closeFd(fd) {
@@ -108,16 +85,6 @@ export function detectDataLanguage(data) {
     lastValidLanguage = currentLanguage;
   }
   return currentLanguage !== '' ? currentLanguage : lastValidLanguage;
-}
-
-export function checkBlacklist(mblacklist, text) {
-  let checkBlacklist = false;
-  for (let i = 0; i < mblacklist.length; i++) {
-    if (text.includes(mblacklist[i])) {
-      checkBlacklist = true;
-    }
-  }
-  return checkBlacklist;
 }
 
 export function getCurrentDate() {
@@ -169,13 +136,6 @@ export function replaceAllNames(mdata, savedNames, id) {
   safeOneDataset = mdata;
 }
 
-export function writeToJsonFile(mData, mfile) {
-  const file = fs.readFileSync(mfile);
-  var json = JSON.parse(file.toString());
-  json.push(mData);
-  fs.writeFileSync(mfile, JSON.stringify(json, null, 2));
-}
-
 export function readJsonFile() {
   const file = fs.readFileSync('names.json');
   var json = JSON.parse(file.toString());
@@ -183,6 +143,13 @@ export function readJsonFile() {
 }
 
 
+export function saveFullFile(data) {
+  let dataObj = {
+    dataPage: []
+  };
+  dataObj.dataPage.push({ text: data, id: 0 });
+  saveToSDCard(false, dataObj);
+}
 
 
 export function writeLatestToTerminal(id, urls) {
@@ -227,4 +194,54 @@ export function clearDataBases(databases) {
 
 export function roundToTwo(num) {
   return +(Math.round(num + "e+5") + "e-5");
+}
+
+
+export async function getExistingNames(db, random) {
+  const iterator = db.iterator()
+  let counter = 0;
+  let allNames = [];
+  let returnValue;
+  while (true) {
+    const entries = await iterator.nextv(100)
+
+    if (entries.length === 0) {
+      break
+    }
+
+    for (const [key, value] of entries) {
+      allNames[counter] = value;
+      counter++;
+    }
+    returnValue = allNames[random];
+  }
+
+  await iterator.close()
+  return returnValue;
+}
+
+
+
+
+
+
+
+export function check_mem() {
+  const mem = process.memoryUsage();
+  return (mem.heapUsed / 1024 / 1024).toFixed(2);
+}
+
+export function retrieveNames() {
+  let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
+  return totalNumberNames.queued[0].lastProcessedNames;
+}
+
+
+export function isJsonString(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
 }

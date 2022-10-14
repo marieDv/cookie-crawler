@@ -1,13 +1,10 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { checkBlacklist, clearDataBases, rand, detectDataLanguage, returnWithZero, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
-import { open, close, fstat } from 'node:fs';
-
-
+import { clearDataBases, rand, isJsonString, check_mem, retrieveNames, getExistingNames, saveFullFile, detectDataLanguage, returnWithZero, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal } from './functions.js';
+import { close } from 'node:fs';
 import df from 'node-df';
 import * as fs from 'fs';
-import getFolderSize from 'get-folder-size';
 
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
@@ -16,7 +13,6 @@ import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
 import { URL } from 'node:url';
 import WebSocket from 'ws';
-import nlp from 'compromise';
 const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
 
 const db = new Level('namesLevel', { valueEncoding: 'json' })
@@ -31,7 +27,7 @@ let globalID = 0;
 let cardFilled = [0, 0];
 let cardRemaining = [0, 0];
 let countSavedURLs = 0;
-let savedToQueue = retrieveURLs();// = retrieveURLs();
+let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
 let tempSaveNames = [];
 var currentDate;
@@ -39,34 +35,24 @@ let currentLanguage = "";
 let latestData = "";
 let inCurrentDataset = 0;
 let linksFound = 0;
-let idForNames = 0;
 let mQueueSize = 0;
 let currentURL = '';
-let sendOnLaunch = true;
 let needReconnect = false;
-let startTime;
+let startTime = new Date();
+let client;
 
-// clearDataBases([dbUrl, dbUrlPrecheck]);//db
-
+//*************************************************** */
+// START WEBSOCKET
+//*************************************************** */
 function heartbeat() {
   clearTimeout(this.pingTimeout);
-
   this.pingTimeout = setTimeout(() => {
     console.log("!!! terminated !!!")
     this.terminate();
   }, 30000 + 1000);
 
 }
-function isJsonString(str) {
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    return false;
-  }
-  return true;
-}
 
-let client;
 async function connect() {
   // client = new WebSocket('ws://localhost:9898/');
   client = new WebSocket('wss://ait-residency.herokuapp.com/');
@@ -105,14 +91,9 @@ async function connect() {
       console.log("CONNECTION WAS CLOSED")
       clearTimeout(this.pingTimeout);
       needReconnect = true;
-      // setTimeout(connect, 30000 + 1000);
-
-
     });
   }
 }
-connect();
-
 
 async function reconnect() {
   try {
@@ -121,7 +102,6 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-
 setInterval(() => {
 
   if (needReconnect === true) {
@@ -130,7 +110,13 @@ setInterval(() => {
   }
 
 }, 30000);
-startTime = new Date();
+connect();
+
+//*************************************************** */
+// START CRAWLER
+//*************************************************** */
+
+// clearDataBases([dbUrl, dbUrlPrecheck]);//db
 
 const c = new Crawler({
   maxConnections: 30,
@@ -171,8 +157,6 @@ const c = new Crawler({
                   urls.push(url.href);
                 }
                 countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
-
-
                 lastProcessedURLs[countSavedURLs] = url.origin;
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
@@ -189,9 +173,6 @@ const c = new Crawler({
 
           }
         }
-
-
-
       }
       c.queue(urls);
     }
@@ -200,29 +181,9 @@ const c = new Crawler({
 });
 c.queue(savedToQueue);
 
-
-function getSDCardSize(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
-
-  let options = {
-    file: currentPath[i],
-    prefixMultiplier: 'MB',
-    isDisplayPrefixMultiplier: true,
-    precision: 4
-  };
-  df(options, function (error, response) {
-    if (error) { throw error; }
-    cardFilled[i] = response[0].used;
-    cardRemaining[i] = response[0].available;
-  });
-}
-
-function closeFd(fd) {
-  close(fd, (err) => {
-    if (err) throw err;
-  });
-}
+//*************************************************** */
+// NLP STUFF & DATA EXTRACTION
+//*************************************************** */
 
 async function extractData(mdata, href, id, foundLinks) {
   let countryCode = href.host.split('.').splice(-2);
@@ -230,43 +191,8 @@ async function extractData(mdata, href, id, foundLinks) {
     await searchForNames(href.href, countryCode[1], mdata, foundLinks);
   }
 }
-
-function saveLastSession(handledNumber) {
-  let mData = {
-    queued: [],
-    lastHandled: handledNumber
-  };
-
-  mData.queued.push({ lastProcessedURLs });
-  fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
-  countLastProcessedURLs = 0
-}
-function saveLastNames(url) {
-  let mData = {
-    queued: []
-  };
-  mData.queued.push({ lastProcessedNames });
-  fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
-  countLastProcessedNames = 0
-}
-
-
-
-function retrieveNames() {
-  let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
-  return totalNumberNames.queued[0].lastProcessedNames;
-}
-
-
-
-
-
-function retrieveURLs() {
-  let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
-  globalID = totalNumberURLs.lastHandled;
-  return totalNumberURLs.queued[0].lastProcessedURLs;
-}
-
+/** CHECK LANGUAGE AND REDIRECT DATA TO LANGUAGE PROCESSING WITH FITTING NLP */
+/** supports: german, english, french, italian and spanish */
 async function searchForNames(url, cc, data, foundLinks) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
   switch (currentLanguage) {
@@ -290,45 +216,24 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
   }
 }
-function check_mem() {
-  const mem = process.memoryUsage();
-  return (mem.heapUsed / 1024 / 1024).toFixed(2);
-  // console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
-}
-
-async function checkNamesDatabase(name) {
-  try {
-    let value = await db.get(name);
-    return true;
-  } catch (err) {
-    await db.put(name, name);
-    return false;
-  }
-
-}
+/** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#FirstName #LastName').out('array');
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-
-
   if (person.length === 0) {
     saveFullFile(data);
-  } else {
-    console.log(person)
   }
-
-
-
-
+  console.log(person)
   for (const a of person) {
+
     let text = a;
     const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
       }
-      const checkedDataBase = await checkNamesDatabase(text);
+      const checkedDataBase = await checkNamesDatabase(db, text);
       if (checkedDataBase === false) {
         let obj = {
           person: []
@@ -349,7 +254,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-
+            console.log(toSend)
             if (client && client.readyState === WebSocket.OPEN && passedTime < 59) {
               client.send(toSend);
               startTime = new Date();
@@ -369,8 +274,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             } else {
               replaceAllNames(data, tempSaveNames, 0);
               tempSaveNames = [];
-              // console.log(`\n\n${getCurrentDate()} `)
-              // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
+              console.log(`\n\n${getCurrentDate()} `)
+              console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
               let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
               if (client && client.readyState === WebSocket.OPEN) {
@@ -393,52 +298,64 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   console.log(passedTime);
   if (client && client.readyState === WebSocket.OPEN && passedTime > 59) {
     let dateObject = new Date();
-    let savedName = await getExistingNames(rand(0, (await getabsoluteNumberNames(db))));
+    let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));
     let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
     client.send(toSend);
     startTime = new Date();
   }
 }
 
-function saveFullFile(data) {
-  let dataObj = {
-    dataPage: []
+//*************************************************** */
+// HELPER FUNCTIONS
+//*************************************************** */
+function getSDCardSize(i) {
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let options = {
+    file: currentPath[i],
+    prefixMultiplier: 'MB',
+    isDisplayPrefixMultiplier: true,
+    precision: 4
   };
-  dataObj.dataPage.push({ text: data, id: 0 });
-  saveToSDCard(false, dataObj);
+  df(options, function (error, response) {
+    if (error) { throw error; }
+    cardFilled[i] = response[0].used;
+    cardRemaining[i] = response[0].available;
+  });
 }
-
-
-
-
-async function getExistingNames(random) {
-  const iterator = db.iterator()
-  let counter = 0;
-  let allNames = [];
-  let returnValue;
-  while (true) {
-    const entries = await iterator.nextv(100)
-
-    if (entries.length === 0) {
-      break
-    }
-
-    for (const [key, value] of entries) {
-      allNames[counter] = value;
-      counter++;
-    }
-    returnValue = allNames[random];
+function retrieveURLs() {
+  let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
+  globalID = totalNumberURLs.lastHandled;
+  return totalNumberURLs.queued[0].lastProcessedURLs;
+}
+function saveLastNames(url) {
+  let mData = {
+    queued: []
+  };
+  mData.queued.push({ lastProcessedNames });
+  fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
+  countLastProcessedNames = 0
+}
+function saveLastSession(handledNumber) {
+  let mData = {
+    queued: [],
+    lastHandled: handledNumber
+  };
+  mData.queued.push({ lastProcessedURLs });
+  fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
+  countLastProcessedURLs = 0
+}
+async function checkNamesDatabase(db, name) {
+  try {
+    let value = await db.get(name);
+    return true;
+  } catch (err) {
+    await db.put(name, name);
+    return false;
   }
 
-  await iterator.close()
-  return returnValue;
 }
-
-
-
-
-
-async function getabsoluteNumberNames(mdb) {
+export async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
   let counter = 0;
   while (true) {
