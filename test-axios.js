@@ -357,7 +357,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             }
             saveToSDCard(true, obj);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
-            lastProcessedNames[countLastProcessedNames] = (`${tempNameString}% ${dateObject.getFullYear()} -${returnWithZero(dateObject.getMonth())} -${returnWithZero(dateObject.getDate())}& nbsp;& nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}% ${cc} `);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+            lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
             if (data === latestData) {
               tempSaveNames[inCurrentDataset] = text;
