@@ -328,12 +328,12 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         }
       } else {
 
-        if (stopSendingData !== 1) {
+        if (stopSendingData !== 1 && securityCheckIsCardFull === false) {
           saveFullFile(data);
         }
       }
     } else {
-      if (stopSendingData !== 1) {
+      if (stopSendingData !== 1 && securityCheckIsCardFull === false) {
         saveFullFile(data);
       }
     }
