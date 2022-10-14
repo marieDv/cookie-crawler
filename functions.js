@@ -38,7 +38,9 @@ export function saveCurrentDataToFile() {
   fs.writeFileSync('./globalVariables.json', JSON.stringify(data));
   return [Object.keys(totalNumberNames).length, totalURLs];
 }
-
+export function rand(min, max) { // min and max included 
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
 
 export function saveToSDCard(names, mData) {
   // let pathOSX = "/Volumes/FULL/output/";
@@ -156,7 +158,7 @@ export function replaceAllNames(mdata, savedNames, id) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames, id: id });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
   }
   safeOneDataset = mdata;
 }

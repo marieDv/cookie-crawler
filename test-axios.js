@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { checkBlacklist, clearDataBases, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
+import { checkBlacklist, clearDataBases, rand, detectDataLanguage, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
 import { open, close, fstat } from 'node:fs';
 
 
@@ -33,7 +33,6 @@ let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();// = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
-// savedToQueue = ['https://tos885.ç§»å\x8A']
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
@@ -45,14 +44,18 @@ let mQueueSize = 0;
 let currentURL = '';
 let sendOnLaunch = true;
 let needReconnect = false;
-// clearDataBases([db, dbUrl, dbUrlPrecheck]);
-clearDataBases([db, dbUrl, dbUrlPrecheck]);
+let countTimeSinceLastName = 0;
+
+clearDataBases([dbUrl, dbUrlPrecheck]);//db
 function heartbeat() {
+  console.log("... ping")
   clearTimeout(this.pingTimeout);
+
   this.pingTimeout = setTimeout(() => {
     console.log("!!! terminated !!!")
     this.terminate();
-  }, 10000 + 1000);
+  }, 30000 + 1000);
+
 }
 function isJsonString(str) {
   try {
@@ -71,21 +74,20 @@ async function connect() {
   if (client) {
     client.on('open', function () {
       console.log("CONNECTION IS OPEN")
-      if (client.readyState === 1) {
+      if (client.readyState === WebSocket.OPEN) {
         needReconnect = false;
         heartbeat
       }
     });
     client.onmessage = function (event) {
 
-      if (event.data !== undefined && client && client.readyState === 1 && (isJsonString(event.data) === true)) {
+      if (event.data !== undefined && client && client.readyState === WebSocket.OPEN && (isJsonString(event.data) === true)) {
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
           let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
           if (totalNumberNames.queued !== undefined) {
             for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
               if (client && (needReconnect === false)) {
-                // client.send(JSON.stringify("SENDFULLFILE"));
-                // client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+                client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
               }
             }
           }
@@ -124,17 +126,17 @@ setInterval(() => {
 
   if (needReconnect === true) {
     console.log(`... trying to reconnect ...`)
-     reconnect();
+    reconnect();
   }
 
 }, 30000);
 
 
 const c = new Crawler({
-  maxConnections: 10,
-  // queueSize: 200,
+  maxConnections: 30,
+  queueSize: 500,
   retries: 0,
-  rateLimit: 1,
+  rateLimit: 0,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -147,19 +149,22 @@ const c = new Crawler({
         currentURL = res.request.uri.href;
         console.log(`\n... ${res.request.uri.href}\n`);
 
-        if (client && client.readyState === 1) {
-          getSDCardSize(0);
-          getSDCardSize(1);
-          client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+        if (client && client.readyState === WebSocket.OPEN) {
+          // getSDCardSize(0);
+          // getSDCardSize(1);
+          // client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
         }
-        if (client && client.readyState === 1) {
-          let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+
+        // console.log(allNames[rand])
+        let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+
+        if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
 
-
-
+        console.log(countTimeSinceLastName)
+        countTimeSinceLastName++;
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#') {
             let oldWebsite = false;
@@ -298,7 +303,7 @@ async function searchForNames(url, cc, data, foundLinks) {
         dataPage: []
       };
       dataObj.dataPage.push({ text: data, id: 0 });
-      saveToSDCard(false, dataObj);
+      // saveToSDCard(false, dataObj);
       break;
   }
 }
@@ -319,14 +324,16 @@ async function checkNamesDatabase(name) {
 
 }
 async function languageProcessing(doc, data, url, cc, foundLinks) {
-  let person = doc.match('#FirstName #LastName' ).out('array');
-  console.log(person)
+  let person = doc.match('#FirstName #LastName').out('array');
+
   if (person.length === 0) {
     let dataObj = {
       dataPage: []
     };
     dataObj.dataPage.push({ text: data, id: 0 });
-    saveToSDCard(false, dataObj);
+    // saveToSDCard(false, dataObj);
+  } else {
+    console.log(person)
   }
   for (const a of person) {
     let text = a;
@@ -345,9 +352,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           if (uppercaseName[0][2] && uppercaseName[1][2]) {
             uppercaseName[0] = uppercaseName[0].toLowerCase();
             uppercaseName[1] = uppercaseName[1].toLowerCase();
-
-
-
             uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
@@ -358,8 +362,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             // mData.queued.push({ lastProcessedURLs });
             // fs.writeFileSync("names.json", JSON.stringify(tempNameString, null, 2), function () { });
 
-            
-            const mUrl = new URL(url);
             function returnWithZero(obj) {
               if (obj < 10) {
                 return '0' + obj;
@@ -368,14 +370,22 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               }
             }
             let dateObject = new Date();
-            let toSend = JSON.stringify(`${tempNameString}`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-
-            if (client && client.readyState === 1 && cc !== undefined) {
-              console.log(toSend)
+            let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+            console.log(tempNameString)
+            if (countTimeSinceLastName > 40 && client && client.readyState === WebSocket.OPEN) {
+              let savedName = await getExistingNames(rand(0, (await getabsoluteNumberNames(db))));
+              toSend = JSON.stringify(`recycledName: ${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
               client.send(toSend);
+              countTimeSinceLastName = 0;
+            } else {
+              if (client && client.readyState === WebSocket.OPEN) {
+                console.log(toSend)
+                client.send(toSend);
+                countTimeSinceLastName = 0;
+              }
             }
             console.log(tempNameString)
-            saveToSDCard(true, tempNameString);
+            // saveToSDCard(true, tempNameString);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
@@ -395,7 +405,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
 
 
-              if (client && client.readyState === 1) {
+              if (client && client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(`METADATA%${mQueueSize}%${totalNumberNames}%${totalURLS}%${check_mem()}%${inCurrentDataset}%${currentURL}%${linksFound}`));
               }
               inCurrentDataset = 0;
@@ -410,6 +420,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
           // saveToSDCard(false, dataObj);
         }
       } else {
+        console.log(`${a} is already in database!`)
         // let dataObj = {
         //   dataPage: []
         // };
@@ -421,10 +432,37 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         dataPage: []
       };
       dataObj.dataPage.push({ text: data, id: 0 });
-      saveToSDCard(false, dataObj);
+      // saveToSDCard(false, dataObj);
     }
   }
 }
+async function getExistingNames(random) {
+  const iterator = db.iterator()
+  let counter = 0;
+  let allNames = [];
+  let returnValue;
+  while (true) {
+    const entries = await iterator.nextv(100)
+
+    if (entries.length === 0) {
+      break
+    }
+
+    for (const [key, value] of entries) {
+      allNames[counter] = value;
+      counter++;
+    }
+    returnValue = allNames[random];
+    // console.log(`my random name: ${allNames[rand(0, entries.length)]}`)
+  }
+
+  await iterator.close()
+  return returnValue;
+}
+
+
+
+
 
 async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
