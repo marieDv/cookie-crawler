@@ -350,13 +350,14 @@ function getSDCardSize(i) {
     cardRemaining[i] = response[0].available;
   });
   console.log(`CARD AVAILABLE ${i} ${cardRemaining[i]}`)
-  let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
-  console.log(numericValue[0] / 1);
-  if ((numericValue[0] / 1) < 10.0) {
-    console.log("!SD CARD ABOUT TO BE FULL!")
-    i === 0 ? sendEmail("NAME").catch(console.error) : sendEmail("FULL").catch(console.error);
+  if (cardRemaining[i]) {
+    let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
+    console.log(numericValue[0] / 1);
+    if ((numericValue[0] / 1) < 10.0) {
+      console.log("!SD CARD ABOUT TO BE FULL!")
+      i === 0 ? sendEmail("NAME").catch(console.error) : sendEmail("FULL").catch(console.error);
+    }
   }
-
 
 }
 function retrieveURLs() {
