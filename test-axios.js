@@ -45,6 +45,9 @@ let startTime = new Date();
 let client;
 let stopSendingData = 3;
 let sdCardToChange = "";
+let emailSend = false;
+
+
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
@@ -63,7 +66,7 @@ async function sendEmail() {
     text: `${sdCardToChange} card should be changed`, // plain text body
     html: `${sdCardToChange} card should be changed`, // html body
   });
-
+  emailSend = true;
   console.log("Message sent: %s", info.messageId);
   console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
 }
@@ -361,7 +364,7 @@ function getSDCardSize(i) {
   if (cardRemaining[i]) {
     let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
     console.log(numericValue[0] / 1);
-    if ((numericValue[0] / 1) < 50.0) {
+    if (((numericValue[0] / 1) < 50.0) && emailSend === false) {
       console.log("!SD CARD ABOUT TO BE FULL!")
       if (i === 0) {
         sdCardToChange = "NAME";
@@ -373,6 +376,7 @@ function getSDCardSize(i) {
       stopSendingData = i;
     } else {
       stopSendingData = 3;
+      emailSend = false;
     }
   }
 
