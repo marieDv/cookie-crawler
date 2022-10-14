@@ -373,10 +373,10 @@ async function getSDCardSize(i) {
       console.log("!SD CARD ABOUT TO BE FULL!")
       if (i === 0) {
         sdCardToChange = "NAME";
-        await sendEmail().catch(console.error);
+        sendEmail().catch(console.error);
       } else {
         sdCardToChange = "FULL";
-        await sendEmail().catch(console.error)
+        sendEmail().catch(console.error)
       }
       securityCheckIsCardFull = false;
       stopSendingData = i;
