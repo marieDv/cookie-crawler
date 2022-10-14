@@ -355,7 +355,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               getSDCardSize(1);
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
-            saveToSDCard(true, tempNameString);
+            saveToSDCard(true, obj);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}% ${dateObject.getFullYear()} -${returnWithZero(dateObject.getMonth())} -${returnWithZero(dateObject.getDate())}& nbsp;& nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}% ${cc} `);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
