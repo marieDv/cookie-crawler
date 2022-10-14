@@ -381,7 +381,7 @@ async function getSDCardSize(i) {
       }
       securityCheckIsCardFull = false;
       stopSendingData = i;
-    } else {
+    } if ((numericValue[0] / 1) > 50.0) {
       securityCheckIsCardFull = false;
       stopSendingData = 3;
       emailSend = false;
