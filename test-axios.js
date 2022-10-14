@@ -46,7 +46,8 @@ let sendOnLaunch = true;
 let needReconnect = false;
 let startTime;
 
-clearDataBases([dbUrl, dbUrlPrecheck]);//db
+// clearDataBases([dbUrl, dbUrlPrecheck]);//db
+
 function heartbeat() {
   clearTimeout(this.pingTimeout);
 
@@ -341,7 +342,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = getCurrentDate();
-            obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: idForNames });
+
+
+            let totalNumberNames = await getabsoluteNumberNames(db);
+            obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: totalNumberNames });
 
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
