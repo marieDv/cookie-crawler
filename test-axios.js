@@ -62,7 +62,7 @@ async function sendEmail() {
   // send mail with defined transport object
   let info = await transporter.sendMail({
     from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
-    to: "dvorzak.marie@gmx.at", // list of receivers
+    to: "mariedvorzak@gmail.com", // list of receivers
     subject: "TIME TO CHANGE SD", // Subject line
     text: `${sdCardToChange} card should be changed`, // plain text body
     html: `${sdCardToChange} card should be changed`, // html body
