@@ -146,13 +146,6 @@ const c = new Crawler({
         let array = $('a').toArray();
         linksFound = array.length;
         currentURL = res.request.uri.href;
-
-        if (client && client.readyState === WebSocket.OPEN) {
-          getSDCardSize(0);
-          getSDCardSize(1);
-          client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
-        }
-
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
 
         if (client && client.readyState === WebSocket.OPEN) {
@@ -329,7 +322,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -356,6 +349,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             if (client && client.readyState === WebSocket.OPEN && passedTime < 59) {
               client.send(toSend);
               startTime = new Date();
+            }
+            if (client && client.readyState === WebSocket.OPEN) {
+              getSDCardSize(0);
+              getSDCardSize(1);
+              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
             saveToSDCard(true, tempNameString);
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
