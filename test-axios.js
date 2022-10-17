@@ -360,6 +360,7 @@ async function getSDCardSize(i) {
     isDisplayPrefixMultiplier: true,
     precision: 4
   };
+try{
   df(options, function (error, response) {
     if (error) { throw error; }
     cardFilled[i] = response[0].used;
@@ -377,16 +378,18 @@ async function getSDCardSize(i) {
       } else {
         sdCardToChange = "FULL";
       //  sendEmail().catch(console.error)
+        }
+        securityCheckIsCardFull = false;
+        stopSendingData = i;
+      } if ((numericValue[0] / 1) > 50.0) {
+        securityCheckIsCardFull = false;
+        stopSendingData = 3;
+        emailSend = false;
       }
-      securityCheckIsCardFull = false;
-      stopSendingData = i;
-    } if ((numericValue[0] / 1) > 50.0) {
-      securityCheckIsCardFull = false;
-      stopSendingData = 3;
-      emailSend = false;
     }
+  }catch(error){
+    console.log(error)
   }
-
 }
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
