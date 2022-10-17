@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import nodemailer from 'nodemailer';
 
 
-
+import psl from 'psl';
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
 import esNlp from 'es-compromise';
@@ -166,8 +166,15 @@ const c = new Crawler({
         let array = $('a').toArray();
         linksFound = array.length;
         currentURL = res.request.uri.href;
+        const url = new URL(res.request.uri.href);
+
+        var pslUrl = psl.parse(url.host);
+        // console.log(psl.isValid(url.host));
+        if (psl.isValid(url.host)) {
+          // console.log(pslUrl.domain);
+        }
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-        console.log(currentURL);
+        // console.log(currentURL);
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
@@ -189,8 +196,20 @@ const c = new Crawler({
                 if (c.queueSize <= 1000) {
                   urls.push(url.href);
                 }
-                countLastProcessedURLs === 20 ? saveLastSession(globalID + c.queueSize) : countLastProcessedURLs++;
-                lastProcessedURLs[countSavedURLs] = url.origin;
+                if (countLastProcessedURLs === 20) {
+                  saveLastSession(globalID + c.queueSize)
+                } else if (!lastProcessedURLs.includes(pslUrl.domain)) {
+                  // console.log(pslUrl.subdomain)
+                  let cutDomain = url.origin.split(`${pslUrl.subdomain}.`);
+      
+               
+                  let saveDomain;
+                  cutDomain.length === 2 ? saveDomain = cutDomain[0].concat(cutDomain[1]) : saveDomain = cutDomain[0];
+                  console.log(saveDomain);
+                  lastProcessedURLs[countSavedURLs] = saveDomain;
+                  countLastProcessedURLs++
+
+                }
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
                 countSavedURLs++;
@@ -259,7 +278,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (person.length === 0 && stopSendingData !== 1 && securityCheckIsCardFull === false) {
     saveFullFile(data);
   }
-  console.log(person)
+  // console.log(person)
   for (const a of person) {
 
     let text = a;
@@ -338,7 +357,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
-  console.log(passedTime);
+  // console.log(passedTime);
   if (client && client.readyState === WebSocket.OPEN && passedTime > 59) {
     let dateObject = new Date();
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));

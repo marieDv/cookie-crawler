@@ -44,8 +44,8 @@ export function returnWithZero(obj) {
   }
 }
 export function saveToSDCard(names, mData) {
-  let currentPath = ['./names-output/output/', './full-output/output/'];
-  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
