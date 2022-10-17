@@ -367,7 +367,7 @@ async function getSDCardSize(i) {
       cardFilled[i] = response[0].used;
       cardRemaining[i] = response[0].available;
     });
-    sendEmail().catch(console.error);
+
     console.log(`CARD AVAILABLE ${i} ${cardRemaining[i]}`)
     if (cardRemaining[i]) {
       let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
