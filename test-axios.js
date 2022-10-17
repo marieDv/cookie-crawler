@@ -44,7 +44,7 @@ let needReconnect = false;
 let startTime = new Date();
 let client;
 let stopSendingData = 3;
-let sdCardToChange = "";
+let sdCardToChange = "äko";
 let emailSend = false;
 let securityCheckIsCardFull = true;
 
@@ -352,41 +352,45 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 // HELPER FUNCTIONS
 //*************************************************** */
 async function getSDCardSize(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'MB',
     isDisplayPrefixMultiplier: true,
     precision: 4
   };
-  df(options, function (error, response) {
-    if (error) { throw error; }
-    cardFilled[i] = response[0].used;
-    cardRemaining[i] = response[0].available;
-  });
-  console.log(`CARD AVAILABLE ${i} ${cardRemaining[i]}`)
-  if (cardRemaining[i]) {
-    let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
-    console.log(numericValue[0] / 1);
-    if (((numericValue[0] / 1) < 50.0) && emailSend === false) {
-      console.log("!SD CARD ABOUT TO BE FULL!")
-      if (i === 0) {
-        sdCardToChange = "NAME";
-        sendEmail().catch(console.error);
-      } else {
-        sdCardToChange = "FULL";
-        sendEmail().catch(console.error)
+  try {
+    df(options, function (error, response) {
+      if (error) { throw error; }
+      cardFilled[i] = response[0].used;
+      cardRemaining[i] = response[0].available;
+    });
+    sendEmail().catch(console.error);
+    console.log(`CARD AVAILABLE ${i} ${cardRemaining[i]}`)
+    if (cardRemaining[i]) {
+      let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
+      console.log(numericValue[0] / 1);
+      if (((numericValue[0] / 1) < 50.0) && emailSend === false) {
+        console.log("!SD CARD ABOUT TO BE FULL!")
+        if (i === 0) {
+          sdCardToChange = "NAME";
+          sendEmail().catch(console.error);
+        } else {
+          sdCardToChange = "FULL";
+          sendEmail().catch(console.error)
+        }
+        securityCheckIsCardFull = false;
+        stopSendingData = i;
+      } if ((numericValue[0] / 1) > 50.0) {
+        securityCheckIsCardFull = false;
+        stopSendingData = 3;
+        emailSend = false;
       }
-      securityCheckIsCardFull = false;
-      stopSendingData = i;
-    } if ((numericValue[0] / 1) > 50.0) {
-      securityCheckIsCardFull = false;
-      stopSendingData = 3;
-      emailSend = false;
     }
+  }catch(error){
+    console.log(error)
   }
-
 }
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
