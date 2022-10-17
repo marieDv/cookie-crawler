@@ -55,7 +55,7 @@ async function sendEmail() {
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: "", // generated ethereal user
+      user: "ait-crawler@gmx.at", // generated ethereal user
       pass: "9izAYkkqLjWYtQJ", // generated ethereal password
     },
   });
