@@ -46,7 +46,7 @@ let client;
 let stopSendingData = 3;
 let sdCardToChange = "";
 let emailSend = false;
-let securityCheckIsCardFull = true;
+let securityCheckIsCardFull = false;
 let blacklistedHostUrls = [];
 let lastHundredHosts = [];
 let countURLS = 0;
@@ -178,9 +178,9 @@ const c = new Crawler({
 
         if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
           blacklistedHostUrls.push(lastHundredHosts[0]);
-          console.log(blacklistedHostUrls.length);
+
           if (blacklistedHostUrls.length > 100) {
-            console.log(`over 100 ${emergencyURLS[rand(0, emergencyURLS.length)]}`)
+            // console.log(`over 100 ${emergencyURLS[rand(0, emergencyURLS.length)]}`)
             urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
             urls = emergencyURLS;
             c.queue(urls);
@@ -341,11 +341,12 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               startTime = new Date();
             }
             if (client && client.readyState === WebSocket.OPEN) {
-               await getSDCardSize(0);
+              await getSDCardSize(0);
               await getSDCardSize(1);
-                client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
             if (stopSendingData !== 0 && securityCheckIsCardFull === false) {
+              console.log("save to names")
               saveToSDCard(true, obj);
             }
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
@@ -381,6 +382,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     } else {
       if (stopSendingData !== 1 && securityCheckIsCardFull === false) {
         saveFullFile(data);
+        console.log("save to full")
+
       }
     }
   }
@@ -401,7 +404,7 @@ async function getSDCardSize(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
-  console.log(fs.existsSync(currentPath[i]));
+  console.log(`paths exist ... ${fs.existsSync(currentPath[i])}`);
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'MB',
@@ -429,10 +432,9 @@ async function getSDCardSize(i) {
           sdCardToChange = "FULL";
           sendEmail().catch(console.error)
         }
-        securityCheckIsCardFull = false;
         stopSendingData = i;
       } if ((numericValue[0] / 1) > 50.0) {
-        securityCheckIsCardFull = false;
+   
         stopSendingData = 3;
         emailSend = false;
       }
