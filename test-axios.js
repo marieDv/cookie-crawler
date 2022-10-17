@@ -356,7 +356,7 @@ async function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
   console.log(fs.existsSync(currentPath[i]));
-  let options = {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    let options = {
     file: currentPath[i],
     prefixMultiplier: 'MB',
     isDisplayPrefixMultiplier: true,
