@@ -140,14 +140,14 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-setInterval(() => {
+// setInterval(() => {
 
-  if (needReconnect === true) {
-    console.log(`... trying to reconnect ...`)
-    reconnect();
-  }
+//   if (needReconnect === true) {
+//     console.log(`... trying to reconnect ...`)
+//     reconnect();
+//   }
 
-}, 30000);
+// }, 30000);
 // connect();
 
 //*************************************************** */
