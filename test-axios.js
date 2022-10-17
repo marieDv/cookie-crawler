@@ -360,7 +360,8 @@ async function getSDCardSize(i) {
     isDisplayPrefixMultiplier: true,
     precision: 4
   };
-  try {
+  if (fs.existsSync(currentPath[i])) {
+
     df(options, function (error, response) {
       if (error) { throw error; }
       cardFilled[i] = response[0].used;
@@ -388,9 +389,8 @@ async function getSDCardSize(i) {
         emailSend = false;
       }
     }
-  }catch(error){
-    console.log(error)
   }
+
 }
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
