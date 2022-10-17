@@ -352,8 +352,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 // HELPER FUNCTIONS
 //*************************************************** */
 async function getSDCardSize(i) {
-  let currentPath = ['./names-output/output/', './full-output/output/'];
-  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
   console.log(fs.existsSync(currentPath[i]));
   let options = {
