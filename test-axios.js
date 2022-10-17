@@ -44,7 +44,7 @@ let needReconnect = false;
 let startTime = new Date();
 let client;
 let stopSendingData = 3;
-let sdCardToChange = "äko";
+let sdCardToChange = "";
 let emailSend = false;
 let securityCheckIsCardFull = true;
 
@@ -55,7 +55,7 @@ async function sendEmail() {
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: "ait-crawler@gmx.at", // generated ethereal user
+      user: "", // generated ethereal user
       pass: "9izAYkkqLjWYtQJ", // generated ethereal password
     },
   });
