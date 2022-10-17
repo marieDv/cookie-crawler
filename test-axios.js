@@ -259,7 +259,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (person.length === 0 && stopSendingData !== 1 && securityCheckIsCardFull === false) {
     saveFullFile(data);
   }
-
+  console.log(person)
   for (const a of person) {
 
     let text = a;
