@@ -3,8 +3,13 @@ import Crawler from 'crawler';
 import { Level } from 'level';
 import { clearDataBases, rand, isJsonString, check_mem, retrieveNames, getExistingNames, saveFullFile, detectDataLanguage, returnWithZero, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal } from './functions.js';
 import { close } from 'node:fs';
-import df from 'node-df';
 import * as fs from 'fs';
+import * as util from 'util';
+import df_ from 'node-df';
+
+const df = util.promisify(df_);
+
+
 import nodemailer from 'nodemailer';
 
 
@@ -150,8 +155,8 @@ connect();
 //*************************************************** */
 
 clearDataBases([dbUrl, dbUrlPrecheck]);//db
-await getSDCardSize(0);
-await getSDCardSize(1);
+await checkSizeBeforeSendingData(0);
+await checkSizeBeforeSendingData(1);
 
 const c = new Crawler({
   maxConnections: 30,
@@ -291,7 +296,7 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
-      if (stopSendingData !== 1 && securityCheckIsCardFull === false) {
+      if (await checkSizeBeforeSendingData(1) === true) {
         saveFullFile(data);
       }
       break;
@@ -302,10 +307,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#FirstName #LastName').out('array');
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-  if (person.length === 0 && stopSendingData !== 1 && securityCheckIsCardFull === false) {
+  if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
     saveFullFile(data);
   }
-  // console.log(person)
+
   for (const a of person) {
 
     let text = a;
@@ -341,11 +346,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               startTime = new Date();
             }
             if (client && client.readyState === WebSocket.OPEN) {
-              await getSDCardSize(0);
-              await getSDCardSize(1);
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
-            if (stopSendingData !== 0 && securityCheckIsCardFull === false) {
+            if (await checkSizeBeforeSendingData(0) === true) {
               console.log("save to names")
               saveToSDCard(true, obj);
             }
@@ -356,7 +359,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               tempSaveNames[inCurrentDataset] = text;
               inCurrentDataset++;
             } else {
-              if (securityCheckIsCardFull === false && stopSendingData !== 1) {
+              if (await checkSizeBeforeSendingData(1) === true) {
                 replaceAllNames(data, tempSaveNames, stopSendingData);
               }
               tempSaveNames = [];
@@ -374,16 +377,13 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         } else {
         }
       } else {
-
-        if (stopSendingData !== 1 && securityCheckIsCardFull === false) {
+        if (await checkSizeBeforeSendingData(1) === true) {
           saveFullFile(data);
         }
       }
     } else {
-      if (stopSendingData !== 1 && securityCheckIsCardFull === false) {
+      if (await checkSizeBeforeSendingData(1) === true) {
         saveFullFile(data);
-        console.log("save to full")
-
       }
     }
   }
@@ -400,6 +400,46 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 //*************************************************** */
 // HELPER FUNCTIONS
 //*************************************************** */
+
+async function checkSizeBeforeSendingData(i) {
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let options = {
+    file: currentPath[i],
+    prefixMultiplier: 'MB',
+    isDisplayPrefixMultiplier: true,
+    precision: 4
+  };
+  let numericValue = '0';
+  if (fs.existsSync(currentPath[i])) {
+    const response = await df(options);
+    cardFilled[i] = response[0].used;
+    cardRemaining[i] = response[0].available;
+    numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
+    if (numericValue[0] > 100) {
+      // console.log("CARD HAS SPACE GO AHEAD AND SAFE")
+      return true;
+    } else {
+      console.log("ABORT CARD IS FULL")
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function getSDCardSize(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
@@ -434,7 +474,7 @@ async function getSDCardSize(i) {
         }
         stopSendingData = i;
       } if ((numericValue[0] / 1) > 50.0) {
-   
+
         stopSendingData = 3;
         emailSend = false;
       }

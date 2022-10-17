@@ -50,7 +50,6 @@ export function saveToSDCard(names, mData) {
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
     fullDataObj.page.push({ text: mData });
-    // console.log(`size full data object: ${sizeof(fullDataObj)}`)
     if (sizeof(fullDataObj) / (1024 * 1024) > 4) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
@@ -60,7 +59,7 @@ export function saveToSDCard(names, mData) {
     }
   } else {
     fullNamesObj.name.push({ mData });
-    console.log(sizeof(fullNamesObj))
+    console.log(`size name data object: ${sizeof(fullNamesObj)}`)
     if (sizeof(fullNamesObj) > 5000) {
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
@@ -152,6 +151,13 @@ export function saveFullFile(data) {
   dataObj.dataPage.push({ text: data, id: 0 });
   saveToSDCard(false, dataObj);
 }
+
+
+
+
+
+
+
 
 
 export function writeLatestToTerminal(id, urls) {
