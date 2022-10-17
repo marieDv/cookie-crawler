@@ -147,7 +147,7 @@ connect();
 // START CRAWLER
 //*************************************************** */
 
-// clearDataBases([dbUrl, dbUrlPrecheck]);//db
+clearDataBases([dbUrl, dbUrlPrecheck]);//db
 await getSDCardSize(0);
 await getSDCardSize(1);
 
@@ -155,7 +155,7 @@ const c = new Crawler({
   maxConnections: 30,
   queueSize: 500,
   retries: 0,
-  rateLimit: 0,
+  rateLimit: 2,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -352,8 +352,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 // HELPER FUNCTIONS
 //*************************************************** */
 async function getSDCardSize(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+
+  console.log(fs.existsSync(currentPath[i]));
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'MB',
