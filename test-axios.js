@@ -47,7 +47,9 @@ let stopSendingData = 3;
 let sdCardToChange = "";
 let emailSend = false;
 let securityCheckIsCardFull = true;
-
+let blacklistedHostUrls = [];
+let lastHundredHosts = [];
+let countURLS = 0;
 
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
@@ -155,13 +157,15 @@ const c = new Crawler({
   maxConnections: 30,
   queueSize: 500,
   retries: 0,
-  rateLimit: 2,
+  rateLimit: 0,
 
   callback: async (error, res, done) => {
     if (error) {
     } else {
       const $ = res.$;
       const urls = [];
+
+
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
         let array = $('a').toArray();
         linksFound = array.length;
@@ -169,17 +173,36 @@ const c = new Crawler({
         const url = new URL(res.request.uri.href);
 
         var pslUrl = psl.parse(url.host);
-        // console.log(psl.isValid(url.host));
-        if (psl.isValid(url.host)) {
-          // console.log(pslUrl.domain);
+        lastHundredHosts[countURLS] = pslUrl.domain;
+        const allEqual = arr => arr.every(val => val === arr[0]);
+
+        if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
+          blacklistedHostUrls.push(lastHundredHosts[0]);
+          console.log(blacklistedHostUrls);
         }
+        countURLS++;
+        if (countURLS === 20) {
+          countURLS = 0;
+        }
+
+        function includesBlacklistedURL(link) {
+          // console.log(blacklistedHostUrls);
+          for (let i = 0; i < blacklistedHostUrls.length; i++) {
+            if (link.includes(blacklistedHostUrls[i])) {
+              console.log("INCLUDES")
+              return true;
+            }
+          }
+          return false;
+        }
+
+
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-        // console.log(currentURL);
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
         for (const a of array) {
-          if (a.attribs.href && a.attribs.href !== '#') {
+          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
             let oldWebsite = false;
             try {
               const url = new URL(a.attribs.href, res.request.uri.href);
@@ -191,31 +214,29 @@ const c = new Crawler({
                 }
               });
               await dbUrlPrecheck.put(url.origin, url.origin);
+
               if (oldWebsite === true) {
+                let newDomain = url.protocol + '//' + pslUrl.domain;
                 mQueueSize = c.queueSize;
                 if (c.queueSize <= 1000) {
                   urls.push(url.href);
                 }
                 if (countLastProcessedURLs === 20) {
-                  saveLastSession(globalID + c.queueSize)
-                } else if (!lastProcessedURLs.includes(pslUrl.domain)) {
-                  // console.log(pslUrl.subdomain)
-                  let cutDomain = url.origin.split(`${pslUrl.subdomain}.`);
-      
-               
-                  let saveDomain;
-                  cutDomain.length === 2 ? saveDomain = cutDomain[0].concat(cutDomain[1]) : saveDomain = cutDomain[0];
-                  console.log(saveDomain);
-                  lastProcessedURLs[countSavedURLs] = saveDomain;
-                  countLastProcessedURLs++
+                  saveLastSession(globalID + c.queueSize);
+                  countLastProcessedURLs = 0;
+                } else if (lastProcessedURLs.includes(newDomain) === false) {
+                  // console.log(pslUrl)
 
+                  lastProcessedURLs[countSavedURLs] = newDomain;
+                  countLastProcessedURLs++
+                  countSavedURLs++;
+                  if (countSavedURLs === 100) {
+                    countSavedURLs = 0;
+                  }
                 }
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
-                countSavedURLs++;
-                if (countSavedURLs === 100) {
-                  countSavedURLs = 0;
-                }
+
               }
             }
             catch (err) {
