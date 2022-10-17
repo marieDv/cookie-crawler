@@ -335,9 +335,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               startTime = new Date();
             }
             if (client && client.readyState === WebSocket.OPEN) {
-              await getSDCardSize(0);
-              await getSDCardSize(1);
-              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+            //  await getSDCardSize(0);
+             // await getSDCardSize(1);
+           //   client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
             if (stopSendingData !== 0 && securityCheckIsCardFull === false) {
               saveToSDCard(true, obj);
@@ -396,7 +396,7 @@ async function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
   console.log(fs.existsSync(currentPath[i]));
-  let options = {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    let options = {
     file: currentPath[i],
     prefixMultiplier: 'MB',
     isDisplayPrefixMultiplier: true,
