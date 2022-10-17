@@ -310,7 +310,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
     saveFullFile(data);
   }
-
+  console.log(person);
   for (const a of person) {
 
     let text = a;
