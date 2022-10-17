@@ -17,7 +17,7 @@ import itNlp from 'it-compromise';
 import { URL } from 'node:url';
 import WebSocket from 'ws';
 const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
-
+const emergencyURLS = ['https://youtube.com', 'https://elpais.com/', 'https://www.thelocal.it/', 'https://www.ait.ac.at/'];
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const dbUrlPrecheck = new Level('dbUrlPrecheck', { valueEncoding: 'json' })
@@ -31,7 +31,7 @@ let cardFilled = [0, 0];
 let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
-savedToQueue = savedToQueue.concat(startURL);
+// savedToQueue = savedToQueue.concat(startURL);
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
@@ -163,7 +163,7 @@ const c = new Crawler({
     if (error) {
     } else {
       const $ = res.$;
-      const urls = [];
+      var urls = [];
 
 
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
@@ -178,18 +178,24 @@ const c = new Crawler({
 
         if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
           blacklistedHostUrls.push(lastHundredHosts[0]);
-          console.log(blacklistedHostUrls);
+          console.log(blacklistedHostUrls.length);
+          if (blacklistedHostUrls.length > 100) {
+            console.log(`over 100 ${emergencyURLS[rand(0, emergencyURLS.length)]}`)
+            urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
+            urls = emergencyURLS;
+            c.queue(urls);
+            blacklistedHostUrls = [];
+          }
         }
+
         countURLS++;
         if (countURLS === 20) {
           countURLS = 0;
         }
 
         function includesBlacklistedURL(link) {
-          // console.log(blacklistedHostUrls);
           for (let i = 0; i < blacklistedHostUrls.length; i++) {
             if (link.includes(blacklistedHostUrls[i])) {
-              console.log("INCLUDES")
               return true;
             }
           }
@@ -335,9 +341,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               startTime = new Date();
             }
             if (client && client.readyState === WebSocket.OPEN) {
-            //  await getSDCardSize(0);
-             // await getSDCardSize(1);
-           //   client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+              //  await getSDCardSize(0);
+              // await getSDCardSize(1);
+              //   client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
             if (stopSendingData !== 0 && securityCheckIsCardFull === false) {
               saveToSDCard(true, obj);
@@ -396,7 +402,7 @@ async function getSDCardSize(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
 
   console.log(fs.existsSync(currentPath[i]));
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    let options = {
+  let options = {
     file: currentPath[i],
     prefixMultiplier: 'MB',
     isDisplayPrefixMultiplier: true,
