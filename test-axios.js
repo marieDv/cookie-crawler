@@ -167,7 +167,7 @@ const c = new Crawler({
         linksFound = array.length;
         currentURL = res.request.uri.href;
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-
+        console.log(currentURL);
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
