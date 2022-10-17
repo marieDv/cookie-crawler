@@ -55,7 +55,7 @@ async function sendEmail() {
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-      user: "ait-crawler@gmx.at", // generated ethereal user
+      user: "", // generated ethereal user
       pass: "9izAYkkqLjWYtQJ", // generated ethereal password
     },
   });
@@ -373,10 +373,10 @@ async function getSDCardSize(i) {
       console.log("!SD CARD ABOUT TO BE FULL!")
       if (i === 0) {
         sdCardToChange = "NAME";
-        sendEmail().catch(console.error);
+       // sendEmail().catch(console.error);
       } else {
         sdCardToChange = "FULL";
-        sendEmail().catch(console.error)
+      //  sendEmail().catch(console.error)
       }
       securityCheckIsCardFull = false;
       stopSendingData = i;
