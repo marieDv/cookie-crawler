@@ -302,9 +302,9 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
-      if (await checkSizeBeforeSendingData(1) === true) {
-        await saveFullFile(data);
-      }
+      // if (await checkSizeBeforeSendingData(1) === true) {
+      //   await saveFullFile(data);
+      // }
       break;
   }
 }
@@ -314,7 +314,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-    await saveFullFile(data);
+    // await saveFullFile(data);
   }
   console.log(`${person}`);
   for (const a of person) {
@@ -388,9 +388,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         // }
       }
     } else {
-      if (await checkSizeBeforeSendingData(1) === true) {
-        await saveFullFile(data);
-      }
+      // if (await checkSizeBeforeSendingData(1) === true) {
+      //   await saveFullFile(data);
+      // }
     }
   }
   if (client.readyState === WebSocket.OPEN) {
