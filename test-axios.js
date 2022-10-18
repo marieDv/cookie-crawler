@@ -36,7 +36,7 @@ let cardFilled = [0, 0];
 let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
-// savedToQueue = savedToQueue.concat(startURL);
+savedToQueue = savedToQueue.concat(startURL);
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
@@ -321,10 +321,10 @@ async function searchForNames(url, cc, data, foundLinks) {
 async function languageProcessing(doc, data, url, cc, foundLinks) {
 
   let person = doc.match('#FirstName #LastName').out('array');
-  // if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-  //   await saveFullFile(data);
-  // }
-  // console.log(person);
+  if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
+    await saveFullFile(data);
+  }
+  console.log(person);
   for (const a of person) {
     let text = a;
     const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
