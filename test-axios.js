@@ -447,7 +447,7 @@ async function checkSizeBeforeSendingData(i) {
   }
     console.log(`available: ${response[0].available}  used: ${response[0].used}`);
     if (numericValue[0] > 100) {
-      console.log("CARD HAS SPACE GO AHEAD AND SAFE")
+      // console.log("CARD HAS SPACE GO AHEAD AND SAFE")
       return true;
     } else {
       console.log("ABORT CARD IS FULL")
