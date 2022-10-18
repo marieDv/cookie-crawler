@@ -115,7 +115,7 @@ export function deleteFileContent(mfile) {
 
 
 
-export function replaceAllNames(mdata, savedNames, save) {
+export async function replaceAllNames(mdata, savedNames, save) {
 
   let replacedNames = '';
   if (safeOneDataset) {
