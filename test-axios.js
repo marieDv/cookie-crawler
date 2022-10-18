@@ -353,7 +353,12 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-
+            if (client && client.readyState === WebSocket.OPEN) {
+              client.send(toSend);
+              startTime = new Date();
+              clearTimeout(timeoutId);
+            }
+            
             timeoutId = setTimeout(async function () {
               console.log("timeoutime")
               let sendRecycledNameVar = await sendRecycledName(cc)
@@ -362,14 +367,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               }
             }
               , 2000);
-
-            if (client && client.readyState === WebSocket.OPEN) {
-              client.send(toSend);
-              startTime = new Date();
-              clearTimeout(timeoutId);
-            }
-
-
 
             if (client && client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
