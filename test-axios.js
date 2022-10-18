@@ -246,9 +246,6 @@ const c = new Crawler({
                   }
                 }
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
-                if (client && client.readyState === WebSocket.OPEN) {
-                  heartbeat
-                }
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
 
               }
@@ -370,9 +367,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
               let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-              if (client && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
-              }
+              // if (client && client.readyState === WebSocket.OPEN) {
+              //   client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
+              // }
               inCurrentDataset = 0;
             }
             latestData = data;
