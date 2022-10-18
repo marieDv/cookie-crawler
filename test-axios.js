@@ -159,10 +159,10 @@ await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
 const c = new Crawler({
-  maxConnections: 30,
+  maxConnections: 20,
   queueSize: 500,
   retries: 0,
-  rateLimit: 0,
+  rateLimit: 2,
 
   callback: async (error, res, done) => {
     if (error) {
@@ -246,6 +246,9 @@ const c = new Crawler({
                   }
                 }
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
+                if (client && client.readyState === WebSocket.OPEN) {
+                  heartbeat
+                }
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
 
               }
@@ -311,10 +314,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     saveFullFile(data);
   }
   console.log(person);
-
-  if (client && client.readyState === WebSocket.OPEN) {
-    heartbeat
-  }
   for (const a of person) {
 
     let text = a;
