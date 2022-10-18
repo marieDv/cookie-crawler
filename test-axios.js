@@ -400,7 +400,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   }
   console.log(passedTime);
   if (passedTime > 59) {
-    await sendRecycledName(cc);
+    let sendRecycledName = await sendRecycledName(cc);
+    if (client && client.readyState === WebSocket.OPEN) {
+      client.send(sendRecycledName);
+    }
+    startTime = new Date();
   }
 }
 async function sendRecycledName(cc) {
@@ -409,11 +413,8 @@ async function sendRecycledName(cc) {
   if (await getabsoluteNumberNames(db) > 2) {
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
     let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
-    if (client && client.readyState === WebSocket.OPEN) {
-      client.send(toSend);
-    }
+    return toSend;
   }
-  startTime = new Date();
 }
 //*************************************************** */
 // HELPER FUNCTIONS
