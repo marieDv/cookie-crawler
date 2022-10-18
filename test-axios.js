@@ -140,14 +140,16 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-setInterval(() => {
+// setInterval(() => {
 
-  if (needReconnect === true) {
-    console.log(`... trying to reconnect ...`)
-    reconnect();
-  }
+//   if (needReconnect === true) {
+//     console.log(`... trying to reconnect ...`)
+//     reconnect();
+//   }
 
-}, 30000);
+// }, 30000);
+
+
 connect();
 
 setInterval(() => {
@@ -218,6 +220,13 @@ const c = new Crawler({
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
+
+        if (needReconnect === true) {
+          console.log(`... trying to reconnect ...`)
+          await reconnect();
+        }
+
+
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
             let oldWebsite = false;
@@ -315,7 +324,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   }
   console.log(`${person}`);
   for (const a of person) {
-
     let text = a;
     const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
@@ -397,7 +405,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 }
 async function sendRecycledName(cc) {
   let dateObject = new Date();
-  console.log(`absolute number of names ${getabsoluteNumberNames(db)}`);
+  console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
   if (await getabsoluteNumberNames(db) > 2) {
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
     let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
