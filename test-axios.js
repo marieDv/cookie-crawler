@@ -140,15 +140,15 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-// setInterval(() => {
+setInterval(() => {
 
-//   if (needReconnect === true) {
-//     console.log(`... trying to reconnect ...`)
-//     reconnect();
-//   }
+  if (needReconnect === true) {
+    console.log(`... trying to reconnect ...`)
+    reconnect();
+  }
 
-// }, 30000);
-// connect();
+}, 30000);
+connect();
 
 //*************************************************** */
 // START CRAWLER
@@ -209,9 +209,9 @@ const c = new Crawler({
 
 
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-        // if (client && client.readyState === WebSocket.OPEN) {
-        //   client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-        // }
+        if (client && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+        }
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
             let oldWebsite = false;
@@ -341,13 +341,13 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
-            // if (client && client.readyState === WebSocket.OPEN && passedTime < 59) {
-            //   client.send(toSend);
-              // startTime = new Date();
-            // }
-            // if (client && client.readyState === WebSocket.OPEN) {
-            //   client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
-            // }
+            if (client && client.readyState === WebSocket.OPEN && passedTime < 59) {
+              client.send(toSend);
+              startTime = new Date();
+            }
+            if (client && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+            }
             if (await checkSizeBeforeSendingData(0) === true) {
               console.log("save to names")
               saveToSDCard(true, obj);
@@ -367,9 +367,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
               let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-              // if (client && client.readyState === WebSocket.OPEN) {
-              //   client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
-              // }
+              if (client && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
+              }
               inCurrentDataset = 0;
             }
             latestData = data;
@@ -388,13 +388,13 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     }
   }
   // console.log(passedTime);
-  // if (client && client.readyState === WebSocket.OPEN && passedTime > 59) {
-  //   let dateObject = new Date();
-  //   let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));
-  //   let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
-  //   client.send(toSend);
-  //   startTime = new Date();
-  // }
+  if (client && client.readyState === WebSocket.OPEN && passedTime > 59) {
+    let dateObject = new Date();
+    let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));
+    let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    client.send(toSend);
+    startTime = new Date();
+  }
 }
 
 //*************************************************** */
