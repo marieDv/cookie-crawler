@@ -209,7 +209,6 @@ const c = new Crawler({
 
         console.log(`${currentURL}`);
         if (client.readyState === WebSocket.OPEN) {
-          needReconnect = false;
           heartbeat
         }
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
@@ -349,9 +348,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               client.send(toSend);
               startTime = new Date();
             }
-            // if (client && client.readyState === WebSocket.OPEN) {
-            //   client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
-            // }
+            if (client && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+            }
             if (await checkSizeBeforeSendingData(0) === true) {
               console.log("save to names")
               saveToSDCard(true, obj);
@@ -391,7 +390,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
-
+  if (client.readyState === WebSocket.OPEN) {
+    heartbeat
+  }
   console.log(passedTime);
   if (passedTime > 29) {
     let dateObject = new Date();
