@@ -144,7 +144,7 @@ setInterval(() => {
 
   if (needReconnect === true) {
     console.log(`... trying to reconnect ...`)
-     reconnect();
+    reconnect();
   }
 
 }, 30000);
@@ -302,9 +302,6 @@ async function searchForNames(url, cc, data, foundLinks) {
       await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
-      // if (await checkSizeBeforeSendingData(1) === true) {
-      //   await saveFullFile(data);
-      // }
       break;
   }
 }
@@ -314,7 +311,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-    // await saveFullFile(data);
+    await saveFullFile(data);
   }
   console.log(`${person}`);
   for (const a of person) {
@@ -383,34 +380,33 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         } else {
         }
       } else {
-        // if (await checkSizeBeforeSendingData(1) === true) {
-        //   await saveFullFile(data);
-        // }
       }
     } else {
-      // if (await checkSizeBeforeSendingData(1) === true) {
-      //   await saveFullFile(data);
-      // }
+      if (await checkSizeBeforeSendingData(1) === true) {
+        await saveFullFile(data);
+      }
     }
   }
   if (client.readyState === WebSocket.OPEN) {
     heartbeat
   }
   console.log(passedTime);
-  if (passedTime > 29) {
-    let dateObject = new Date();
-    console.log(`absolute number of names ${getabsoluteNumberNames(db)}`);
-    if (await getabsoluteNumberNames(db) > 2) {
-      let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
-      let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
-      if (client && client.readyState === WebSocket.OPEN) {
-        client.send(toSend);
-      }
-    }
-    startTime = new Date();
+  if (passedTime > 59) {
+    await sendRecycledName();
   }
 }
-
+async function sendRecycledName() {
+  let dateObject = new Date();
+  console.log(`absolute number of names ${getabsoluteNumberNames(db)}`);
+  if (await getabsoluteNumberNames(db) > 2) {
+    let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
+    let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    if (client && client.readyState === WebSocket.OPEN) {
+      client.send(toSend);
+    }
+  }
+  startTime = new Date();
+}
 //*************************************************** */
 // HELPER FUNCTIONS
 //*************************************************** */
