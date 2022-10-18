@@ -26,7 +26,7 @@ const emergencyURLS = ['https://youtube.com', 'https://elpais.com/', 'https://ww
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const dbUrlPrecheck = new Level('dbUrlPrecheck', { valueEncoding: 'json' })
-
+let totalNumberNames = 0;
 let lastProcessedURLs = [];
 let lastProcessedNames = [];
 let countLastProcessedURLs = 0;
@@ -107,11 +107,11 @@ async function connect() {
 
       if (event.data !== undefined && client && client.readyState === WebSocket.OPEN && (isJsonString(event.data) === true)) {
         if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
-          let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
-          if (totalNumberNames.queued !== undefined) {
-            for (let i = 0; i < totalNumberNames.queued[0].lastProcessedNames.length; i++) {
+          let totalNumberName = JSON.parse(fs.readFileSync("./latest_names.json").toString());
+          if (totalNumberName.queued !== undefined) {
+            for (let i = 0; i < totalNumberName.queued[0].lastProcessedNames.length; i++) {
               if (client && (needReconnect === false)) {
-                client.send(JSON.stringify(totalNumberNames.queued[0].lastProcessedNames[i]));
+                client.send(JSON.stringify(totalNumberName.queued[0].lastProcessedNames[i]));
               }
             }
           }
@@ -310,7 +310,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
     await saveFullFile(data);
   }
-  console.log(person);
+  console.log(`${url} with ${person}`);
   for (const a of person) {
 
     let text = a;
@@ -335,7 +335,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             currentDate = getCurrentDate();
 
 
-            let totalNumberNames = await getabsoluteNumberNames(db);
+            totalNumberNames = await getabsoluteNumberNames(db);
             obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: totalNumberNames });
 
             let dateObject = new Date();
@@ -387,16 +387,19 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
-  console.log(passedTime);
-  if (client && client.readyState === WebSocket.OPEN && passedTime > 59) {
-    let dateObject = new Date();
-    console.log("absolute number of names")
-    console.log(await getabsoluteNumberNames(db));
 
+  // totalNumberNames = await getabsoluteNumberNames(db);
+
+  console.log(passedTime);
+  if (passedTime > 29) {
+    let dateObject = new Date();
+    console.log(`absolute number of names ${getabsoluteNumberNames(db)}`);
     if (await getabsoluteNumberNames(db) > 2) {
-      let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));
+      let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
       let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
-      client.send(toSend);
+      if (client && client.readyState === WebSocket.OPEN) {
+        client.send(toSend);
+      }
     }
     startTime = new Date();
   }

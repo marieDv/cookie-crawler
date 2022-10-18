@@ -205,13 +205,13 @@ export function roundToTwo(num) {
 }
 
 
-export async function getExistingNames(db, random) {
+export async function getExistingNames(db, random, length) {
   const iterator = db.iterator()
   let counter = 0;
   let allNames = [];
   let returnValue;
   while (true) {
-    const entries = await iterator.nextv(100)
+    const entries = await iterator.nextv(length)
 
     if (entries.length === 0) {
       break
