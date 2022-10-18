@@ -263,6 +263,19 @@ const c = new Crawler({
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
 
+                let endTime = new Date();
+                passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
+                console.log(passedTime);
+                if (passedTime > 59) {
+                  let sendRecycledNameVar = await sendRecycledName(cc);
+                  if (client && client.readyState === WebSocket.OPEN) {
+                    client.send(sendRecycledNameVar);
+                  }
+                  startTime = new Date();
+                }
+
+
+
               }
             }
             catch (err) {
@@ -295,17 +308,6 @@ async function extractData(mdata, href, id, foundLinks) {
 async function searchForNames(url, cc, data, foundLinks) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
 
-  let endTime = new Date();
-  passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-  console.log(passedTime);
-  if (passedTime > 59) {
-    let sendRecycledNameVar = await sendRecycledName(cc);
-    if (client && client.readyState === WebSocket.OPEN) {
-      client.send(sendRecycledNameVar);
-    }
-    startTime = new Date();
-  }
-  
   switch (currentLanguage) {
     case 'german':
       await languageProcessing(deNlp(data), data, url, cc, foundLinks)
