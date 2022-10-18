@@ -311,6 +311,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     saveFullFile(data);
   }
   console.log(person);
+
+  if (client && client.readyState === WebSocket.OPEN) {
+    heartbeat
+  }
   for (const a of person) {
 
     let text = a;
