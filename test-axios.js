@@ -154,7 +154,7 @@ connect();
 // START CRAWLER
 //*************************************************** */
 
-clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
+clearDataBases([dbUrl, dbUrlPrecheck]);//db
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
@@ -308,7 +308,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-   await saveFullFile(data);
+    await saveFullFile(data);
   }
   console.log(person);
   for (const a of person) {
@@ -390,9 +390,14 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   console.log(passedTime);
   if (client && client.readyState === WebSocket.OPEN && passedTime > 59) {
     let dateObject = new Date();
-    let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));
-    let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
-    client.send(toSend);
+    console.log("absolute number of names")
+    console.log(await getabsoluteNumberNames(db));
+
+    if (await getabsoluteNumberNames(db) > 2) {
+      let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));
+      let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+      client.send(toSend);
+    }
     startTime = new Date();
   }
 }
