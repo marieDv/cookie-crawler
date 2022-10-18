@@ -321,9 +321,9 @@ async function searchForNames(url, cc, data, foundLinks) {
 async function languageProcessing(doc, data, url, cc, foundLinks) {
 
   let person = doc.match('#FirstName #LastName').out('array');
-  if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-    await saveFullFile(data);
-  }
+  // if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
+  //   await saveFullFile(data);
+  // }
   // console.log(person);
   for (const a of person) {
     let text = a;
