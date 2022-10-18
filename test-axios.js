@@ -142,17 +142,17 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-setInterval(() => {
+// setInterval(() => {
 
-  if (needReconnect === true) {
-    console.log(`... trying to reconnect ...`)
-    reconnect();
-  }
+//   if (needReconnect === true) {
+//     console.log(`... trying to reconnect ...`)
+//     reconnect();
+//   }
 
-}, 30000);
+// }, 30000);
 
 
-connect();
+// connect();
 
 setInterval(() => {
   if (client.readyState === WebSocket.OPEN) {
@@ -356,17 +356,17 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             if (client && client.readyState === WebSocket.OPEN) {
               client.send(toSend);
               startTime = new Date();
-              clearTimeout(timeoutId);
+              // clearTimeout(timeoutId);
             }
 
-            timeoutId = setTimeout(async function () {
-              console.log("timeoutime")
-              let sendRecycledNameVar = await sendRecycledName(cc)
-              if (client && client.readyState === WebSocket.OPEN) {
-                client.send(sendRecycledNameVar);
-              }
-            }
-              , 10000);
+            // timeoutId = setTimeout(async function () {
+            //   console.log("timeoutime")
+            //   let sendRecycledNameVar = await sendRecycledName(cc)
+            //   if (client && client.readyState === WebSocket.OPEN) {
+            //     client.send(sendRecycledNameVar);
+            //   }
+            // }
+            //   , 10000);
 
             if (client && client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
@@ -390,6 +390,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
               let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+              console.log(`queue size: ${mQueueSize} total names: ${totalNumberNames}`)
               if (client && client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
               }
@@ -402,9 +403,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       } else {
       }
     } else {
-      if (await checkSizeBeforeSendingData(1) === true) {
-        await saveFullFile(data);
-      }
+      // if (await checkSizeBeforeSendingData(1) === true) {
+      //   await saveFullFile(data);
+      // }
     }
   }
 }
@@ -439,6 +440,7 @@ async function checkSizeBeforeSendingData(i) {
     cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
+    console.log(`available: ${response[0].available}  used: ${response[0].used}`);
     if (numericValue[0] > 100) {
       console.log("CARD HAS SPACE GO AHEAD AND SAFE")
       return true;
