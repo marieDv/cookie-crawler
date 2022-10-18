@@ -317,8 +317,6 @@ async function searchForNames(url, cc, data, foundLinks) {
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#FirstName #LastName').out('array');
-  let endTime = new Date();
-  let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
     await saveFullFile(data);
   }
@@ -398,6 +396,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (client.readyState === WebSocket.OPEN) {
     heartbeat
   }
+
+  let endTime = new Date();
+  let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
   console.log(passedTime);
   if (passedTime > 59) {
     let sendRecycledNameVar = await sendRecycledName(cc);
