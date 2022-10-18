@@ -263,16 +263,7 @@ const c = new Crawler({
                 // console.log($("body").text().length + ' ' + check_mem() + 'MB');
                 await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
 
-                let endTime = new Date();
-                passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-                console.log(passedTime);
-                if (passedTime > 59) {
-                  let sendRecycledNameVar = await sendRecycledName(cc);
-                  if (client && client.readyState === WebSocket.OPEN) {
-                    client.send(sendRecycledNameVar);
-                  }
-                  startTime = new Date();
-                }
+
 
 
 
@@ -300,6 +291,19 @@ c.queue(savedToQueue);
 async function extractData(mdata, href, id, foundLinks) {
   let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
+    // ********
+    let endTime = new Date();
+    passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
+    console.log(passedTime);
+    if (passedTime > 59) {
+      startTime = new Date();
+      let sendRecycledNameVar = await sendRecycledName(countryCode[1]);
+      if (client && client.readyState === WebSocket.OPEN) {
+        client.send(sendRecycledNameVar);
+      }
+
+    }
+    // ********
     await searchForNames(href.href, countryCode[1], mdata, foundLinks);
   }
 }
