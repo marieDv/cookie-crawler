@@ -300,7 +300,7 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
     case '':
       if (await checkSizeBeforeSendingData(1) === true) {
-        saveFullFile(data);
+        await saveFullFile(data);
       }
       break;
   }
@@ -311,7 +311,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   let endTime = new Date();
   let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-    saveFullFile(data);
+   await saveFullFile(data);
   }
   console.log(person);
   for (const a of person) {
@@ -380,13 +380,13 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
         } else {
         }
       } else {
-        if (await checkSizeBeforeSendingData(1) === true) {
-          saveFullFile(data);
-        }
+        // if (await checkSizeBeforeSendingData(1) === true) {
+        //   await saveFullFile(data);
+        // }
       }
     } else {
       if (await checkSizeBeforeSendingData(1) === true) {
-        saveFullFile(data);
+        await saveFullFile(data);
       }
     }
   }

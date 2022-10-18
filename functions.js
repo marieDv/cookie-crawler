@@ -43,7 +43,7 @@ export function returnWithZero(obj) {
     return obj;
   }
 }
-export function saveToSDCard(names, mData) {
+export async function saveToSDCard(names, mData) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let dateObject = new Date();
@@ -130,7 +130,7 @@ export function replaceAllNames(mdata, savedNames, save) {
       dataPage: []
     };
     dataObj.dataPage.push({ text: dataStringWithoutNames });
-    saveToSDCard(false, dataObj);
+    await saveToSDCard(false, dataObj);
   }
   if (save !== 1) {
     safeOneDataset = mdata;
@@ -144,12 +144,12 @@ export function readJsonFile() {
 }
 
 
-export function saveFullFile(data) {
+export async function saveFullFile(data) {
   let dataObj = {
     dataPage: []
   };
   dataObj.dataPage.push({ text: data, id: 0 });
-  saveToSDCard(false, dataObj);
+  await saveToSDCard(false, dataObj);
 }
 
 
