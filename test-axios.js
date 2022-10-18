@@ -440,6 +440,11 @@ async function checkSizeBeforeSendingData(i) {
     cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
+    if(i === 0){
+    console.log('NAMES:')
+  }else {
+    console.log('FULL:')
+  }
     console.log(`available: ${response[0].available}  used: ${response[0].used}`);
     if (numericValue[0] > 100) {
       console.log("CARD HAS SPACE GO AHEAD AND SAFE")
