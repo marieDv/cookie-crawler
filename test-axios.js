@@ -140,15 +140,15 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-setInterval(() => {
+// setInterval(() => {
 
-  if (needReconnect === true) {
-    console.log(`... trying to reconnect ...`)
-    reconnect();
-  }
+//   if (needReconnect === true) {
+//     console.log(`... trying to reconnect ...`)
+//     reconnect();
+//   }
 
-}, 30000);
-connect();
+// }, 30000);
+// connect();
 
 //*************************************************** */
 // START CRAWLER
@@ -367,9 +367,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
               let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-              // if (client && client.readyState === WebSocket.OPEN) {
-              //   client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
-              // }
+              if (client && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
+              }
               inCurrentDataset = 0;
             }
             latestData = data;
@@ -387,8 +387,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
-
-  // totalNumberNames = await getabsoluteNumberNames(db);
 
   console.log(passedTime);
   if (passedTime > 29) {
