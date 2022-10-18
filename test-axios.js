@@ -140,15 +140,15 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-// setInterval(() => {
+setInterval(() => {
 
-//   if (needReconnect === true) {
-//     console.log(`... trying to reconnect ...`)
-//     reconnect();
-//   }
+  if (needReconnect === true) {
+    console.log(`... trying to reconnect ...`)
+    reconnect();
+  }
 
-// }, 30000);
-// connect();
+}, 30000);
+connect();
 
 //*************************************************** */
 // START CRAWLER
@@ -208,6 +208,10 @@ const c = new Crawler({
         }
 
         console.log(`${currentURL}`);
+        if (client.readyState === WebSocket.OPEN) {
+          needReconnect = false;
+          heartbeat
+        }
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
