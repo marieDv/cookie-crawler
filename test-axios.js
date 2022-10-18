@@ -363,7 +363,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               inCurrentDataset++;
             } else {
               if (await checkSizeBeforeSendingData(1) === true) {
-                replaceAllNames(data, tempSaveNames, stopSendingData);
+                await replaceAllNames(data, tempSaveNames, stopSendingData);
               }
               tempSaveNames = [];
               // console.log(`\n\n${getCurrentDate()} `)
