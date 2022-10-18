@@ -207,7 +207,7 @@ const c = new Crawler({
           return false;
         }
 
-
+        console.log(`${currentURL}`);
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
@@ -310,7 +310,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
     await saveFullFile(data);
   }
-  console.log(`${url} with ${person}`);
+  console.log(`${person}`);
   for (const a of person) {
 
     let text = a;
