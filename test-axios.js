@@ -169,7 +169,7 @@ await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
 const c = new Crawler({
-  maxConnections: 30,
+  maxConnections: 10,
   queueSize: 500,
   retries: 0,
   rateLimit: 0,
