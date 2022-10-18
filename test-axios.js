@@ -55,6 +55,7 @@ let securityCheckIsCardFull = false;
 let blacklistedHostUrls = [];
 let lastHundredHosts = [];
 let countURLS = 0;
+let waitForRecycledName = false;
 let passedTime;
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
@@ -292,9 +293,11 @@ async function extractData(mdata, href, id, foundLinks) {
     let endTime = new Date();
     passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
     console.log(passedTime);
-    if (passedTime > 59) {
-      startTime = new Date();
+
+    if (passedTime > 59 && waitForRecycledName === false) {
+
       let sendRecycledNameVar = await sendRecycledName(countryCode[1]);
+      
       if (client && client.readyState === WebSocket.OPEN) {
         client.send(sendRecycledNameVar);
       }
@@ -414,10 +417,13 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 }
 async function sendRecycledName(cc) {
   let dateObject = new Date();
+  waitForRecycledName = true;
   console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
   if (await getabsoluteNumberNames(db) > 2) {
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
     let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    startTime = new Date();
+    waitForRecycledName = false;
     return toSend;
   }
 }
