@@ -407,11 +407,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
-
-
-  if (client.readyState === WebSocket.OPEN) {
-    heartbeat
-  }
 }
 async function sendRecycledName(cc) {
   let dateObject = new Date();
