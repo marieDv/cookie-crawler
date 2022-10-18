@@ -55,7 +55,7 @@ let securityCheckIsCardFull = false;
 let blacklistedHostUrls = [];
 let lastHundredHosts = [];
 let countURLS = 0;
-
+let passedTime;
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
@@ -294,6 +294,18 @@ async function extractData(mdata, href, id, foundLinks) {
 /** supports: german, english, french, italian and spanish */
 async function searchForNames(url, cc, data, foundLinks) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
+
+  let endTime = new Date();
+  passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
+  console.log(passedTime);
+  if (passedTime > 59) {
+    let sendRecycledNameVar = await sendRecycledName(cc);
+    if (client && client.readyState === WebSocket.OPEN) {
+      client.send(sendRecycledNameVar);
+    }
+    startTime = new Date();
+  }
+  
   switch (currentLanguage) {
     case 'german':
       await languageProcessing(deNlp(data), data, url, cc, foundLinks)
@@ -312,16 +324,6 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
     case '':
       break;
-  }
-  let endTime = new Date();
-  let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-  console.log(passedTime);
-  if (passedTime > 59) {
-    let sendRecycledNameVar = await sendRecycledName(cc);
-    if (client && client.readyState === WebSocket.OPEN) {
-      client.send(sendRecycledNameVar);
-    }
-    startTime = new Date();
   }
 }
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
