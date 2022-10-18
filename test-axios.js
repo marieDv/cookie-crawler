@@ -392,10 +392,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   }
   console.log(passedTime);
   if (passedTime > 59) {
-    await sendRecycledName();
+    await sendRecycledName(cc);
   }
 }
-async function sendRecycledName() {
+async function sendRecycledName(cc) {
   let dateObject = new Date();
   console.log(`absolute number of names ${getabsoluteNumberNames(db)}`);
   if (await getabsoluteNumberNames(db) > 2) {
