@@ -400,9 +400,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   }
   console.log(passedTime);
   if (passedTime > 59) {
-    let sendRecycledName = await sendRecycledName(cc);
+    let sendRecycledNameVar = await sendRecycledName(cc);
     if (client && client.readyState === WebSocket.OPEN) {
-      client.send(sendRecycledName);
+      client.send(sendRecycledNameVar);
     }
     startTime = new Date();
   }
