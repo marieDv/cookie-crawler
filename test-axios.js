@@ -154,7 +154,7 @@ connect();
 // START CRAWLER
 //*************************************************** */
 
-clearDataBases([dbUrl, dbUrlPrecheck]);//db
+clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
