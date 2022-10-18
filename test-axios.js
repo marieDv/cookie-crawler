@@ -48,6 +48,7 @@ let currentURL = '';
 let needReconnect = false;
 let startTime = new Date();
 let client;
+let timeoutId;
 let stopSendingData = 3;
 let sdCardToChange = "";
 let emailSend = false;
@@ -222,7 +223,7 @@ const c = new Crawler({
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
-     
+
 
 
         for (const a of array) {
@@ -289,21 +290,6 @@ c.queue(savedToQueue);
 async function extractData(mdata, href, id, foundLinks) {
   let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
-    // ********
-    let endTime = new Date();
-    passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-    console.log(passedTime);
-
-    if (passedTime > 59 && waitForRecycledName === false) {
-
-      let sendRecycledNameVar = await sendRecycledName(countryCode[1]);
-      
-      if (client && client.readyState === WebSocket.OPEN) {
-        client.send(sendRecycledNameVar);
-      }
-
-    }
-    // ********
     await searchForNames(href.href, countryCode[1], mdata, foundLinks);
   }
 }
@@ -311,7 +297,6 @@ async function extractData(mdata, href, id, foundLinks) {
 /** supports: german, english, french, italian and spanish */
 async function searchForNames(url, cc, data, foundLinks) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
-
   switch (currentLanguage) {
     case 'german':
       await languageProcessing(deNlp(data), data, url, cc, foundLinks)
@@ -334,11 +319,12 @@ async function searchForNames(url, cc, data, foundLinks) {
 }
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks) {
+
   let person = doc.match('#FirstName #LastName').out('array');
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
     await saveFullFile(data);
   }
-  console.log(`${person}`);
+  // console.log(person);
   for (const a of person) {
     let text = a;
     const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
@@ -360,7 +346,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = getCurrentDate();
-
+            console.log(tempNameString)
 
             totalNumberNames = await getabsoluteNumberNames(db);
             obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: totalNumberNames });
@@ -368,10 +354,23 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
-            if (client && client.readyState === WebSocket.OPEN && passedTime < 59) {
+            timeoutId = setTimeout(async function () {
+              console.log("timeoutime")
+              let sendRecycledNameVar = await sendRecycledName(cc)
+              if (client && client.readyState === WebSocket.OPEN) {
+                client.send(sendRecycledNameVar);
+              }
+            }
+              , 2000);
+
+            if (client && client.readyState === WebSocket.OPEN) {
               client.send(toSend);
               startTime = new Date();
+              clearTimeout(timeoutId);
             }
+
+
+
             if (client && client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
@@ -411,6 +410,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
+
+
   if (client.readyState === WebSocket.OPEN) {
     heartbeat
   }
@@ -418,7 +419,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 async function sendRecycledName(cc) {
   let dateObject = new Date();
   waitForRecycledName = true;
-  console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
+  // console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
   if (await getabsoluteNumberNames(db) > 2) {
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
     let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
