@@ -140,14 +140,14 @@ async function reconnect() {
     console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
   }
 }
-// setInterval(() => {
+setInterval(() => {
 
-//   if (needReconnect === true) {
-//     console.log(`... trying to reconnect ...`)
-//     reconnect();
-//   }
+  if (needReconnect === true) {
+    console.log(`... trying to reconnect ...`)
+    reconnect();
+  }
 
-// }, 30000);
+}, 30000);
 
 
 connect();
@@ -221,10 +221,7 @@ const c = new Crawler({
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
 
-        if (needReconnect === true) {
-          console.log(`... trying to reconnect ...`)
-          await reconnect();
-        }
+     
 
 
         for (const a of array) {
