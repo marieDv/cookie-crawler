@@ -358,7 +358,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               startTime = new Date();
               clearTimeout(timeoutId);
             }
-            
+
             timeoutId = setTimeout(async function () {
               console.log("timeoutime")
               let sendRecycledNameVar = await sendRecycledName(cc)
@@ -366,7 +366,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
                 client.send(sendRecycledNameVar);
               }
             }
-              , 2000);
+              , 10000);
 
             if (client && client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
