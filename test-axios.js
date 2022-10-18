@@ -313,6 +313,16 @@ async function searchForNames(url, cc, data, foundLinks) {
     case '':
       break;
   }
+  let endTime = new Date();
+  let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
+  console.log(passedTime);
+  if (passedTime > 59) {
+    let sendRecycledNameVar = await sendRecycledName(cc);
+    if (client && client.readyState === WebSocket.OPEN) {
+      client.send(sendRecycledNameVar);
+    }
+    startTime = new Date();
+  }
 }
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks) {
@@ -395,17 +405,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   }
   if (client.readyState === WebSocket.OPEN) {
     heartbeat
-  }
-
-  let endTime = new Date();
-  let passedTime = (Math.round((startTime - endTime) / 1000)) * -1;
-  console.log(passedTime);
-  if (passedTime > 59) {
-    let sendRecycledNameVar = await sendRecycledName(cc);
-    if (client && client.readyState === WebSocket.OPEN) {
-      client.send(sendRecycledNameVar);
-    }
-    startTime = new Date();
   }
 }
 async function sendRecycledName(cc) {
