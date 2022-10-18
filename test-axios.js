@@ -144,11 +144,17 @@ setInterval(() => {
 
   if (needReconnect === true) {
     console.log(`... trying to reconnect ...`)
-    reconnect();
+     reconnect();
   }
 
 }, 30000);
 connect();
+
+setInterval(() => {
+  if (client.readyState === WebSocket.OPEN) {
+    heartbeat
+  }
+}, 5000);
 
 //*************************************************** */
 // START CRAWLER
@@ -208,9 +214,6 @@ const c = new Crawler({
         }
 
         console.log(`${currentURL}`);
-        if (client.readyState === WebSocket.OPEN) {
-          heartbeat
-        }
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
