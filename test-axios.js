@@ -391,7 +391,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
     }
   }
-  // console.log(passedTime);
+  console.log(passedTime);
   if (client && client.readyState === WebSocket.OPEN && passedTime > 59) {
     let dateObject = new Date();
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))));
