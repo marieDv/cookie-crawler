@@ -154,11 +154,11 @@ async function reconnect() {
 
 // connect();
 
-setInterval(() => {
-  if (client.readyState === WebSocket.OPEN) {
-    heartbeat
-  }
-}, 5000);
+// setInterval(() => {
+//   if (client.readyState === WebSocket.OPEN) {
+//     heartbeat
+//   }
+// }, 5000);
 
 //*************************************************** */
 // START CRAWLER
