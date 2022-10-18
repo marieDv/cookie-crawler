@@ -403,9 +403,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       } else {
       }
     } else {
-      // if (await checkSizeBeforeSendingData(1) === true) {
-      //   await saveFullFile(data);
-      // }
     }
   }
 }
@@ -445,7 +442,7 @@ async function checkSizeBeforeSendingData(i) {
   }else {
     console.log('FULL:')
   }
-    console.log(`available: ${response[0].available}  used: ${response[0].used}`);
+    console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
     if (numericValue[0] > 100) {
       // console.log("CARD HAS SPACE GO AHEAD AND SAFE")
       return true;
