@@ -7,7 +7,7 @@ import sizeof from 'object-sizeof';
 import { Console } from 'console';
 
 let lastValidLanguage = '';
-let fullDataObj = { page: [] };
+let fullDataObj = { pages: [] };
 let fullNamesObj = { name: [] };
 
 const { terminal, TextTable } = pkg;
@@ -44,22 +44,23 @@ export function returnWithZero(obj) {
   }
 }
 export async function saveToSDCard(names, mData) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
-    fullDataObj.page.push({ text: mData });
-    if (sizeof(fullDataObj) / (1024 * 1024) > 4) {
+
+    fullDataObj.pages.push({ mData });
+    if (sizeof(fullDataObj) / (1024 * 1024) > 10) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
       fs.writeFileSync(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
-      fullDataObj = { page: [] }
+      fullDataObj = { pages: [] }
     }
   } else {
     fullNamesObj.name.push({ mData });
-    console.log(`size name data object: ${sizeof(fullNamesObj)}`)
+    // console.log(`size name data object: ${sizeof(fullNamesObj)}`)
     if (sizeof(fullNamesObj) > 5000) {
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
@@ -115,26 +116,27 @@ export function deleteFileContent(mfile) {
 
 
 
-export async function replaceAllNames(mdata, savedNames, save) {
+export async function replaceAllNames(mdata, savedNames, save, id) {
 
   let replacedNames = '';
-  if (safeOneDataset) {
-    let dataStringWithoutNames = safeOneDataset.toString();
+  if (mdata) {
+    let dataStringWithoutNames = mdata.toString();
     for (let q = 0; q < savedNames.length; q++) {
-      if (safeOneDataset.includes(savedNames[q])) {
+      if (mdata.includes(savedNames[q])) {
         replacedNames += "" + savedNames[q] + ", ";
         dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
       }
     }
     let dataObj = {
-      dataPage: []
+      id: id,
+      html: dataStringWithoutNames,
     };
-    dataObj.dataPage.push({ text: dataStringWithoutNames });
+    // dataObj.pages.push({  id: id, html: dataStringWithoutNames });
     await saveToSDCard(false, dataObj);
   }
-  if (save !== 1) {
-    safeOneDataset = mdata;
-  }
+  // if (save !== 1) {
+  //   safeOneDataset = mdata;
+  // }
 }
 
 export function readJsonFile() {

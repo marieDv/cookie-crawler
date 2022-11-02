@@ -59,6 +59,7 @@ let waitForRecycledName = false;
 let sdFULLInfo = [];
 let sdNAMESInfo = [];
 let foundNames = 0;
+let NAMES = [];
 
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
@@ -166,7 +167,7 @@ async function reconnect() {
 // START CRAWLER
 //*************************************************** */
 
-// clearDataBases([dbUrl, dbUrlPrecheck]);//db
+clearDataBases([dbUrl, dbUrlPrecheck]);//db
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
@@ -268,7 +269,8 @@ const c = new Crawler({
 
           }
         }
-        await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
+        // console.log($("html").text())
+        await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
       }
       c.queue(urls);
     }
@@ -321,6 +323,11 @@ async function searchForNames(url, cc, data, foundLinks) {
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
 ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`);
+
+if (await checkSizeBeforeSendingData(1) === true) {
+  await replaceAllNames(data, NAMES, stopSendingData, totalURLS);
+}
+NAMES = [];
 foundNames = 0;
 }
 
@@ -338,7 +345,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
   let person = doc.match('#FirstName #LastName').out('array');
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-    await saveFullFile(data);
+    // await saveFullFile(data);
   }
 
   for (const a of person) {
@@ -393,12 +400,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
             if (data === latestData) {
               tempSaveNames[inCurrentDataset] = text;
+              NAMES[foundNames] = text;
               inCurrentDataset++;
               foundNames++;
             } else {
-              if (await checkSizeBeforeSendingData(1) === true) {
-                await replaceAllNames(data, tempSaveNames, stopSendingData);
-              }
+           
               tempSaveNames = [];
               // console.log(`\n\n${getCurrentDate()} `)
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
@@ -438,8 +444,8 @@ async function sendRecycledName(cc) {
 //*************************************************** */
 
 async function checkSizeBeforeSendingData(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'GB',
@@ -451,7 +457,7 @@ async function checkSizeBeforeSendingData(i) {
     const response = await df(options);
     cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
-    numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
+    numericValue = response[0].available.includes('GB') ? response[0].available.split('GB') : '';
     if (i === 0) {
 
       sdNAMESInfo[0] = response[0].size;
@@ -463,7 +469,7 @@ async function checkSizeBeforeSendingData(i) {
       sdFULLInfo[1] = response[0].used;
     }
     // console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
-    if (numericValue[0] > 100) {
+    if (numericValue[0] > 10) {
       // console.log("CARD HAS SPACE GO AHEAD AND SAFE")
       return true;
     } else {
