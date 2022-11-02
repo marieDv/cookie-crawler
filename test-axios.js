@@ -336,7 +336,8 @@ TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
 ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`);
 
   if (await checkSizeBeforeSendingData(1) === true) {
-    await replaceAllNames(data, NAMES, stopSendingData, totalURLS);
+    
+    await replaceAllNames(data, NAMES, stopSendingData, totalURLS, currentURL, getCurrentDate());
   }
   NAMES = [];
   foundNames = 0;
@@ -368,9 +369,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
       }
       const checkedDataBase = await checkNamesDatabase(db, text);
       if (checkedDataBase === false) {
-        let obj = {
-          person: []
-        };
+
         let uppercaseName = text.split(" ");
         if (uppercaseName[1]) {
           if (uppercaseName[0][2] && uppercaseName[1][2]) {
@@ -381,7 +380,18 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = getCurrentDate();
             totalNumberNames = await getabsoluteNumberNames(db);
-            obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: totalNumberNames });
+
+
+            let obj = {
+              name: tempNameString,
+              url: url,
+              id: totalNumberNames,
+              date: currentDate,
+              countrycode: cc,
+              language: currentLanguage
+            };
+
+            // obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: totalNumberNames });
 
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);

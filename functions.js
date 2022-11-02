@@ -7,8 +7,8 @@ import sizeof from 'object-sizeof';
 import { Console } from 'console';
 
 let lastValidLanguage = '';
-let fullDataObj = { pages: [] };
-let fullNamesObj = { name: [] };
+let fullDataObj = [];
+let fullNamesObj = [];
 
 const { terminal, TextTable } = pkg;
 const term = pkg.terminal;
@@ -49,23 +49,24 @@ export async function saveToSDCard(names, mData) {
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
-
-    fullDataObj.pages.push({ mData });
+    let page = mData;
+    fullDataObj.push({ page });
     if (sizeof(fullDataObj) / (1024 * 1024) > 10) {
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
       fs.writeFileSync(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
-      fullDataObj = { pages: [] }
+      fullDataObj = [];
     }
   } else {
-    fullNamesObj.name.push({ mData });
-    // console.log(`size name data object: ${sizeof(fullNamesObj)}`)
+    let person = mData;
+    fullNamesObj.push({ person });
+
     if (sizeof(fullNamesObj) > 5000) {
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
       fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
-      fullNamesObj = { name: [] }
+      fullNamesObj = [];
     }
   }
 
@@ -116,7 +117,7 @@ export function deleteFileContent(mfile) {
 
 
 
-export async function replaceAllNames(mdata, savedNames, save, id) {
+export async function replaceAllNames(mdata, savedNames, save, id, url, date) {
 
   let replacedNames = '';
   if (mdata) {
@@ -128,7 +129,10 @@ export async function replaceAllNames(mdata, savedNames, save, id) {
       }
     }
     let dataObj = {
+      url: url,
       id: id,
+      date: date,
+      names: savedNames,
       html: dataStringWithoutNames,
     };
     // dataObj.pages.push({  id: id, html: dataStringWithoutNames });
