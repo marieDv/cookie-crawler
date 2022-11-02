@@ -447,14 +447,15 @@ async function checkSizeBeforeSendingData(i) {
     cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
+    console.log(response[0])
     if (i === 0) {
 
       sdNAMESInfo[0] = response[0].available;
-      sdNAMESInfo[1] = response[0].used;
+      sdNAMESInfo[1] = response[0].size;
       if (i === 1)
 
-        sdFULLInfo[0] = response[0].available;
-      sdFULLInfo[1] = response[0].used;
+      sdFULLInfo[0] = response[0].available;
+      sdFULLInfo[1] = response[0].size;
     }
     // console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
     if (numericValue[0] > 100) {
