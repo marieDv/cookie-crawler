@@ -452,7 +452,8 @@ async function checkSizeBeforeSendingData(i) {
 
       sdNAMESInfo[0] = response[0].size;
       sdNAMESInfo[1] = response[0].used;
-      if (i === 1)
+    }
+    if (i === 1) {
 
       sdFULLInfo[0] = response[0].size;
       sdFULLInfo[1] = response[0].used;
