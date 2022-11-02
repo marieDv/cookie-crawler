@@ -6,6 +6,7 @@ import { close } from 'node:fs';
 import * as fs from 'fs';
 import * as util from 'util';
 import df_ from 'node-df';
+import * as dns from 'dns';
 
 const df = util.promisify(df_);
 
@@ -60,7 +61,7 @@ let sdFULLInfo = [];
 let sdNAMESInfo = [];
 let foundNames = 0;
 let NAMES = [];
-
+let isConnected = true;
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
@@ -171,6 +172,10 @@ clearDataBases([dbUrl, dbUrlPrecheck]);//db
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
+
+
+
+
 const c = new Crawler({
   maxConnections: 10,
   queueSize: 1000,
@@ -178,106 +183,112 @@ const c = new Crawler({
   rateLimit: 0,
 
   callback: async (error, res, done) => {
-    if (error) {
-    } else {
-      const $ = res.$;
-      var urls = [];
+    isConnected = !!await dns.promises.resolve('google.com').catch(() => { console.log("ERROR: NO INTERNET CONNECTION") });
+    if (isConnected === true) {
 
 
-      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-        let array = $('a').toArray();
-        linksFound = array.length;
-        currentURL = res.request.uri.href;
-        const url = new URL(res.request.uri.href);
 
-        var pslUrl = psl.parse(url.host);
-        lastHundredHosts[countURLS] = pslUrl.domain;
-        const allEqual = arr => arr.every(val => val === arr[0]);
+      if (error) {
+      } else {
+        const $ = res.$;
+        var urls = [];
 
-        if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
-          blacklistedHostUrls.push(lastHundredHosts[0]);
 
-          if (blacklistedHostUrls.length > 100) {
-            // console.log(`over 100 ${emergencyURLS[rand(0, emergencyURLS.length)]}`)
-            urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
-            urls = emergencyURLS;
-            c.queue(urls);
-            blacklistedHostUrls = [];
-          }
-        }
 
-        countURLS++;
-        if (countURLS === 20) {
-          countURLS = 0;
-        }
+        if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
+          let array = $('a').toArray();
+          linksFound = array.length;
+          currentURL = res.request.uri.href;
+          const url = new URL(res.request.uri.href);
 
-        function includesBlacklistedURL(link) {
-          for (let i = 0; i < blacklistedHostUrls.length; i++) {
-            if (link.includes(blacklistedHostUrls[i])) {
-              return true;
+          var pslUrl = psl.parse(url.host);
+          lastHundredHosts[countURLS] = pslUrl.domain;
+          const allEqual = arr => arr.every(val => val === arr[0]);
+
+          if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
+            blacklistedHostUrls.push(lastHundredHosts[0]);
+
+            if (blacklistedHostUrls.length > 100) {
+              // console.log(`over 100 ${emergencyURLS[rand(0, emergencyURLS.length)]}`)
+              urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
+              urls = emergencyURLS;
+              c.queue(urls);
+              blacklistedHostUrls = [];
             }
           }
-          return false;
-        }
+
+          countURLS++;
+          if (countURLS === 20) {
+            countURLS = 0;
+          }
+
+          function includesBlacklistedURL(link) {
+            for (let i = 0; i < blacklistedHostUrls.length; i++) {
+              if (link.includes(blacklistedHostUrls[i])) {
+                return true;
+              }
+            }
+            return false;
+          }
 
 
-        let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-        if (client && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-        }
+          let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
+          if (client && client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+          }
+          for (const a of array) {
+            if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
+              let oldWebsite = false;
+              try {
+                const url = new URL(a.attribs.href, res.request.uri.href);
+                let value = await dbUrlPrecheck.get(url.origin, function (err) {
+                  if (err) {
+                    oldWebsite = true;
+                  } else {
+                    oldWebsite = false;
+                  }
+                });
+                await dbUrlPrecheck.put(url.origin, url.origin);
 
-
-
-
-        for (const a of array) {
-          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
-            let oldWebsite = false;
-            try {
-              const url = new URL(a.attribs.href, res.request.uri.href);
-              let value = await dbUrlPrecheck.get(url.origin, function (err) {
-                if (err) {
-                  oldWebsite = true;
-                } else {
-                  oldWebsite = false;
-                }
-              });
-              await dbUrlPrecheck.put(url.origin, url.origin);
-
-              if (oldWebsite === true) {
-                let newDomain = url.protocol + '//' + pslUrl.domain;
-                mQueueSize = c.queueSize;
-                if (c.queueSize <= 2000) {
-                  urls.push(url.href);
-                }
-                if (countLastProcessedURLs === 20) {
-                  saveLastSession(globalID + c.queueSize);
-                  countLastProcessedURLs = 0;
-                } else if (lastProcessedURLs.includes(newDomain) === false) {
-                  lastProcessedURLs[countSavedURLs] = newDomain;
-                  countLastProcessedURLs++
-                  countSavedURLs++;
-                  if (countSavedURLs === 100) {
-                    countSavedURLs = 0;
+                if (oldWebsite === true) {
+                  let newDomain = url.protocol + '//' + pslUrl.domain;
+                  mQueueSize = c.queueSize;
+                  if (c.queueSize <= 2000) {
+                    urls.push(url.href);
+                  }
+                  if (countLastProcessedURLs === 20) {
+                    saveLastSession(globalID + c.queueSize);
+                    countLastProcessedURLs = 0;
+                  } else if (lastProcessedURLs.includes(newDomain) === false) {
+                    lastProcessedURLs[countSavedURLs] = newDomain;
+                    countLastProcessedURLs++
+                    countSavedURLs++;
+                    if (countSavedURLs === 100) {
+                      countSavedURLs = 0;
+                    }
                   }
                 }
               }
-            }
-            catch (err) {
-              console.log(err)
-            }
+              catch (err) {
+                console.log(err)
+              }
 
 
+            }
           }
+          // console.log($("html").text())
+          await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
         }
-        // console.log($("html").text())
-        await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
+        c.queue(urls);
+
       }
-      c.queue(urls);
-    }
-    done();
+      done();
+    };
   }
 });
-c.queue(savedToQueue);
+if (isConnected === true) {
+  c.queue(savedToQueue);
+}
 
 //*************************************************** */
 // NLP STUFF & DATA EXTRACTION
@@ -313,7 +324,7 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
   }
   let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
-              // totalNumberNames = await getabsoluteNumberNames(db);
+  // totalNumberNames = await getabsoluteNumberNames(db);
   // console.log(`\n${currentURL} \n
   // NAMES: ${inCurrentDataset}, URLSs: l: ${foundLinks}  ${totalURLS}\n qs: ${mQueueSize} || tn: ${totalNumberNames} 
   //  ||  memory usage: ${check_mem()}MB \n CARD A: ${sdFULLInfo[1]} from ${sdFULLInfo[0]} || CARD B: ${sdNAMESInfo[1]} from ${sdNAMESInfo[0]}`);
@@ -324,11 +335,11 @@ NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
 ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`);
 
-if (await checkSizeBeforeSendingData(1) === true) {
-  await replaceAllNames(data, NAMES, stopSendingData, totalURLS);
-}
-NAMES = [];
-foundNames = 0;
+  if (await checkSizeBeforeSendingData(1) === true) {
+    await replaceAllNames(data, NAMES, stopSendingData, totalURLS);
+  }
+  NAMES = [];
+  foundNames = 0;
 }
 
 
@@ -404,7 +415,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               inCurrentDataset++;
               foundNames++;
             } else {
-           
+
               tempSaveNames = [];
               // console.log(`\n\n${getCurrentDate()} `)
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
@@ -417,7 +428,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               inCurrentDataset = 0;
             }
             latestData = data;
-            
+
           }
         } else {
         }
