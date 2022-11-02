@@ -310,7 +310,8 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
   }
   let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
-  console.log(`\n${currentURL} \n links: ${foundLinks} || names: ${inCurrentDataset} \n queue size: ${mQueueSize} || total names: ${totalNumberNames} || total URLs: ${totalURLS} ||  memory usage: ${check_mem()}MB \n FULL: avaialble ${sdFULLInfo[0]} used ${sdFULLInfo[1]} || NAMES: avaialble ${sdNAMESInfo[0]} used ${sdNAMESInfo[1]}`);
+  console.log(`\n${currentURL} \n links: ${foundLinks} || names: ${inCurrentDataset} \n queue size: ${mQueueSize} || total names: ${totalNumberNames} 
+  || total URLs: ${totalURLS} ||  memory usage: ${check_mem()}MB \n FULL: avaialble ${sdFULLInfo[0]} used ${sdFULLInfo[1]} || NAMES: avaialble ${sdNAMESInfo[0]} used ${sdNAMESInfo[1]}`);
 
 }
 
@@ -442,12 +443,12 @@ async function checkSizeBeforeSendingData(i) {
     numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
     if (i === 0) {
       console.log('NAMES:')
-      sdFULLInfo[0] = response[0].available;
-      sdFULLInfo[1] = response[0].used;
-    } else {
-      console.log('FULL:')
       sdNAMESInfo[0] = response[0].available;
       sdNAMESInfo[1] = response[0].used;
+    if(i === 1)
+      console.log('FULL:')
+      sdFULLInfo[0] = response[0].available;
+      sdFULLInfo[1] = response[0].used;
     }
     console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
     if (numericValue[0] > 100) {
