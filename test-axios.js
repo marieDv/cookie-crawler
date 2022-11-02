@@ -58,6 +58,7 @@ let countURLS = 0;
 let waitForRecycledName = false;
 let sdFULLInfo = [];
 let sdNAMESInfo = [];
+let foundNames = 0;
 
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
@@ -171,7 +172,7 @@ await checkSizeBeforeSendingData(1);
 
 const c = new Crawler({
   maxConnections: 10,
-  queueSize: 500,
+  queueSize: 1000,
   retries: 0,
   rateLimit: 0,
 
@@ -244,7 +245,7 @@ const c = new Crawler({
               if (oldWebsite === true) {
                 let newDomain = url.protocol + '//' + pslUrl.domain;
                 mQueueSize = c.queueSize;
-                if (c.queueSize <= 1000) {
+                if (c.queueSize <= 2000) {
                   urls.push(url.href);
                 }
                 if (countLastProcessedURLs === 20) {
@@ -310,15 +311,17 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
   }
   let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
+              // totalNumberNames = await getabsoluteNumberNames(db);
   // console.log(`\n${currentURL} \n
   // NAMES: ${inCurrentDataset}, URLSs: l: ${foundLinks}  ${totalURLS}\n qs: ${mQueueSize} || tn: ${totalNumberNames} 
   //  ||  memory usage: ${check_mem()}MB \n CARD A: ${sdFULLInfo[1]} from ${sdFULLInfo[0]} || CARD B: ${sdNAMESInfo[1]} from ${sdNAMESInfo[0]}`);
 
 
   console.log(`\n${currentURL}
-NAMES: ${inCurrentDataset}, URLS: ${foundLinks}(${mQueueSize})
+NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
-ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`)
+ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`);
+foundNames = 0;
 }
 
 
@@ -391,6 +394,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             if (data === latestData) {
               tempSaveNames[inCurrentDataset] = text;
               inCurrentDataset++;
+              foundNames++;
             } else {
               if (await checkSizeBeforeSendingData(1) === true) {
                 await replaceAllNames(data, tempSaveNames, stopSendingData);
@@ -407,6 +411,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               inCurrentDataset = 0;
             }
             latestData = data;
+            
           }
         } else {
         }
