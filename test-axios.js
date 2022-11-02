@@ -447,7 +447,6 @@ async function checkSizeBeforeSendingData(i) {
     cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
-    console.log(response[0])
     if (i === 0) {
 
       sdNAMESInfo[0] = response[0].size;
