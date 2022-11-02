@@ -165,7 +165,7 @@ async function reconnect() {
 // START CRAWLER
 //*************************************************** */
 
-clearDataBases([dbUrl, dbUrlPrecheck]);//db
+// clearDataBases([dbUrl, dbUrlPrecheck]);//db
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
@@ -310,9 +310,15 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
   }
   let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
-  console.log(`\n${currentURL} \n links: ${foundLinks} || names: ${inCurrentDataset} \n queue size: ${mQueueSize} || total names: ${totalNumberNames} 
-  || total URLs: ${totalURLS} ||  memory usage: ${check_mem()}MB \n FULL: avaialble ${sdFULLInfo[0]} used ${sdFULLInfo[1]} || NAMES: avaialble ${sdNAMESInfo[0]} used ${sdNAMESInfo[1]}`);
+  // console.log(`\n${currentURL} \n
+  // NAMES: ${inCurrentDataset}, URLSs: l: ${foundLinks}  ${totalURLS}\n qs: ${mQueueSize} || tn: ${totalNumberNames} 
+  //  ||  memory usage: ${check_mem()}MB \n CARD A: ${sdFULLInfo[1]} from ${sdFULLInfo[0]} || CARD B: ${sdNAMESInfo[1]} from ${sdNAMESInfo[0]}`);
 
+
+  console.log(`\n${currentURL}
+NAMES: ${inCurrentDataset}, URLS: ${foundLinks}(${mQueueSize})
+TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
+ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`)
 }
 
 
@@ -431,9 +437,9 @@ async function checkSizeBeforeSendingData(i) {
   let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let options = {
     file: currentPath[i],
-    prefixMultiplier: 'MB',
+    prefixMultiplier: 'GB',
     isDisplayPrefixMultiplier: true,
-    precision: 4
+    precision: 2
   };
   let numericValue = '0';
   if (fs.existsSync(currentPath[i])) {
@@ -442,15 +448,15 @@ async function checkSizeBeforeSendingData(i) {
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
     if (i === 0) {
-      console.log('NAMES:')
+
       sdNAMESInfo[0] = response[0].available;
       sdNAMESInfo[1] = response[0].used;
-    if(i === 1)
-      console.log('FULL:')
-      sdFULLInfo[0] = response[0].available;
+      if (i === 1)
+
+        sdFULLInfo[0] = response[0].available;
       sdFULLInfo[1] = response[0].used;
     }
-    console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
+    // console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
     if (numericValue[0] > 100) {
       // console.log("CARD HAS SPACE GO AHEAD AND SAFE")
       return true;
