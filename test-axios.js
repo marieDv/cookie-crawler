@@ -324,7 +324,7 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
   }
 
-  await printLogs();
+  await printLogs(foundLinks);
   // REPLACE FOUND NAMES AND SAVE HTML DATA TO SD CARD
   if (await checkSizeBeforeSendingData(1) === true) {
     await replaceAllNames(data, NAMES, stopSendingData, totalURLS, currentURL, getCurrentDate());
@@ -335,7 +335,7 @@ async function searchForNames(url, cc, data, foundLinks) {
 
 
 
-async function printLogs() {
+async function printLogs(foundLinks) {
   let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
   console.log(`\n${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
