@@ -44,8 +44,8 @@ export function returnWithZero(obj) {
   }
 }
 export async function saveToSDCard(names, mData) {
-  let currentPath = ['./names-output/output/', './full-output/output/'];
-  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
@@ -106,15 +106,6 @@ export function checkCountryCode(countryCode) {
 
 
 
-export function deleteFileContent(mfile) {
-  if (mfile) {
-    fs.truncate(mfile, 0, function () { console.log('done') });
-    // fs.writeFileSync(mfile, '[]');
-  }
-}
-
-
-
 
 
 export async function replaceAllNames(mdata, savedNames, save, id, url, date) {
@@ -135,12 +126,8 @@ export async function replaceAllNames(mdata, savedNames, save, id, url, date) {
       names: savedNames,
       html: dataStringWithoutNames,
     };
-    // dataObj.pages.push({  id: id, html: dataStringWithoutNames });
     await saveToSDCard(false, dataObj);
   }
-  // if (save !== 1) {
-  //   safeOneDataset = mdata;
-  // }
 }
 
 export function readJsonFile() {
@@ -197,7 +184,6 @@ export function writeLatestToTerminal(id, urls) {
 
   }
   );
-  // console.log("written to terminal");
 }
 
 export function clearDataBases(databases) {
