@@ -52,12 +52,13 @@ let timeoutId;
 let stopSendingData = 3;
 let sdCardToChange = "";
 let emailSend = false;
-let securityCheckIsCardFull = false;
 let blacklistedHostUrls = [];
 let lastHundredHosts = [];
 let countURLS = 0;
 let waitForRecycledName = false;
-let passedTime;
+let sdFULLInfo = [];
+let sdNAMESInfo = [];
+
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
@@ -217,7 +218,7 @@ const c = new Crawler({
           return false;
         }
 
-        console.log(`${currentURL}`);
+
         let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
         if (client && client.readyState === WebSocket.OPEN) {
           client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
@@ -250,8 +251,6 @@ const c = new Crawler({
                   saveLastSession(globalID + c.queueSize);
                   countLastProcessedURLs = 0;
                 } else if (lastProcessedURLs.includes(newDomain) === false) {
-                  // console.log(pslUrl)
-
                   lastProcessedURLs[countSavedURLs] = newDomain;
                   countLastProcessedURLs++
                   countSavedURLs++;
@@ -259,13 +258,6 @@ const c = new Crawler({
                     countSavedURLs = 0;
                   }
                 }
-                // console.log($("body").text().length + ' ' + check_mem() + 'MB');
-                await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
-
-
-
-
-
               }
             }
             catch (err) {
@@ -275,6 +267,7 @@ const c = new Crawler({
 
           }
         }
+        await extractData($("body").text(), url, (globalID + c.queueSize), array.length);
       }
       c.queue(urls);
     }
@@ -316,7 +309,20 @@ async function searchForNames(url, cc, data, foundLinks) {
     case '':
       break;
   }
+  let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
+  console.log(`\n${currentURL} \n links: ${foundLinks} || names: ${inCurrentDataset} \n queue size: ${mQueueSize} || total names: ${totalNumberNames} || total URLs: ${totalURLS} ||  memory usage: ${check_mem()}MB \n FULL: avaialble ${sdFULLInfo[0]} used ${sdFULLInfo[1]} || NAMES: avaialble ${sdNAMESInfo[0]} used ${sdNAMESInfo[1]}`);
+
 }
+
+
+
+
+
+
+
+
+
+
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks) {
 
@@ -324,7 +330,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
     await saveFullFile(data);
   }
-  console.log(person);
+
   for (const a of person) {
     let text = a;
     const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
@@ -346,8 +352,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = getCurrentDate();
-            console.log(tempNameString)
-
             totalNumberNames = await getabsoluteNumberNames(db);
             obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: totalNumberNames });
 
@@ -372,7 +376,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
             }
             if (await checkSizeBeforeSendingData(0) === true) {
-              console.log("save to names")
               saveToSDCard(true, obj);
             }
             countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
@@ -389,8 +392,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               // console.log(`\n\n${getCurrentDate()} `)
               // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
-              let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
-              console.log(`queue size: ${mQueueSize} total names: ${totalNumberNames}`)
+              let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
+
               if (client && client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
               }
@@ -437,11 +440,15 @@ async function checkSizeBeforeSendingData(i) {
     cardFilled[i] = response[0].used;
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('MB') ? response[0].available.split('MB') : '';
-    if(i === 0){
-    console.log('NAMES:')
-  }else {
-    console.log('FULL:')
-  }
+    if (i === 0) {
+      console.log('NAMES:')
+      sdFULLInfo[0] = response[0].available;
+      sdFULLInfo[1] = response[0].used;
+    } else {
+      console.log('FULL:')
+      sdNAMESInfo[0] = response[0].available;
+      sdNAMESInfo[1] = response[0].used;
+    }
     console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
     if (numericValue[0] > 100) {
       // console.log("CARD HAS SPACE GO AHEAD AND SAFE")
