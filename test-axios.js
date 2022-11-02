@@ -450,12 +450,12 @@ async function checkSizeBeforeSendingData(i) {
     console.log(response[0])
     if (i === 0) {
 
-      sdNAMESInfo[0] = response[0].available;
-      sdNAMESInfo[1] = response[0].size;
+      sdNAMESInfo[0] = response[0].size;
+      sdNAMESInfo[1] = response[0].used;
       if (i === 1)
 
-      sdFULLInfo[0] = response[0].available;
-      sdFULLInfo[1] = response[0].size;
+      sdFULLInfo[0] = response[0].size;
+      sdFULLInfo[1] = response[0].used;
     }
     // console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
     if (numericValue[0] > 100) {
