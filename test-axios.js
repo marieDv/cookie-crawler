@@ -323,20 +323,10 @@ async function searchForNames(url, cc, data, foundLinks) {
     case '':
       break;
   }
-  let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
-  // totalNumberNames = await getabsoluteNumberNames(db);
-  // console.log(`\n${currentURL} \n
-  // NAMES: ${inCurrentDataset}, URLSs: l: ${foundLinks}  ${totalURLS}\n qs: ${mQueueSize} || tn: ${totalNumberNames} 
-  //  ||  memory usage: ${check_mem()}MB \n CARD A: ${sdFULLInfo[1]} from ${sdFULLInfo[0]} || CARD B: ${sdNAMESInfo[1]} from ${sdNAMESInfo[0]}`);
 
-
-  console.log(`\n${currentURL}
-NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
-TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
-ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`);
-
+  await printLogs();
+  // REPLACE FOUND NAMES AND SAVE HTML DATA TO SD CARD
   if (await checkSizeBeforeSendingData(1) === true) {
-    
     await replaceAllNames(data, NAMES, stopSendingData, totalURLS, currentURL, getCurrentDate());
   }
   NAMES = [];
@@ -345,10 +335,13 @@ ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
 
 
 
-
-
-
-
+async function printLogs() {
+  let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
+  console.log(`\n${currentURL}
+NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
+TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
+ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`);
+}
 
 
 
@@ -502,65 +495,12 @@ async function checkSizeBeforeSendingData(i) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-async function getSDCardSize(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
-
-  console.log(`paths exist ... ${fs.existsSync(currentPath[i])}`);
-  let options = {
-    file: currentPath[i],
-    prefixMultiplier: 'MB',
-    isDisplayPrefixMultiplier: true,
-    precision: 4
-  };
-  if (fs.existsSync(currentPath[i])) {
-
-    df(options, function (error, response) {
-      if (error) { throw error; }
-      cardFilled[i] = response[0].used;
-      cardRemaining[i] = response[0].available;
-    });
-
-    console.log(`CARD AVAILABLE ${i} ${cardRemaining[i]}`)
-    if (cardRemaining[i]) {
-      let numericValue = cardRemaining[i].includes('MB') ? cardRemaining[i].split('MB') : '';
-      console.log(numericValue[0] / 1);
-      if (((numericValue[0] / 1) < 50.0) && emailSend === false) {
-        console.log("!SD CARD ABOUT TO BE FULL!")
-        if (i === 0) {
-          sdCardToChange = "NAME";
-          sendEmail().catch(console.error);
-        } else {
-          sdCardToChange = "FULL";
-          sendEmail().catch(console.error)
-        }
-        stopSendingData = i;
-      } if ((numericValue[0] / 1) > 50.0) {
-
-        stopSendingData = 3;
-        emailSend = false;
-      }
-    }
-  }
-
-}
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
   globalID = totalNumberURLs.lastHandled;
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
+
 function saveLastNames(url) {
   let mData = {
     queued: []
@@ -586,8 +526,8 @@ async function checkNamesDatabase(db, name) {
     await db.put(name, name);
     return false;
   }
-
 }
+
 export async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
   let counter = 0;
