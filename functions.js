@@ -44,14 +44,14 @@ export function returnWithZero(obj) {
   }
 }
 export async function saveToSDCard(names, mData) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
     let page = mData;
     fullDataObj.push({ page });
-    if (sizeof(fullDataObj) / (1024 * 1024) > 10) {
+    if (sizeof(fullDataObj) / (1024 * 1024) > 10) {//sizeof(fullDataObj) / (1024 * 1024) > 10
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
@@ -62,7 +62,7 @@ export async function saveToSDCard(names, mData) {
     let person = mData;
     fullNamesObj.push({ person });
 
-    if (sizeof(fullNamesObj) > 5000) {
+    if (sizeof(fullNamesObj) > 10000) {//5000
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
       fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
@@ -90,7 +90,7 @@ export function detectDataLanguage(data) {
 
 export function getCurrentDate() {
   let dateObject = new Date();
-  return (monthNames[dateObject.getMonth()] + ", " + dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds() + ", " + dateObject.getMilliseconds();
+  return (monthNames[dateObject.getMonth()] + ", " + dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds();// + ", " + dateObject.getMilliseconds();
 }
 
 export function checkCountryCode(countryCode) {
@@ -108,26 +108,26 @@ export function checkCountryCode(countryCode) {
 
 
 
-export async function replaceAllNames(mdata, savedNames, save, id, url, date) {
-
+export async function replaceAllNames(mdata, savedNames, id, url, date) {
   let replacedNames = '';
-  if (mdata) {
+
     let dataStringWithoutNames = mdata.toString();
     for (let q = 0; q < savedNames.length; q++) {
-      if (mdata.includes(savedNames[q])) {
+      console.log(dataStringWithoutNames.includes(savedNames[q]))
+      if (dataStringWithoutNames.includes(savedNames[q])) {
         replacedNames += "" + savedNames[q] + ", ";
         dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
       }
     }
+    console.log(replacedNames)
     let dataObj = {
       url: url,
-      id: id,
+      urlId: id,
       date: date,
       names: savedNames,
       html: dataStringWithoutNames,
     };
     await saveToSDCard(false, dataObj);
-  }
 }
 
 export function readJsonFile() {

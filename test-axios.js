@@ -4,6 +4,7 @@ import { Level } from 'level';
 import { clearDataBases, rand, isJsonString, check_mem, retrieveNames, getExistingNames, saveFullFile, detectDataLanguage, returnWithZero, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal } from './functions.js';
 import { close } from 'node:fs';
 import * as fs from 'fs';
+import { convert } from 'html-to-text';
 import * as util from 'util';
 import df_ from 'node-df';
 import * as dns from 'dns';
@@ -60,8 +61,12 @@ let waitForRecycledName = false;
 let sdFULLInfo = [];
 let sdNAMESInfo = [];
 let foundNames = 0;
-let NAMES = [];
+let allCurrentNames = [];
 let isConnected = true;
+let lastUrl = '';
+let totalURLS = ' ';
+let testLatestData = '';
+
 async function sendEmail() {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
@@ -168,14 +173,13 @@ async function reconnect() {
 // START CRAWLER
 //*************************************************** */
 
-clearDataBases([dbUrl, dbUrlPrecheck]);//db
+clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
 
-
-
-
+totalURLS = await getabsoluteNumberNames(dbUrl);
+console.log(`see total urls ${totalURLS}`)
 const c = new Crawler({
   maxConnections: 10,
   queueSize: 1000,
@@ -183,7 +187,7 @@ const c = new Crawler({
   rateLimit: 0,
 
   callback: async (error, res, done) => {
-    isConnected = !!await dns.promises.resolve('google.com').catch(() => { console.log("ERROR: NO INTERNET CONNECTION") });
+    isConnected = true;//!!await dns.promises.resolve('google.com').catch(() => { console.log("ERROR: NO INTERNET CONNECTION") });
     if (isConnected === true) {
 
 
@@ -192,10 +196,10 @@ const c = new Crawler({
       } else {
         const $ = res.$;
         var urls = [];
-
-
+        currentURL = res.request.uri.href;
 
         if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
+          await dbUrl.put(currentURL, currentURL);
           let array = $('a').toArray();
           linksFound = array.length;
           currentURL = res.request.uri.href;
@@ -209,7 +213,6 @@ const c = new Crawler({
             blacklistedHostUrls.push(lastHundredHosts[0]);
 
             if (blacklistedHostUrls.length > 100) {
-              // console.log(`over 100 ${emergencyURLS[rand(0, emergencyURLS.length)]}`)
               urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
               urls = emergencyURLS;
               c.queue(urls);
@@ -232,7 +235,6 @@ const c = new Crawler({
           }
 
 
-          let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck)
           if (client && client.readyState === WebSocket.OPEN) {
             client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
           }
@@ -276,8 +278,15 @@ const c = new Crawler({
 
             }
           }
-          // console.log($("html").text())
-          await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
+
+
+          if (lastUrl !== currentURL) {
+
+            await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
+          }
+
+          lastUrl = currentURL;
+
         }
         c.queue(urls);
 
@@ -324,23 +333,27 @@ async function searchForNames(url, cc, data, foundLinks) {
       break;
   }
 
-  await printLogs(foundLinks);
+
+  // await printLogs(foundLinks, totalURLS);
   // REPLACE FOUND NAMES AND SAVE HTML DATA TO SD CARD
-  if (await checkSizeBeforeSendingData(1) === true) {
-    await replaceAllNames(data, NAMES, stopSendingData, totalURLS, currentURL, getCurrentDate());
-  }
-  NAMES = [];
+  // console.log(data)
+
+
+
+  testLatestData = data;
+  totalURLS++;
+  allCurrentNames = [];
   foundNames = 0;
+
 }
 
 
 
-async function printLogs(foundLinks) {
-  let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
+async function printLogs(foundLinks, totalURLS) {
   console.log(`\n${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
-ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}`);
+ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`);
 }
 
 
@@ -349,13 +362,9 @@ ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
 async function languageProcessing(doc, data, url, cc, foundLinks) {
 
   let person = doc.match('#FirstName #LastName').out('array');
-  if (person.length === 0 && await checkSizeBeforeSendingData(1) === true) {
-    // await saveFullFile(data);
-  }
-
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -374,18 +383,16 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             currentDate = getCurrentDate();
             totalNumberNames = await getabsoluteNumberNames(db);
 
-
+            // let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
             let obj = {
               name: tempNameString,
               url: url,
-              id: totalNumberNames,
+              nId: totalNumberNames,
+              urlId: totalURLS,
               date: currentDate,
-              countrycode: cc,
-              language: currentLanguage
+              domain: cc,
+              textLanguage: currentLanguage
             };
-
-            // obj.person.push({ name: tempNameString, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: totalNumberNames });
-
             let dateObject = new Date();
             let toSend = JSON.stringify(`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             if (client && client.readyState === WebSocket.OPEN) {
@@ -414,16 +421,21 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
             if (data === latestData) {
               tempSaveNames[inCurrentDataset] = text;
-              NAMES[foundNames] = text;
+              allCurrentNames[foundNames] = a;
               inCurrentDataset++;
               foundNames++;
             } else {
+              allCurrentNames[foundNames++] = a;
+              // allCurrentNames = tempSaveNames;
+              // console.log(allCurrentNames)
 
+              if (await checkSizeBeforeSendingData(1) === true) {
+                console.log(allCurrentNames);
+                await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
+              }
               tempSaveNames = [];
-              // console.log(`\n\n${getCurrentDate()} `)
-              // console.log(`${url} \n names found: ${inCurrentDataset} queue size: ${mQueueSize} memory used: ${check_mem()} MB`);
               let totalNumberNames = await getabsoluteNumberNames(db);
-              let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
+              // let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
 
               if (client && client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
@@ -440,6 +452,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
     } else {
     }
   }
+
 }
 async function sendRecycledName(cc) {
   let dateObject = new Date();
@@ -458,8 +471,8 @@ async function sendRecycledName(cc) {
 //*************************************************** */
 
 async function checkSizeBeforeSendingData(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'GB',
