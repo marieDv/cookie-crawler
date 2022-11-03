@@ -352,7 +352,7 @@ async function printLogs(foundLinks, totalURLS) {
   console.log(`\n${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
-ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`);
+ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n\n`);
 }
 
 
