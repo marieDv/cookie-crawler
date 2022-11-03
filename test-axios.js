@@ -471,7 +471,7 @@ async function sendRecycledName(cc) {
 
 async function checkSizeBeforeSendingData(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/output/", "/media/process/FULL/output/"];
+  let currentPath = ["/media/process/NAMES/output/", "/media/process/ALL/output/"];
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'GB',
