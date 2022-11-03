@@ -429,7 +429,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               // console.log(allCurrentNames)
 
               if (await checkSizeBeforeSendingData(1) === true) {
-                console.log(allCurrentNames);
                 await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
               }
               tempSaveNames = [];
