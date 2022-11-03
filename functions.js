@@ -113,13 +113,11 @@ export async function replaceAllNames(mdata, savedNames, id, url, date) {
 
     let dataStringWithoutNames = mdata.toString();
     for (let q = 0; q < savedNames.length; q++) {
-      console.log(dataStringWithoutNames.includes(savedNames[q]))
       if (dataStringWithoutNames.includes(savedNames[q])) {
         replacedNames += "" + savedNames[q] + ", ";
         dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
       }
     }
-    console.log(replacedNames)
     let dataObj = {
       url: url,
       urlId: id,

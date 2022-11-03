@@ -179,7 +179,6 @@ await checkSizeBeforeSendingData(1);
 
 
 totalURLS = await getabsoluteNumberNames(dbUrl);
-console.log(`see total urls ${totalURLS}`)
 const c = new Crawler({
   maxConnections: 10,
   queueSize: 1000,
@@ -334,7 +333,7 @@ async function searchForNames(url, cc, data, foundLinks) {
   }
 
 
-  // await printLogs(foundLinks, totalURLS);
+  await printLogs(foundLinks, totalURLS);
   // REPLACE FOUND NAMES AND SAVE HTML DATA TO SD CARD
   // console.log(data)
 
