@@ -1,223 +1,446 @@
-import enNlp from 'compromise';
+
 import Crawler from 'crawler';
+import { Level } from 'level';
+import { clearDataBases, rand, check_mem, getabsoluteNumberNames, checkNamesDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
+// import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
+import * as fs from 'fs';
+import * as util from 'util';
+import df_ from 'node-df';
+
+const df = util.promisify(df_);
+
+
+import nodemailer from 'nodemailer';
+import psl from 'psl';
+import enNlp from 'compromise';
 import deNlp from 'de-compromise';
 import esNlp from 'es-compromise';
 import frNlp from 'fr-compromise';
 import itNlp from 'it-compromise';
-import { Level } from 'level';
-import { checkBlacklist, clearDataBases, detectDataLanguage, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal, writeToJsonFile } from './functions.js';
-
-
-
-const ignoreSelector = `:not([href$=".png"]):not([href$=".jpg"]):not([href$=".mp4"]):not([href$=".mp3"]):not([href$=".gif"])`;
-
-const startURL = 'https://altkatholische-heilandskirche-wien.at/';//https://wuerstelstandleo.at';//'https://xn--hftgold-n2a.wien/';//https://www.ait.ac.at/en/
-var currentLanguage;
-var currentDate;
-let latestData = "";
-let tempSaveNames = [];
-let inCurrentDataset = 0;
-let countUpID = 0;
-let countNames = 0;
-let countURLs = 0;
-let ready = true;
-let alreadyVisited = false;
-
+import { URL } from 'node:url';
+import WebSocket from 'ws';
+const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
+const emergencyURLS = ['https://youtube.com', 'https://elpais.com/', 'https://www.thelocal.it/', 'https://www.ait.ac.at/'];
 const db = new Level('namesLevel', { valueEncoding: 'json' })
 const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
 const dbUrlPrecheck = new Level('dbUrlPrecheck', { valueEncoding: 'json' })
-const blacklist = ["php", "html", "pdf", "%", "/", "jpeg", "back", "zip", "0&"];
-const blockedSites = new RegExp('(google)|(paypal)|(raiffeisen)');
+let totalNumberNames = 0;
+let lastProcessedURLs = [];
+let lastProcessedNames = [];
+let countLastProcessedURLs = 0;
+let countLastProcessedNames = 0;
+let globalID = 0;
+let cardFilled = [0, 0];
+let cardRemaining = [0, 0];
+let countSavedURLs = 0;
+let savedToQueue = retrieveURLs();
+savedToQueue = savedToQueue.concat(startURL);
+let tempSaveNames = [];
+var currentDate;
+let currentLanguage = "";
+let latestData = "";
+let inCurrentDataset = 0;
+let linksFound = 0;
+let mQueueSize = 0;
+let currentURL = '';
+let startTime = new Date();
+var client;
+let timeoutId;
+let sdCardToChange = "";
+let emailSend = false;
+let blacklistedHostUrls = [];
+let lastHundredHosts = [];
+let countURLS = 0;
+let waitForRecycledName = false;
+let sdFULLInfo = [];
+let sdNAMESInfo = [];
+let foundNames = 0;
+let allCurrentNames = [];
+let isConnected = true;
+let lastUrl = '';
+let totalURLS = ' ';
+let testLatestData = '';
+let sendEmailOnce = [true, true];
 
+// import "./websocket.js";
+// const Websocket = import ('./websocket');
+// import Websocket from './websocket.js';
+// const websocket = new classWebsocket();
+// console.log(Websocket)
+import { Websocket } from './websocket.js';
+const websocket = new Websocket();
 
-init();
+clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
+await checkSizeBeforeSendingData(0);
+await checkSizeBeforeSendingData(1);
 
-
-
-function init() {
-  countNames = saveCurrentDataToFile()[0];
-  countURLs = saveCurrentDataToFile()[1];
-  clearDataBases([db, dbUrl, dbUrlPrecheck]);
-  writeLatestToTerminal();
-  crawlerTest();
-
+//*************************************************** */
+// START WEBSOCKET IF FLAG 'web' is set
+//*************************************************** */
+if (process.argv[2] === "web") {
+  await websocket.websocketConnect();
+  console.log("Hurray I got the communication done");
+  // await websocketConnect();
 }
-function check_mem() {
-  const mem = process.memoryUsage();
-  console.log('%f MB used', (mem.heapUsed / 1024 / 1024).toFixed(2))
-}
+//*************************************************** */
+// START CRAWLER
+//*************************************************** */
 
+totalURLS = await getabsoluteNumberNames(dbUrl);
+const c = new Crawler({
+  maxConnections: 10,
+  queueSize: 500,
+  retries: 0,
+  rateLimit: 0,
 
-function crawlerTest() {
-  let counter = 0;
-  const c = new Crawler({
-    maxConnections: 20,
-    queueSize: 1000,
-    retries: 0,
+  callback: async (error, res, done) => {
+    if (error) {
+    } else {
+      const $ = res.$;
+      var urls = [];
+      currentURL = res.request.uri.href;
+      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
+        await dbUrl.put(currentURL, currentURL);
+        let array = $('a').toArray();
+        linksFound = array.length;
+        currentURL = res.request.uri.href;
+        const url = new URL(res.request.uri.href);
+        var pslUrl = psl.parse(url.host);
+        lastHundredHosts[countURLS] = pslUrl.domain;
+        const allEqual = arr => arr.every(val => val === arr[0]);
+        if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
+          blacklistedHostUrls.push(lastHundredHosts[0]);
+          if (blacklistedHostUrls.length > 100) {
+            urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
+            urls = emergencyURLS;
+            c.queue(urls);
+            blacklistedHostUrls = [];
+          }
+        }
+        countURLS++;
+        if (countURLS === 20) {
+          countURLS = 0;
+        }
+        function includesBlacklistedURL(link) {
+          for (let i = 0; i < blacklistedHostUrls.length; i++) {
+            if (link.includes(blacklistedHostUrls[i])) {
+              return true;
+            }
+          }
+          return false;
+        }
+        if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+          websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
+          // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+        }
 
-    callback: (error, res, done) => {
-      if (error) {
-      } else {
-        const $ = res.$;
-        const urls = [];
-        if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-
-          $('a').each((i, a) => {
-            if (a.attribs.href && a.attribs.href !== '#') {
-              dbUrlPrecheck.get(a.attribs.href, function (err) {
+        for (const a of array) {
+          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
+            let oldWebsite = false;
+            try {
+              const url = new URL(a.attribs.href, res.request.uri.href);
+              let value = await dbUrlPrecheck.get(url.origin, function (err) {
                 if (err) {
-                  alreadyVisited = false;
-                  dbUrlPrecheck.put(a.attribs.href, a.attribs.href);
-                } else { alreadyVisited = true; }
-              });
-              if (alreadyVisited === false) {
-
-                const matchedSites = a.attribs.href.match(new RegExp('(google)|(facebook)|(instagram)|(jpeg)|(png)|(js)|(php)|(pdf)|(back)|(zip)|(0&)|(javascript)|(mail)|(tel:)|(#carousel)'));
-                if (matchedSites === null) {
-                  const url = new URL(a.attribs.href, res.request.uri.href)
-                  if (c.queueSize < 1000) {
-                    urls.push(url.href);
-                  }
-                  setTimeout(() => {
-                    if (i < 20) {
-                      extractData($("body").text(), url.href);
-                    }
-                  }, 100);
-
-                  counter++;
-
+                  oldWebsite = true;
                 } else {
+                  oldWebsite = false;
+                }
+              });
 
-                  let dataObj = {
-                    dataPage: []
-                  };
-                  dataObj.dataPage.push({ text: $("body").text(), id: 0 });
-                  saveToSDCard(false, dataObj);
+
+              await dbUrlPrecheck.put(url.origin, url.origin);
+              if (oldWebsite === true) {
+                let newDomain = url.protocol + '//' + pslUrl.domain;
+                mQueueSize = c.queueSize;
+                let tempString = url.href;
+                // console.log(tempString.includes('§'));
+                if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false)) {
+                  urls.push(url.href);
+                }
+                if (countLastProcessedURLs === 20) {
+                  saveLastSession(globalID + c.queueSize);
+                  countLastProcessedURLs = 0;
+                } else if (lastProcessedURLs.includes(newDomain) === false) {
+                  lastProcessedURLs[countSavedURLs] = newDomain;
+                  countLastProcessedURLs++
+                  countSavedURLs++;
+                  if (countSavedURLs === 100) {
+                    countSavedURLs = 0;
+                  }
                 }
               }
-
             }
-
-
-          })
+            catch (err) {
+              console.log(err)
+            }
+          }
         }
-
-        c.queue(urls);
+        if (lastUrl !== currentURL) {
+          await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
+        }
+        lastUrl = currentURL;
       }
-      done();
+      c.queue(urls);
     }
-  });
-  c.queue(startURL);
+    done();
+  }
+});
+c.queue(savedToQueue);
 
+//*************************************************** */
+// NLP STUFF & DATA EXTRACTION
+//*************************************************** */
 
-}
-
-function extractData(mdata, href) {
-  check_mem();
-  let countryCode = href.split('.').splice(-2);
+async function extractData(mdata, href, id, foundLinks) {
+  let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
-    countryCode[1] = countryCode[1].substring(-4);
-    if (countryCode[1].includes('%')) {
-      countryCode = countryCode[1].split('%')[0];
-    } else {
-      countryCode = countryCode[1].split('/')[0];
-    }
-
-    let transferData = true;
-    for (let i = 0; i < blacklist.length; i++) {
-      if (countryCode.includes(blacklist[i])) {
-        transferData = false;
-      }
-    }
-    if (transferData === true) {
-      searchForNames(href, countryCode, mdata);
-    } else {
-    }
+    await searchForNames(href.href, countryCode[1], mdata, foundLinks);
   }
 }
-
-
-function languageProcessing(doc, data, url, cc) {
-  let person = doc.match('#Person #Noun');
-  person = person.forEach(function (d, i) {
-
-    let text = d.text();
-    let textR = d.text('reduced');
-
-
-    const matchedNames = text.match(new RegExp('(=)|(})|({)|(ii)|(=)|(#)|(&)|(-)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(^[0-9])'));//|(})|({)|(ii)|(=)|(#)|(.)|(<)|(>)|(&)|(_)|(–)|(span)
-    // const matchedNames = text.match(new RegExp('\[=}{=#&-_–,:©.()]\|(^[0-9])'));
-    if (matchedNames !== null) {
-      // console.log(matchedNames);
-    }
-    if (matchedNames === null) {
-      db.get(textR, function (err, key) {
-        if (err) {
-
-          let obj = {
-            person: []
-          };
-          if (text.includes("’s") || text.includes("'s")) {
-            text = d.text().slice(0, -2);
-          }
-          currentDate = getCurrentDate();
-          obj.person.push({ name: text, url: url, countrycode: cc, date: currentDate, language: currentLanguage, id: countUpID });
-          writeToJsonFile(obj.person, 'names.json');
-          saveToSDCard(true, obj.person);
-
-          let urlObj = {
-            url: []
-          };
-          countURLs++;
-          if (data === latestData) {
-            tempSaveNames[inCurrentDataset] = text;
-            inCurrentDataset++;
-            countNames++;
-            // console.log("same url");
-          } else {
-            // console.log("new url")
-            replaceAllNames(data, tempSaveNames, countUpID);
-            inCurrentDataset = 0;
-            tempSaveNames = [];
-            countUpID++;
-            countNames++;
-          }
-          //  writeLatestToTerminal(countNames, countURLs);
-          latestData = data;
-        } else {
-        }
-      })
-      db.put(textR, textR);
-    }
-  })
-
-  ready = true;
-  doc.text()
-}
-
-// SEARCH FOR NAMES IN THE SAVED TEXT
-function searchForNames(url, cc, data) {
+/** CHECK LANGUAGE AND REDIRECT DATA TO LANGUAGE PROCESSING WITH FITTING NLP */
+/** supports: german, english, french, italian and spanish */
+async function searchForNames(url, cc, data, foundLinks) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
-
-
   switch (currentLanguage) {
     case 'german':
-      languageProcessing(deNlp(data), data, url, cc)
+      await languageProcessing(deNlp(data), data, url, cc, foundLinks)
       break;
     case 'english':
-      languageProcessing(enNlp(data), data, url, cc);
+      await languageProcessing(enNlp(data), data, url, cc, foundLinks);
       break;
     case 'french':
-      languageProcessing(frNlp(data), data, url, cc);
+      await languageProcessing(frNlp(data), data, url, cc, foundLinks);
       break;
     case 'italian':
-      languageProcessing(itNlp(data), data, url, cc);
+      await languageProcessing(itNlp(data), data, url, cc, foundLinks);
       break;
     case 'spanish':
-      languageProcessing(esNlp(data), data, url, cc);
+      await languageProcessing(esNlp(data), data, url, cc, foundLinks);
       break;
     case '':
-
       break;
   }
+
+
+  await printLogs(foundLinks, totalURLS);
+  testLatestData = data;
+  totalURLS++;
+  allCurrentNames = [];
+  foundNames = 0;
+
 }
+
+async function printLogs(foundLinks, totalURLS) {
+  console.log(`
+                                                              
+${currentURL}
+NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
+TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
+ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}
+                                                              
+`);
+}
+
+/** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
+async function languageProcessing(doc, data, url, cc, foundLinks) {
+  let person = doc.match('#FirstName #LastName').out('array');
+  for (const a of person) {
+    let text = a;
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    if (matchedNames === null) {
+      if (text.includes("’s") || text.includes("'s")) {
+        text = a.slice(0, -2);
+      }
+      const checkedDataBase = await checkNamesDatabase(db, text);
+      if (checkedDataBase === false) {
+
+        let uppercaseName = text.split(" ");
+        if (uppercaseName[1]) {
+          if (uppercaseName[0][2] && uppercaseName[1][2]) {
+            uppercaseName[0] = uppercaseName[0].toLowerCase();
+            uppercaseName[1] = uppercaseName[1].toLowerCase();
+            uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
+            uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
+            let tempNameString = uppercaseName[0].concat(uppercaseName[1])
+            currentDate = getCurrentDate();
+            totalNumberNames = await getabsoluteNumberNames(db);
+            let obj = {
+              name: tempNameString,
+              url: url,
+              nId: totalNumberNames,
+              urlId: totalURLS,
+              date: currentDate,
+              domain: cc,
+              textLanguage: currentLanguage
+            };
+            let dateObject = new Date();
+            let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+
+
+
+     
+            if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+              websocket.clientSend(toSend);
+              startTime = new Date();
+              // clearTimeout(timeoutId);
+            }
+
+            // timeoutId = setTimeout(async function () {
+            //   console.log("timeoutime")
+            //   let sendRecycledNameVar = await sendRecycledName(cc)
+            //   if (client && client.readyState === WebSocket.OPEN) {
+            //     client.send(sendRecycledNameVar);
+            //   }
+            // }
+            //   , 10000);
+
+            if (client && client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+            }
+            if (await checkSizeBeforeSendingData(0) === true) {
+              saveToSDCard(true, obj);
+            }
+            countLastProcessedNames === 22 ? await saveLastNames(url, lastProcessedNames, countLastProcessedNames) : countLastProcessedNames++;
+            lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+
+            if (data === latestData) {
+              tempSaveNames[inCurrentDataset] = text;
+              allCurrentNames[foundNames] = a;
+              inCurrentDataset++;
+              foundNames++;
+            } else {
+              allCurrentNames[foundNames++] = a;
+              if (await checkSizeBeforeSendingData(1) === true) {
+                await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
+              }
+              tempSaveNames = [];
+              let totalNumberNames = await getabsoluteNumberNames(db);
+              if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+                websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);
+              }
+              inCurrentDataset = 0;
+            }
+            latestData = data;
+
+          }
+        } else {
+        }
+      } else {
+      }
+    } else {
+    }
+  }
+
+}
+
+async function sendRecycledName(cc) {
+  let dateObject = new Date();
+  waitForRecycledName = true;
+  // console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
+  if (await getabsoluteNumberNames(db) > 2) {
+    let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
+    let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    startTime = new Date();
+    waitForRecycledName = false;
+    return toSend;
+  }
+}
+//*************************************************** */
+// HELPER FUNCTIONS
+//*************************************************** */
+async function checkSizeBeforeSendingData(i) {
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  let options = {
+    file: currentPath[i],
+    prefixMultiplier: 'GB',
+    isDisplayPrefixMultiplier: true,
+    precision: 2
+  };
+  let numericValue = '0';
+  if (fs.existsSync(currentPath[i])) {
+    const response = await df(options);
+    cardFilled[i] = response[0].used;
+    cardRemaining[i] = response[0].available;
+    numericValue = response[0].available.includes('GB') ? response[0].available.split('GB') : '';
+    if (i === 0) {
+
+      sdNAMESInfo[0] = response[0].size;
+      sdNAMESInfo[1] = response[0].used;
+    }
+    if (i === 1) {
+
+      sdFULLInfo[0] = response[0].size;
+      sdFULLInfo[1] = response[0].used;
+    }
+
+    if (numericValue[0] > 2) {
+      if (i === 0) {
+        sendEmailOnce[0] === true;
+      }
+      if (i === 1) {
+        sendEmailOnce[1] === true;
+      }
+      return true;
+    } else {
+      if (i === 0 && sendEmailOnce[0] === true) {
+        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card NAMES is already filled with data 🤯 \nPlease change it asap!\n
+        Current Stats: 
+        TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
+        ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
+
+        sendEmail(whichCard)
+        sendEmailOnce[0] = false;
+      }
+      if (i === 1 && sendEmailOnce[1] === true) {
+        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card FULL is already filled with data 🤯 \nPlease change it asap!\n
+        Current Stats: 
+        TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
+        ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
+        sendEmail(whichCard)
+        sendEmailOnce[1] = false;
+      }
+      return false;
+    }
+  } else {
+    return false;
+  }
+}
+function retrieveURLs() {
+  let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
+  globalID = totalNumberURLs.lastHandled;
+  return totalNumberURLs.queued[0].lastProcessedURLs;
+}
+function saveLastSession(handledNumber) {
+  let mData = {
+    queued: [],
+    lastHandled: handledNumber
+  };
+  mData.queued.push({ lastProcessedURLs });
+  fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
+  countLastProcessedURLs = 0
+}
+async function sendEmail(mText) {
+  let transporter = nodemailer.createTransport({
+    host: "mail.gmx.net",
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: "ait-crawler@gmx.at", // generated ethereal user
+      pass: "9izAYkkqLjWYtQJ", // generated ethereal password
+    },
+  });
+  // send mail with defined transport object
+  let info = await transporter.sendMail({
+    from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
+    to: "mariedvorzak@gmail.com", // list of receivers
+    // cc: "hello@process.studio",
+    subject: "TIME TO CHANGE SD", // Subject line
+    text: `${mText}`, // plain text body
+    // html: `${mText}`, // html body
+  });
+  emailSend = true;
+  console.log("Message sent: %s", info.messageId);
+  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+}
+
