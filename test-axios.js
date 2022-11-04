@@ -382,6 +382,12 @@ async function checkSizeBeforeSendingData(i) {
     }
 
     if (numericValue[0] > 2) {
+      if(i === 0){
+        sendEmailOnce[0] === true;
+      }
+      if(i === 1){
+        sendEmailOnce[1] === true;
+      }
       return true;
     } else {
       if (i === 0 && sendEmailOnce[0] === true) {
