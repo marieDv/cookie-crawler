@@ -112,7 +112,7 @@ const c = new Crawler({
       var urls = [];
       currentURL = res.request.uri.href;
 
-      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
+      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html" && $('a').includes('§') === false) {
         await dbUrl.put(currentURL, currentURL);
         let array = $('a').toArray();
         linksFound = array.length;
@@ -338,6 +338,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
   }
 
 }
+
 async function sendRecycledName(cc) {
   let dateObject = new Date();
   waitForRecycledName = true;
