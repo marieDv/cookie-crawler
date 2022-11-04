@@ -80,7 +80,7 @@ export class Websocket {
 
   async reconnect() {
     try {
-      await websocketConnect()
+      await this.websocketConnect()
     } catch (err) {
       console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
     }
