@@ -276,8 +276,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = getCurrentDate();
             totalNumberNames = await getabsoluteNumberNames(db);
-
-            // let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
             let obj = {
               name: tempNameString,
               url: url,
@@ -320,16 +318,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               foundNames++;
             } else {
               allCurrentNames[foundNames++] = a;
-              // allCurrentNames = tempSaveNames;
-              // console.log(allCurrentNames)
-
               if (await checkSizeBeforeSendingData(1) === true) {
                 await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
               }
               tempSaveNames = [];
               let totalNumberNames = await getabsoluteNumberNames(db);
-              // let totalURLS = await getabsoluteNumberNames(dbUrlPrecheck);
-
               if (client && client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `));
               }
