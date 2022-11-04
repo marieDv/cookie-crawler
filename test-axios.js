@@ -109,7 +109,7 @@ const c = new Crawler({
       const $ = res.$;
       var urls = [];
       currentURL = res.request.uri.href;
-      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html" && $('a').includes('§') === false) {
+      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
         await dbUrl.put(currentURL, currentURL);
         let array = $('a').toArray();
         linksFound = array.length;
@@ -161,7 +161,9 @@ const c = new Crawler({
               if (oldWebsite === true) {
                 let newDomain = url.protocol + '//' + pslUrl.domain;
                 mQueueSize = c.queueSize;
-                if (c.queueSize <= 2000) {
+                let tempString = url.href;
+                // console.log(tempString.includes('§'));
+                if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false)) {
                   urls.push(url.href);
                 }
                 if (countLastProcessedURLs === 20) {
