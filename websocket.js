@@ -33,7 +33,6 @@ export class Websocket {
         }
       });
       client.onmessage = function (event) {
-        console.log("no message? :(")
         if (event.data !== undefined && client && client.readyState === WebSocket.OPEN && (isJsonString(event.data) === true)) {
           if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
             let totalNumberName = JSON.parse(fs.readFileSync("./latest_names.json").toString());
