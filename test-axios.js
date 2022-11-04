@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { clearDataBases, rand, isJsonString, check_mem, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard, writeLatestToTerminal } from './functions.js';
+import { clearDataBases, rand, check_mem, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 import * as fs from 'fs';
 import * as util from 'util';
 import df_ from 'node-df';
@@ -244,12 +244,12 @@ async function searchForNames(url, cc, data, foundLinks) {
 
 async function printLogs(foundLinks, totalURLS) {
   console.log(`
-
-  ${currentURL}
+                                                              
+${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
 ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}
-
+                                                              
 `);
 }
 
