@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { clearDataBases, rand, check_mem, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
+import { clearDataBases, rand, check_mem, getabsoluteNumberNames, checkNamesDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 import * as fs from 'fs';
 import * as util from 'util';
 import df_ from 'node-df';
@@ -10,8 +10,6 @@ const df = util.promisify(df_);
 
 
 import nodemailer from 'nodemailer';
-
-
 import psl from 'psl';
 import enNlp from 'compromise';
 import deNlp from 'de-compromise';
@@ -308,7 +306,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             if (await checkSizeBeforeSendingData(0) === true) {
               saveToSDCard(true, obj);
             }
-            countLastProcessedNames === 22 ? saveLastNames(url) : countLastProcessedNames++;
+            countLastProcessedNames === 22 ? await saveLastNames(url, lastProcessedNames, countLastProcessedNames) : countLastProcessedNames++;
             lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
             if (data === latestData) {
@@ -382,10 +380,10 @@ async function checkSizeBeforeSendingData(i) {
     }
 
     if (numericValue[0] > 2) {
-      if(i === 0){
+      if (i === 0) {
         sendEmailOnce[0] === true;
       }
-      if(i === 1){
+      if (i === 1) {
         sendEmailOnce[1] === true;
       }
       return true;
@@ -418,14 +416,6 @@ function retrieveURLs() {
   globalID = totalNumberURLs.lastHandled;
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
-function saveLastNames(url) {
-  let mData = {
-    queued: []
-  };
-  mData.queued.push({ lastProcessedNames });
-  fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
-  countLastProcessedNames = 0
-}
 function saveLastSession(handledNumber) {
   let mData = {
     queued: [],
@@ -435,30 +425,4 @@ function saveLastSession(handledNumber) {
   fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
   countLastProcessedURLs = 0
 }
-async function checkNamesDatabase(db, name) {
-  try {
-    let value = await db.get(name);
-    return true;
-  } catch (err) {
-    await db.put(name, name);
-    return false;
-  }
-}
-export async function getabsoluteNumberNames(mdb) {
-  const iterator = mdb.iterator()
-  let counter = 0;
-  while (true) {
-    const entries = await iterator.nextv(100)
 
-    if (entries.length === 0) {
-      break
-    }
-
-    for (const [key, value] of entries) {
-      counter++;
-    }
-  }
-
-  await iterator.close()
-  return counter;
-}

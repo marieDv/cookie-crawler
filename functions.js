@@ -43,6 +43,40 @@ export function returnWithZero(obj) {
     return obj;
   }
 }
+export async function saveLastNames(url, lastProcessedNames, countLastProcessedNames) {
+  let mData = {
+    queued: []
+  };
+  mData.queued.push({ lastProcessedNames });
+  fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
+  countLastProcessedNames = 0
+}
+
+export async function getabsoluteNumberNames(mdb) {
+  const iterator = mdb.iterator()
+  let counter = 0;
+  while (true) {
+    const entries = await iterator.nextv(100)
+    if (entries.length === 0) {
+      break
+    }
+    for (const [key, value] of entries) {
+      counter++;
+    }
+  }
+  await iterator.close()
+  return counter;
+}
+export async function checkNamesDatabase(db, name) {
+  try {
+    let value = await db.get(name);
+    return true;
+  } catch (err) {
+    await db.put(name, name);
+    return false;
+  }
+}
+
 export async function saveToSDCard(names, mData) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
