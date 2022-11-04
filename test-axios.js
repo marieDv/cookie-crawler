@@ -104,8 +104,6 @@ const c = new Crawler({
   rateLimit: 0,
 
   callback: async (error, res, done) => {
-
-
     if (error) {
     } else {
       const $ = res.$;
