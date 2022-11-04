@@ -1,13 +1,10 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { clearDataBases, rand, isJsonString, check_mem, retrieveNames, getExistingNames, saveFullFile, detectDataLanguage, returnWithZero, roundToTwo, getCurrentDate, replaceAllNames, saveCurrentDataToFile, saveToSDCard, writeLatestToTerminal } from './functions.js';
-import { close } from 'node:fs';
+import { clearDataBases, rand, isJsonString, check_mem, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard, writeLatestToTerminal } from './functions.js';
 import * as fs from 'fs';
-import { convert } from 'html-to-text';
 import * as util from 'util';
 import df_ from 'node-df';
-import * as dns from 'dns';
 
 const df = util.promisify(df_);
 
@@ -51,7 +48,6 @@ let needReconnect = false;
 let startTime = new Date();
 let client;
 let timeoutId;
-let stopSendingData = 3;
 let sdCardToChange = "";
 let emailSend = false;
 let blacklistedHostUrls = [];
@@ -66,8 +62,11 @@ let isConnected = true;
 let lastUrl = '';
 let totalURLS = ' ';
 let testLatestData = '';
+let sendEmailOnce = [true, true];
 
-async function sendEmail() {
+
+
+async function sendEmail(mText) {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",
     port: 587,
@@ -81,94 +80,15 @@ async function sendEmail() {
   let info = await transporter.sendMail({
     from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
     to: "mariedvorzak@gmail.com", // list of receivers
+    // cc: "hello@process.studio",
     subject: "TIME TO CHANGE SD", // Subject line
-    text: `${sdCardToChange} card should be changed`, // plain text body
-    html: `${sdCardToChange} card should be changed`, // html body
+    text: `${mText}`, // plain text body
+    // html: `${mText}`, // html body
   });
   emailSend = true;
   console.log("Message sent: %s", info.messageId);
   console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
 }
-
-//*************************************************** */
-// START WEBSOCKET
-//*************************************************** */
-function heartbeat() {
-  clearTimeout(this.pingTimeout);
-  this.pingTimeout = setTimeout(() => {
-    console.log("!!! terminated !!!")
-    this.terminate();
-  }, 30000 + 1000);
-
-}
-
-async function connect() {
-  // client = new WebSocket('ws://localhost:9898/');
-  client = new WebSocket('wss://ait-residency.herokuapp.com/');
-  console.log(`...... connect`);
-  if (client) {
-    client.on('open', function () {
-      console.log("CONNECTION IS OPEN")
-      if (client.readyState === WebSocket.OPEN) {
-        needReconnect = false;
-        heartbeat
-      }
-    });
-    client.onmessage = function (event) {
-
-      if (event.data !== undefined && client && client.readyState === WebSocket.OPEN && (isJsonString(event.data) === true)) {
-        if (JSON.parse(event.data) === 'REQUESTCURRENTSTATE') {
-          let totalNumberName = JSON.parse(fs.readFileSync("./latest_names.json").toString());
-          if (totalNumberName.queued !== undefined) {
-            for (let i = 0; i < totalNumberName.queued[0].lastProcessedNames.length; i++) {
-              if (client && (needReconnect === false)) {
-                client.send(JSON.stringify(totalNumberName.queued[0].lastProcessedNames[i]));
-              }
-            }
-          }
-        }
-      }
-    };
-
-    client.on('error', (error) => {
-      needReconnect = true;
-      console.log(`error: ${error}`)
-    })
-    client.on('ping', heartbeat);
-
-    client.on('close', function clear() {
-      console.log("CONNECTION WAS CLOSED")
-      clearTimeout(this.pingTimeout);
-      needReconnect = true;
-    });
-  }
-}
-
-async function reconnect() {
-  try {
-    await connect()
-  } catch (err) {
-    console.log('WEBSOCKET_RECONNECT: Error', new Error(err).message)
-  }
-}
-// setInterval(() => {
-
-//   if (needReconnect === true) {
-//     console.log(`... trying to reconnect ...`)
-//     reconnect();
-//   }
-
-// }, 30000);
-
-
-// connect();
-
-// setInterval(() => {
-//   if (client.readyState === WebSocket.OPEN) {
-//     heartbeat
-//   }
-// }, 5000);
-
 //*************************************************** */
 // START CRAWLER
 //*************************************************** */
@@ -187,117 +107,97 @@ const c = new Crawler({
 
   callback: async (error, res, done) => {
     isConnected = true;//!!await dns.promises.resolve('google.com').catch(() => { console.log("ERROR: NO INTERNET CONNECTION") });
-    if (isConnected === true) {
 
+    if (error) {
+    } else {
+      const $ = res.$;
+      var urls = [];
+      currentURL = res.request.uri.href;
 
-
-      if (error) {
-      } else {
-        const $ = res.$;
-        var urls = [];
+      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
+        await dbUrl.put(currentURL, currentURL);
+        let array = $('a').toArray();
+        linksFound = array.length;
         currentURL = res.request.uri.href;
-
-        if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-          await dbUrl.put(currentURL, currentURL);
-          let array = $('a').toArray();
-          linksFound = array.length;
-          currentURL = res.request.uri.href;
-          const url = new URL(res.request.uri.href);
-
-          var pslUrl = psl.parse(url.host);
-          lastHundredHosts[countURLS] = pslUrl.domain;
-          const allEqual = arr => arr.every(val => val === arr[0]);
-
-          if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
-            blacklistedHostUrls.push(lastHundredHosts[0]);
-
-            if (blacklistedHostUrls.length > 100) {
-              urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
-              urls = emergencyURLS;
-              c.queue(urls);
-              blacklistedHostUrls = [];
+        const url = new URL(res.request.uri.href);
+        var pslUrl = psl.parse(url.host);
+        lastHundredHosts[countURLS] = pslUrl.domain;
+        const allEqual = arr => arr.every(val => val === arr[0]);
+        if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
+          blacklistedHostUrls.push(lastHundredHosts[0]);
+          if (blacklistedHostUrls.length > 100) {
+            urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
+            urls = emergencyURLS;
+            c.queue(urls);
+            blacklistedHostUrls = [];
+          }
+        }
+        countURLS++;
+        if (countURLS === 20) {
+          countURLS = 0;
+        }
+        function includesBlacklistedURL(link) {
+          for (let i = 0; i < blacklistedHostUrls.length; i++) {
+            if (link.includes(blacklistedHostUrls[i])) {
+              return true;
             }
           }
-
-          countURLS++;
-          if (countURLS === 20) {
-            countURLS = 0;
-          }
-
-          function includesBlacklistedURL(link) {
-            for (let i = 0; i < blacklistedHostUrls.length; i++) {
-              if (link.includes(blacklistedHostUrls[i])) {
-                return true;
-              }
-            }
-            return false;
-          }
-
-
-          if (client && client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-          }
-          for (const a of array) {
-            if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
-              let oldWebsite = false;
-              try {
-                const url = new URL(a.attribs.href, res.request.uri.href);
-                let value = await dbUrlPrecheck.get(url.origin, function (err) {
-                  if (err) {
-                    oldWebsite = true;
-                  } else {
-                    oldWebsite = false;
-                  }
-                });
-                await dbUrlPrecheck.put(url.origin, url.origin);
-
-                if (oldWebsite === true) {
-                  let newDomain = url.protocol + '//' + pslUrl.domain;
-                  mQueueSize = c.queueSize;
-                  if (c.queueSize <= 2000) {
-                    urls.push(url.href);
-                  }
-                  if (countLastProcessedURLs === 20) {
-                    saveLastSession(globalID + c.queueSize);
-                    countLastProcessedURLs = 0;
-                  } else if (lastProcessedURLs.includes(newDomain) === false) {
-                    lastProcessedURLs[countSavedURLs] = newDomain;
-                    countLastProcessedURLs++
-                    countSavedURLs++;
-                    if (countSavedURLs === 100) {
-                      countSavedURLs = 0;
-                    }
+          return false;
+        }
+        if (client && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+        }
+        for (const a of array) {
+          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
+            let oldWebsite = false;
+            try {
+              const url = new URL(a.attribs.href, res.request.uri.href);
+              let value = await dbUrlPrecheck.get(url.origin, function (err) {
+                if (err) {
+                  oldWebsite = true;
+                } else {
+                  oldWebsite = false;
+                }
+              });
+              await dbUrlPrecheck.put(url.origin, url.origin);
+              if (oldWebsite === true) {
+                let newDomain = url.protocol + '//' + pslUrl.domain;
+                mQueueSize = c.queueSize;
+                if (c.queueSize <= 2000) {
+                  urls.push(url.href);
+                }
+                if (countLastProcessedURLs === 20) {
+                  saveLastSession(globalID + c.queueSize);
+                  countLastProcessedURLs = 0;
+                } else if (lastProcessedURLs.includes(newDomain) === false) {
+                  lastProcessedURLs[countSavedURLs] = newDomain;
+                  countLastProcessedURLs++
+                  countSavedURLs++;
+                  if (countSavedURLs === 100) {
+                    countSavedURLs = 0;
                   }
                 }
               }
-              catch (err) {
-                console.log(err)
-              }
-
-
+            }
+            catch (err) {
+              console.log(err)
             }
           }
-
-
-          if (lastUrl !== currentURL) {
-
-            await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
-          }
-
-          lastUrl = currentURL;
-
         }
-        c.queue(urls);
-
+        if (lastUrl !== currentURL) {
+          await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
+        }
+        lastUrl = currentURL;
       }
-      done();
-    };
+      c.queue(urls);
+    }
+    done();
+
   }
 });
 if (isConnected === true) {
   c.queue(savedToQueue);
 }
-
 //*************************************************** */
 // NLP STUFF & DATA EXTRACTION
 //*************************************************** */
@@ -334,32 +234,20 @@ async function searchForNames(url, cc, data, foundLinks) {
 
 
   await printLogs(foundLinks, totalURLS);
-  // REPLACE FOUND NAMES AND SAVE HTML DATA TO SD CARD
-  // console.log(data)
-
-
-
   testLatestData = data;
   totalURLS++;
   allCurrentNames = [];
   foundNames = 0;
 
 }
-
-
-
 async function printLogs(foundLinks, totalURLS) {
   console.log(`\n${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
 ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`);
 }
-
-
-
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks) {
-
   let person = doc.match('#FirstName #LastName').out('array');
   for (const a of person) {
     let text = a;
@@ -467,7 +355,6 @@ async function sendRecycledName(cc) {
 //*************************************************** */
 // HELPER FUNCTIONS
 //*************************************************** */
-
 async function checkSizeBeforeSendingData(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
@@ -493,25 +380,38 @@ async function checkSizeBeforeSendingData(i) {
       sdFULLInfo[0] = response[0].size;
       sdFULLInfo[1] = response[0].used;
     }
-    // console.log(`available: ${response[0].available}  used: ${response[0].used} queue size ${mQueueSize}`);
-    if (numericValue[0] > 10) {
-      // console.log("CARD HAS SPACE GO AHEAD AND SAFE")
+
+    if (numericValue[0] > 2) {
       return true;
     } else {
-      console.log("ABORT CARD IS FULL")
+      if (i === 0 && sendEmailOnce[0] === true) {
+        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card NAMES is already filled with data 🤯 \nPlease change it asap!\n
+        Current Stats: 
+        TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
+        ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
+
+        sendEmail(whichCard)
+        sendEmailOnce[0] = false;
+      }
+      if (i === 1 && sendEmailOnce[1] === true) {
+        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card FULL is already filled with data 🤯 \nPlease change it asap!\n
+        Current Stats: 
+        TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
+        ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
+        sendEmail(whichCard)
+        sendEmailOnce[1] = false;
+      }
       return false;
     }
   } else {
     return false;
   }
 }
-
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
   globalID = totalNumberURLs.lastHandled;
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
-
 function saveLastNames(url) {
   let mData = {
     queued: []
@@ -538,7 +438,6 @@ async function checkNamesDatabase(db, name) {
     return false;
   }
 }
-
 export async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
   let counter = 0;

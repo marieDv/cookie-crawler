@@ -44,14 +44,14 @@ export function returnWithZero(obj) {
   }
 }
 export async function saveToSDCard(names, mData) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
     let page = mData;
     fullDataObj.push({ page });
-    if (sizeof(fullDataObj) / (1024 * 1024) > 10) {//sizeof(fullDataObj) / (1024 * 1024) > 10
+    if (sizeof(fullDataObj) / (1024 * 1024) > 6) {//sizeof(fullDataObj) / (1024 * 1024) > 10
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
@@ -62,7 +62,7 @@ export async function saveToSDCard(names, mData) {
     let person = mData;
     fullNamesObj.push({ person });
 
-    if (sizeof(fullNamesObj) > 10000) {//5000
+    if (sizeof(fullNamesObj) > 6000) {//5000
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
       fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
