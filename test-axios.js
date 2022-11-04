@@ -111,7 +111,6 @@ const c = new Crawler({
       const $ = res.$;
       var urls = [];
       currentURL = res.request.uri.href;
-
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html" && $('a').includes('§') === false) {
         await dbUrl.put(currentURL, currentURL);
         let array = $('a').toArray();
