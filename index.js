@@ -70,7 +70,7 @@ let sendEmailOnce = [true, true];
 import { Websocket } from './websocket.js';
 const websocket = new Websocket();
 
-clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
+// clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
