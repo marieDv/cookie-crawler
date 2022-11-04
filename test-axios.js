@@ -101,12 +101,12 @@ await checkSizeBeforeSendingData(1);
 totalURLS = await getabsoluteNumberNames(dbUrl);
 const c = new Crawler({
   maxConnections: 10,
-  queueSize: 1000,
+  queueSize: 500,
   retries: 0,
   rateLimit: 0,
 
   callback: async (error, res, done) => {
-    isConnected = true;//!!await dns.promises.resolve('google.com').catch(() => { console.log("ERROR: NO INTERNET CONNECTION") });
+
 
     if (error) {
     } else {
@@ -144,9 +144,10 @@ const c = new Crawler({
           }
           return false;
         }
-        if (client && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-        }
+        // if (client && client.readyState === WebSocket.OPEN) {
+        //   client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+        // }
+
         for (const a of array) {
           if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
             let oldWebsite = false;
@@ -159,6 +160,8 @@ const c = new Crawler({
                   oldWebsite = false;
                 }
               });
+
+
               await dbUrlPrecheck.put(url.origin, url.origin);
               if (oldWebsite === true) {
                 let newDomain = url.protocol + '//' + pslUrl.domain;
@@ -192,12 +195,10 @@ const c = new Crawler({
       c.queue(urls);
     }
     done();
-
   }
 });
-if (isConnected === true) {
-  c.queue(savedToQueue);
-}
+c.queue(savedToQueue);
+
 //*************************************************** */
 // NLP STUFF & DATA EXTRACTION
 //*************************************************** */
@@ -240,12 +241,18 @@ async function searchForNames(url, cc, data, foundLinks) {
   foundNames = 0;
 
 }
+
 async function printLogs(foundLinks, totalURLS) {
-  console.log(`\n${currentURL}
+  console.log(`
+
+  ${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
 TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
-ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`);
+ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}
+
+`);
 }
+
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks) {
   let person = doc.match('#FirstName #LastName').out('array');
