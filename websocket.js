@@ -64,7 +64,7 @@ export class Websocket {
 
       if (needReconnect === true) {
         console.log(`... trying to reconnect ...`)
-        reconnect();
+        this.reconnect();
       }
 
     }, 30000);
