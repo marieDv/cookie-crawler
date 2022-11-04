@@ -295,7 +295,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             //   , 10000);
 
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
-              websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[0]}%${sdNAMESInfo[0]}%${sdFULLInfo[1]}%${sdNAMESInfo[0]}`);
+              websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
             }
             if (await checkSizeBeforeSendingData(0) === true) {
               saveToSDCard(true, obj);
