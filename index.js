@@ -294,8 +294,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             // }
             //   , 10000);
 
-            if (client && client.readyState === WebSocket.OPEN) {
-              client.send(JSON.stringify(`GETCARDSIZE%${cardFilled[0]}%${cardFilled[1]}%${cardRemaining[0]}%${cardRemaining[1]}`));
+            if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
+              websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[0]}%${sdNAMESInfo[0]}%${sdFULLInfo[1]}%${sdNAMESInfo[0]}`);
             }
             if (await checkSizeBeforeSendingData(0) === true) {
               saveToSDCard(true, obj);
@@ -316,7 +316,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
               tempSaveNames = [];
               let totalNumberNames = await getabsoluteNumberNames(db);
               if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-                websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);
+                websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
               }
               inCurrentDataset = 0;
             }
