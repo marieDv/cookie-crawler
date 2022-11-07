@@ -71,6 +71,7 @@ import { Websocket } from './websocket.js';
 const websocket = new Websocket();
 
 // clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
+clearDataBases([dbUrlPrecheck]);
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
