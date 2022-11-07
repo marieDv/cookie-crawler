@@ -17,7 +17,7 @@ export class Websocket {
   returnClient() {
     return client;
   }
-  clientSend(content) {
+  async clientSend(content) {
     client.send(JSON.stringify(content));
   }
   async websocketConnect() {

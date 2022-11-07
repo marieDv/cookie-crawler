@@ -45,6 +45,7 @@ let mQueueSize = 0;
 let currentURL = '';
 let startTime = new Date();
 var client;
+let currentHTML = '';
 let timeoutId;
 let sdCardToChange = "";
 let emailSend = false;
@@ -59,14 +60,9 @@ let allCurrentNames = [];
 let isConnected = true;
 let lastUrl = '';
 let totalURLS = ' ';
-let testLatestData = '';
+
 let sendEmailOnce = [true, true];
 
-// import "./websocket.js";
-// const Websocket = import ('./websocket');
-// import Websocket from './websocket.js';
-// const websocket = new classWebsocket();
-// console.log(Websocket)
 import { Websocket } from './websocket.js';
 const websocket = new Websocket();
 
@@ -80,7 +76,6 @@ await checkSizeBeforeSendingData(1);
 //*************************************************** */
 if (process.argv[2] === "web") {
   await websocket.websocketConnect();
-  console.log("Hurray I got the communication done");
   // await websocketConnect();
 }
 //*************************************************** */
@@ -94,9 +89,22 @@ const c = new Crawler({
   retries: 0,
   rateLimit: 0,
 
+
+  preRequest: (options, done) => {
+    try {
+      done();
+    } catch (error) {
+      console.log(`prerequest error: ${error}`);
+
+    }
+  },
   callback: async (error, res, done) => {
+
+
     if (error) {
+
     } else {
+      totalURLS = await getabsoluteNumberNames(dbUrl);
       const $ = res.$;
       var urls = [];
       currentURL = res.request.uri.href;
@@ -131,13 +139,13 @@ const c = new Crawler({
           return false;
         }
         if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-          websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
+          await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
           // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
         let countCurrentUrls = 0;
         for (const a of array) {
-          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300 ) {
-            countCurrentUrls ++;
+          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
+            countCurrentUrls++;
             let oldWebsite = false;
             try {
               const url = new URL(a.attribs.href, res.request.uri.href);
@@ -173,11 +181,12 @@ const c = new Crawler({
               }
             }
             catch (err) {
-              console.log(err)
+              // console.log(err)
             }
           }
         }
         if (lastUrl !== currentURL) {
+          currentHTML = $("html").html();
           await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
         }
         lastUrl = currentURL;
@@ -185,7 +194,9 @@ const c = new Crawler({
       c.queue(urls);
     }
     done();
+
   }
+
 });
 c.queue(savedToQueue);
 
@@ -225,7 +236,6 @@ async function searchForNames(url, cc, data, foundLinks) {
 
 
   await printLogs(foundLinks, totalURLS);
-  testLatestData = data;
   totalURLS++;
   allCurrentNames = [];
   foundNames = 0;
@@ -278,24 +288,23 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
 
 
 
-     
+
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-              websocket.clientSend(toSend);
+              await websocket.clientSend(toSend);
               startTime = new Date();
-              // clearTimeout(timeoutId);
+              clearTimeout(timeoutId);
             }
 
-            // timeoutId = setTimeout(async function () {
-            //   console.log("timeoutime")
-            //   let sendRecycledNameVar = await sendRecycledName(cc)
-            //   if (client && client.readyState === WebSocket.OPEN) {
-            //     client.send(sendRecycledNameVar);
-            //   }
-            // }
-            //   , 10000);
+            timeoutId = setTimeout(async function () {
+              let sendRecycledNameVar = await sendRecycledName(cc)
+              if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+                await websocket.clientSend(sendRecycledNameVar);
+              }
+            }
+              , 10000);
 
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
-              websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
+              await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
             }
             if (await checkSizeBeforeSendingData(0) === true) {
               saveToSDCard(true, obj);
@@ -311,12 +320,12 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             } else {
               allCurrentNames[foundNames++] = a;
               if (await checkSizeBeforeSendingData(1) === true) {
-                await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
+                await replaceAllNames(currentHTML, allCurrentNames, totalURLS, currentURL, getCurrentDate());
               }
               tempSaveNames = [];
               let totalNumberNames = await getabsoluteNumberNames(db);
               if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-                websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
+                await websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
               }
               inCurrentDataset = 0;
             }
@@ -349,8 +358,8 @@ async function sendRecycledName(cc) {
 // HELPER FUNCTIONS
 //*************************************************** */
 async function checkSizeBeforeSendingData(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'GB',
