@@ -187,7 +187,7 @@ const c = new Crawler({
         }
         if (lastUrl !== currentURL) {
           currentHTML = $("html").html();
-          await extractData($("html").text(), url, (globalID + c.queueSize), array.length);
+          await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
         }
         lastUrl = currentURL;
       }
@@ -204,7 +204,7 @@ c.queue(savedToQueue);
 // NLP STUFF & DATA EXTRACTION
 //*************************************************** */
 
-async function extractData(mdata, href, id, foundLinks) {
+async function extractData(mdata, href, id, foundLinks, dataHtml) {
   let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
     await searchForNames(href.href, countryCode[1], mdata, foundLinks);
@@ -212,23 +212,23 @@ async function extractData(mdata, href, id, foundLinks) {
 }
 /** CHECK LANGUAGE AND REDIRECT DATA TO LANGUAGE PROCESSING WITH FITTING NLP */
 /** supports: german, english, french, italian and spanish */
-async function searchForNames(url, cc, data, foundLinks) {
+async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
   switch (currentLanguage) {
     case 'german':
-      await languageProcessing(deNlp(data), data, url, cc, foundLinks)
+      await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml)
       break;
     case 'english':
-      await languageProcessing(enNlp(data), data, url, cc, foundLinks);
+      await languageProcessing(enNlp(data), data, url, cc, foundLinks, dataHtml);
       break;
     case 'french':
-      await languageProcessing(frNlp(data), data, url, cc, foundLinks);
+      await languageProcessing(frNlp(data), data, url, cc, foundLinks, dataHtml);
       break;
     case 'italian':
-      await languageProcessing(itNlp(data), data, url, cc, foundLinks);
+      await languageProcessing(itNlp(data), data, url, cc, foundLinks, dataHtml);
       break;
     case 'spanish':
-      await languageProcessing(esNlp(data), data, url, cc, foundLinks);
+      await languageProcessing(esNlp(data), data, url, cc, foundLinks, dataHtml);
       break;
     case '':
       break;
@@ -252,7 +252,7 @@ NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNu
 }
 
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
-async function languageProcessing(doc, data, url, cc, foundLinks) {
+async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   let person = doc.match('#FirstName #LastName').out('array');
   for (const a of person) {
     let text = a;
@@ -320,7 +320,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks) {
             } else {
               allCurrentNames[foundNames++] = a;
               if (await checkSizeBeforeSendingData(1) === true) {
-                await replaceAllNames(currentHTML, allCurrentNames, totalURLS, currentURL, getCurrentDate());
+                await replaceAllNames(dataHtml, allCurrentNames, totalURLS, currentURL, getCurrentDate());
               }
               tempSaveNames = [];
               let totalNumberNames = await getabsoluteNumberNames(db);
