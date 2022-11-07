@@ -207,7 +207,7 @@ c.queue(savedToQueue);
 async function extractData(mdata, href, id, foundLinks, dataHtml) {
   let countryCode = href.host.split('.').splice(-2);
   if (countryCode[1]) {
-    await searchForNames(href.href, countryCode[1], mdata, foundLinks);
+    await searchForNames(href.href, countryCode[1], mdata, foundLinks, dataHtml);
   }
 }
 /** CHECK LANGUAGE AND REDIRECT DATA TO LANGUAGE PROCESSING WITH FITTING NLP */
