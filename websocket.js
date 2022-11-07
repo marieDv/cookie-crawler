@@ -27,8 +27,9 @@ export class Websocket {
     if (client) {
       client.on('open', function () {
         console.log("CONNECTION IS OPEN")
+        needReconnect = false;
         if (client.readyState === WebSocket.OPEN) {
-          needReconnect = false;
+     
           this.heartbeat;
         }
       });

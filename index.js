@@ -320,7 +320,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             } else {
               allCurrentNames[foundNames++] = a;
               if (await checkSizeBeforeSendingData(1) === true) {
-                await replaceAllNames(dataHtml, allCurrentNames, totalURLS, currentURL, getCurrentDate());
+                await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
               }
               tempSaveNames = [];
               let totalNumberNames = await getabsoluteNumberNames(db);
@@ -348,7 +348,7 @@ async function sendRecycledName(cc) {
   // console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
   if (await getabsoluteNumberNames(db) > 2) {
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
-    let toSend = JSON.stringify(`recycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    let toSend = (`RecycledName: ${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
     startTime = new Date();
     waitForRecycledName = false;
     return toSend;
