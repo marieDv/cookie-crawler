@@ -234,9 +234,7 @@ async function printLogs(foundLinks, totalURLS) {
   console.log(`
                                                               
 ${currentURL}
-NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize})
-TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS
-ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}
+NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}
                                                               
 `);
 }
@@ -434,7 +432,7 @@ async function sendEmail(mText) {
   let info = await transporter.sendMail({
     from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
     to: "mariedvorzak@gmail.com", // list of receivers
-    // cc: "hello@process.studio",
+    cc: "hello@process.studio",
     subject: "TIME TO CHANGE SD", // Subject line
     text: `${mText}`, // plain text body
     // html: `${mText}`, // html body
