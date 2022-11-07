@@ -134,9 +134,10 @@ const c = new Crawler({
           websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
           // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
         }
-
+        let countCurrentUrls = 0;
         for (const a of array) {
-          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false) {
+          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300 ) {
+            countCurrentUrls ++;
             let oldWebsite = false;
             try {
               const url = new URL(a.attribs.href, res.request.uri.href);
