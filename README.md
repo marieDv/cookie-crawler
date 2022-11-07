@@ -6,7 +6,7 @@ commands:
 
 >**npm start** 
 
->**npm start web** to start the websocket (https://ait-residency.herokuapp.com/)
+>**npm start web** to run the websocket (https://ait-residency.herokuapp.com/)
 
 
 
