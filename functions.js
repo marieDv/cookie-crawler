@@ -92,13 +92,13 @@ export async function getabsoluteNumberNames(mdb) {
   await iterator.close()
   return counter;
 }
-export async function checkNamesDatabase(db, name) {
+export async function checkNamesDatabase(mdb, name) {
   try {
-    let key = await db.get(name);
-    await db.put(name, key += 1);//key value
+    let value = await mdb.get(name);
+    await mdb.put(name, value += 1);//key value
     return true;
   } catch (err) {
-    await db.put(name, 1);//key value
+    await mdb.put(name, 1);//key value
     return false;
   }
 }
@@ -268,7 +268,7 @@ export async function getExistingNames(db, random, length) {
     }
 
     for (const [key, value] of entries) {
-      allNames[counter] = value;
+      allNames[counter] = key;
       counter++;
     }
     returnValue = allNames[random];

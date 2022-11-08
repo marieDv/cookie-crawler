@@ -33,6 +33,7 @@ let globalID = 0;
 let cardFilled = [0, 0];
 let cardRemaining = [0, 0];
 let countSavedURLs = 0;
+let longestName = 0;
 let savedToQueue = retrieveURLs();
 // savedToQueue = savedToQueue.concat(startURL);
 let tempSaveNames = [];
@@ -49,7 +50,6 @@ let currentHTML = '';
 let timeoutId;
 let sdCardToChange = "";
 let emailSend = false;
-let longestName = 0;
 let blacklistedHostUrls = [];
 let lastHundredHosts = [];
 let countURLS = 0;
@@ -255,7 +255,7 @@ async function printLogs(foundLinks, totalURLS) {
   console.log(`
                                                               
 ${currentURL}
-NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
+NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | LONGEST: ${longestName} | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
                                                               
 `);
   if (process.argv[2] === "ranking" || process.argv[3] === "ranking" || process.argv[4] === "ranking") {
@@ -284,7 +284,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   let person = doc.match('#FirstName #LastName').out('array');
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -333,7 +333,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                 await websocket.clientSend(sendRecycledNameVar);
               }
             }
-              , 10000);
+              , 5000);
 
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
               await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
@@ -380,7 +380,7 @@ async function sendRecycledName(cc) {
   // console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
   if (await getabsoluteNumberNames(db) > 2) {
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
-    let toSend = (`RecycledName: ${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    let toSend = (`RecycledName:${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
     startTime = new Date();
     waitForRecycledName = false;
     return toSend;
@@ -457,12 +457,18 @@ async function checkSizeBeforeSendingData(i) {
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
   globalID = totalNumberURLs.lastHandled;
+  if (totalNumberURLs && totalNumberURLs.longestName > longestName) {
+    longestName = totalNumberURLs.longestName;
+  }
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
+
+
 function saveLastSession(handledNumber) {
   let mData = {
     queued: [],
-    lastHandled: handledNumber
+    lastHandled: handledNumber,
+    longestName: longestName,
   };
   mData.queued.push({ lastProcessedURLs });
   fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
