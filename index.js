@@ -246,7 +246,7 @@ async function printLogs(foundLinks, totalURLS) {
   console.log(`
                                                               
 ${currentURL}
-NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}
+NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
                                                               
 `);
 }
@@ -374,12 +374,12 @@ async function checkSizeBeforeSendingData(i) {
     numericValue = response[0].available.includes('GB') ? response[0].available.split('GB') : '';
     if (i === 0) {
       console.log("check size names")
-      sdNAMESInfo[0] = response[0].size;
+      sdNAMESInfo[0] = response[0].size + '/';
       sdNAMESInfo[1] = response[0].used;
     }
     if (i === 1) {
       console.log("check size full")
-      sdFULLInfo[0] = response[0].size;
+      sdFULLInfo[0] = response[0].size + '/';
       sdFULLInfo[1] = response[0].used;
     }
     console.log(numericValue[0]);
@@ -414,12 +414,12 @@ async function checkSizeBeforeSendingData(i) {
   } else {
     console.log("no path")
     if (i === 0) {
-      sdNAMESInfo[0] = `/`;
-      sdNAMESInfo[1] = `card is not recognized / path doesn't exist`;
+      sdNAMESInfo[0] = ``;
+      sdNAMESInfo[1] = `path doesn't exist`;
     }
     if (i === 1) {
-      sdFULLInfo[0] = `/`;
-      sdFULLInfo[1] = `card is not recognized / path doesn't exist`;
+      sdFULLInfo[0] = ``;
+      sdFULLInfo[1] = `path doesn't exist`;
     }
 
     return false;
