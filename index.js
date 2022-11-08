@@ -79,6 +79,9 @@ console.log(process.argv);
 if (process.argv[2] === "web" || process.argv[3] === "web") {
   await websocket.websocketConnect();
 }
+if (process.argv[2] === "clear" || process.argv[3] === "clear" || process.argv[4] === "clear") {
+  clearDataBases([dbUrl, db]);
+}
 //*************************************************** */
 // START CRAWLER
 //*************************************************** */
@@ -255,7 +258,7 @@ ${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
                                                               
 `);
-  if (process.argv[2] === "ranking" || process.argv[3] === "ranking") {
+  if (process.argv[2] === "ranking" || process.argv[3] === "ranking" || process.argv[4] === "ranking") {
     let mostUsedNames = await findMostUsed(db);
     let mostUsedURLS = await findMostUsed(dbUrl);
     console.log(`NAME STATS
