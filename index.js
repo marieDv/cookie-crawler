@@ -243,6 +243,8 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
 }
 
 async function printLogs(foundLinks, totalURLS) {
+  await checkSizeBeforeSendingData(1);
+  await checkSizeBeforeSendingData(0);
   console.log(`
                                                               
 ${currentURL}
