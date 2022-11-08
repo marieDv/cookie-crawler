@@ -358,8 +358,8 @@ async function sendRecycledName(cc) {
 // HELPER FUNCTIONS
 //*************************************************** */
 async function checkSizeBeforeSendingData(i) {
-  let currentPath = ['./names-output/output/', './full-output/output/'];
-  // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'GB',
@@ -414,12 +414,12 @@ async function checkSizeBeforeSendingData(i) {
   } else {
     console.log("no path")
     if (i === 0) {
-      sdNAMESInfo[0] = `card is not recognized / pat doesn't exist`;
-      sdNAMESInfo[1] = `card is not recognized / pat doesn't exist`;
+      sdNAMESInfo[0] = `/`;
+      sdNAMESInfo[1] = `card is not recognized / path doesn't exist`;
     }
     if (i === 1) {
-      sdFULLInfo[0] = `card is not recognized / pat doesn't exist`;
-      sdFULLInfo[1] = `card is not recognized / pat doesn't exist`;
+      sdFULLInfo[0] = `/`;
+      sdFULLInfo[1] = `card is not recognized / path doesn't exist`;
     }
 
     return false;
