@@ -373,12 +373,12 @@ async function checkSizeBeforeSendingData(i) {
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('GB') ? response[0].available.split('GB') : '';
     if (i === 0) {
-
+      console.log("check size names")
       sdNAMESInfo[0] = response[0].size;
       sdNAMESInfo[1] = response[0].used;
     }
     if (i === 1) {
-
+      console.log("check size full")
       sdFULLInfo[0] = response[0].size;
       sdFULLInfo[1] = response[0].used;
     }
