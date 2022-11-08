@@ -52,6 +52,30 @@ export async function saveLastNames(url, lastProcessedNames, countLastProcessedN
   countLastProcessedNames = 0
 }
 
+
+export async function findMostUsed(mdb) {
+  let sortedArray = [];
+  let entries = [];
+  let returnArray = [];
+  try {
+    for await (const [key, value] of mdb.iterator()) {
+      entries.push({ key: key, value: value });
+    }
+
+    sortedArray = entries.sort(function (a, b) {
+      return b.value - a.value;
+    });
+    for (let i = 0; i < 10; i++) {
+      if (sortedArray[i]) {
+        returnArray[i] = sortedArray[i];
+      }
+    }
+  } catch (error) {
+    console.log("problem with name database" + error)
+  }
+  return returnArray;
+
+}
 export async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
   let counter = 0;
@@ -69,10 +93,11 @@ export async function getabsoluteNumberNames(mdb) {
 }
 export async function checkNamesDatabase(db, name) {
   try {
-    let value = await db.get(name);
+    let key = await db.get(name);
+    await db.put(name, key += 1);//key value
     return true;
   } catch (err) {
-    await db.put(name, name);
+    await db.put(name, 1);//key value
     return false;
   }
 }
@@ -81,7 +106,7 @@ export async function saveToSDCard(names, mData) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let dateObject = new Date();
-  let timestampDate = dateObject.getFullYear() + "_" + dateObject.getMonth() + 1 + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
+  let timestampDate = dateObject.getFullYear() + "_" + (dateObject.getMonth() + 1) + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
     let page = mData;
     fullDataObj.push({ page });
@@ -145,21 +170,21 @@ export function checkCountryCode(countryCode) {
 export async function replaceAllNames(mdata, savedNames, id, url, date) {
   let replacedNames = '';
 
-    let dataStringWithoutNames = mdata.toString();
-    for (let q = 0; q < savedNames.length; q++) {
-      if (dataStringWithoutNames.includes(savedNames[q])) {
-        replacedNames += "" + savedNames[q] + ", ";
-        dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
-      }
+  let dataStringWithoutNames = mdata.toString();
+  for (let q = 0; q < savedNames.length; q++) {
+    if (dataStringWithoutNames.includes(savedNames[q])) {
+      replacedNames += "" + savedNames[q] + ", ";
+      dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
     }
-    let dataObj = {
-      url: url,
-      urlId: id,
-      date: date,
-      names: savedNames,
-      html: dataStringWithoutNames,
-    };
-    await saveToSDCard(false, dataObj);
+  }
+  let dataObj = {
+    url: url,
+    urlId: id,
+    date: date,
+    names: savedNames,
+    html: dataStringWithoutNames,
+  };
+  await saveToSDCard(false, dataObj);
 }
 
 export function readJsonFile() {

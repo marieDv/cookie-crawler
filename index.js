@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import { Level } from 'level';
-import { clearDataBases, rand, check_mem, getabsoluteNumberNames, checkNamesDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
+import { clearDataBases, rand, check_mem, findMostUsed, getabsoluteNumberNames, checkNamesDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 // import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
 import * as fs from 'fs';
 import * as util from 'util';
@@ -34,7 +34,7 @@ let cardFilled = [0, 0];
 let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let savedToQueue = retrieveURLs();
-savedToQueue = savedToQueue.concat(startURL);
+// savedToQueue = savedToQueue.concat(startURL);
 let tempSaveNames = [];
 var currentDate;
 let currentLanguage = "";
@@ -49,6 +49,7 @@ let currentHTML = '';
 let timeoutId;
 let sdCardToChange = "";
 let emailSend = false;
+let longestName = 0;
 let blacklistedHostUrls = [];
 let lastHundredHosts = [];
 let countURLS = 0;
@@ -74,9 +75,9 @@ await checkSizeBeforeSendingData(1);
 //*************************************************** */
 // START WEBSOCKET IF FLAG 'web' is set
 //*************************************************** */
-if (process.argv[2] === "web") {
+console.log(process.argv);
+if (process.argv[2] === "web" || process.argv[3] === "web") {
   await websocket.websocketConnect();
-  // await websocketConnect();
 }
 //*************************************************** */
 // START CRAWLER
@@ -109,10 +110,12 @@ const c = new Crawler({
       var urls = [];
       currentURL = res.request.uri.href;
       if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-        await dbUrl.put(currentURL, currentURL);
+        await checkNamesDatabase(dbUrl, currentURL)
+        // console.log(currentURL)
+        // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
+        // await dbUrl.put(currentURL, currentURL);
         let array = $('a').toArray();
         linksFound = array.length;
-        currentURL = res.request.uri.href;
         const url = new URL(res.request.uri.href);
         var pslUrl = psl.parse(url.host);
         lastHundredHosts[countURLS] = pslUrl.domain;
@@ -190,6 +193,7 @@ const c = new Crawler({
           await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
         }
         lastUrl = currentURL;
+        // }
       }
       c.queue(urls);
     }
@@ -251,6 +255,25 @@ ${currentURL}
 NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
                                                               
 `);
+  if (process.argv[2] === "ranking" || process.argv[3] === "ranking") {
+    let mostUsedNames = await findMostUsed(db);
+    let mostUsedURLS = await findMostUsed(dbUrl);
+    console.log(`NAME STATS
+LONGEST: ${longestName} | MOST FOUND:
+1: ${mostUsedNames[0].key}: ${mostUsedNames[0].value}
+2: ${mostUsedNames[1].key}: ${mostUsedNames[1].value}
+3: ${mostUsedNames[2].key}: ${mostUsedNames[2].value}
+4: ${mostUsedNames[3].key}: ${mostUsedNames[3].value}
+5: ${mostUsedNames[4].key}: ${mostUsedNames[4].value}
+
+MOST FOUND URLs: 
+1: ${mostUsedURLS[0].key}: ${mostUsedURLS[0].value}
+2: ${mostUsedURLS[1].key}: ${mostUsedURLS[1].value}
+3: ${mostUsedURLS[2].key}: ${mostUsedURLS[2].value}
+4: ${mostUsedURLS[3].key}: ${mostUsedURLS[3].value}
+5: ${mostUsedURLS[4].key}: ${mostUsedURLS[4].value}
+`)
+  }
 }
 
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
@@ -258,7 +281,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   let person = doc.match('#FirstName #LastName').out('array');
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`(\s+\S\s)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -276,6 +299,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = getCurrentDate();
             totalNumberNames = await getabsoluteNumberNames(db);
+
+            if (tempNameString.length > longestName) {
+              longestName = tempNameString.length;
+            }
             let obj = {
               name: tempNameString,
               url: url,
@@ -375,16 +402,13 @@ async function checkSizeBeforeSendingData(i) {
     cardRemaining[i] = response[0].available;
     numericValue = response[0].available.includes('GB') ? response[0].available.split('GB') : '';
     if (i === 0) {
-      console.log("check size names")
-      sdNAMESInfo[0] = '/'+response[0].size;
+      sdNAMESInfo[0] = '/' + response[0].size;
       sdNAMESInfo[1] = response[0].used;
     }
     if (i === 1) {
-      console.log("check size full")
-      sdFULLInfo[0] = '/'+response[0].size;
+      sdFULLInfo[0] = '/' + response[0].size;
       sdFULLInfo[1] = response[0].used;
     }
-    console.log(numericValue[0]);
     if (numericValue[0] > 0.5) {
       if (i === 0) {
         sendEmailOnce[0] === true;
