@@ -73,6 +73,7 @@ export async function findMostUsed(mdb) {
   } catch (error) {
     console.log("problem with name database" + error)
   }
+  console.log(sortedArray.length)
   return returnArray;
 
 }
