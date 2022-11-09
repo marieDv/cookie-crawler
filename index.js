@@ -410,7 +410,8 @@ async function checkSizeBeforeSendingData(i) {
       sdFULLInfo[0] = '/' + response[0].size;
       sdFULLInfo[1] = response[0].used;
     }
-    if (numericValue[0] > 0.5) {
+    console.log(numericValue[0])
+    if (numericValue[0] >= 50.0) {
       if (i === 0) {
         sendEmailOnce[0] === true;
       }
@@ -418,22 +419,24 @@ async function checkSizeBeforeSendingData(i) {
         sendEmailOnce[1] === true;
       }
       return true;
-    } else {
+    }
+    if (numericValue[0] <= 0.5) {
       if (i === 0 && sendEmailOnce[0] === true) {
         let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card NAMES is already filled with data 🤯 \nPlease change it asap!\n
         Current Stats: 
         TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
         ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
 
-        sendEmail(whichCard)
+        await sendEmail(whichCard)
         sendEmailOnce[0] = false;
       }
       if (i === 1 && sendEmailOnce[1] === true) {
-        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card FULL is already filled with data 🤯 \nPlease change it asap!\n
+        console.log("time to change card");
+        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card ALL is already filled with data 🤯 \nPlease change it asap!\n
         Current Stats: 
         TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
         ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
-        sendEmail(whichCard)
+        await sendEmail(whichCard)
         sendEmailOnce[1] = false;
       }
       return false;
@@ -486,7 +489,7 @@ async function sendEmail(mText) {
   let info = await transporter.sendMail({
     from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
     to: "mariedvorzak@gmail.com", // list of receivers
-    cc: "hello@process.studio",
+    // cc: "hello@process.studio",
     subject: "TIME TO CHANGE SD", // Subject line
     text: `${mText}`, // plain text body
     // html: `${mText}`, // html body
