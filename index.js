@@ -410,7 +410,7 @@ async function checkSizeBeforeSendingData(i) {
       sdFULLInfo[0] = '/' + response[0].size;
       sdFULLInfo[1] = response[0].used;
     }
-    console.log(numericValue[0])
+    // console.log(numericValue[0])
     if (numericValue[0] >= 50.0) {
       if (i === 0) {
         sendEmailOnce[0] === true;
