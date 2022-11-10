@@ -9,8 +9,6 @@ let client;
 
 export class Websocket {
   constructor() {
-
-    // this.width = width;
   }
 
 
@@ -24,7 +22,7 @@ export class Websocket {
     // client = new WebSocket('ws://localhost:9898/');
     client = new WebSocket('wss://ait-residency.herokuapp.com/');
     console.log(`...... connect`);
-    if (client) {
+    if (client && needReconnect === true) {
       client.on('open', function () {
         console.log("CONNECTION IS OPEN")
         needReconnect = false;
