@@ -51,9 +51,7 @@ export async function saveLastNames(url, lastProcessedNames, countLastProcessedN
   fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
   countLastProcessedNames = 0
 }
-
-
-export async function findMostUsed(mdb) {
+export async function returnMostUsed(mdb){
   let sortedArray = [];
   let entries = [];
   let returnArray = [];
@@ -61,7 +59,6 @@ export async function findMostUsed(mdb) {
     for await (const [key, value] of mdb.iterator()) {
       entries.push({ key: key, value: value });
     }
-
     sortedArray = entries.sort(function (a, b) {
       return b.value - a.value;
     });
@@ -75,22 +72,39 @@ export async function findMostUsed(mdb) {
   }
   console.log(sortedArray.length)
   return returnArray;
+}
+
+export async function findMostUsed(mdb) {
+  let sortedArray = [];
+  let entries = [];
+  let returnArray = [];
+  try {
+    for await (const [key, value] of mdb.iterator()) {
+      entries.push({ key: key, value: value });
+    }
+    sortedArray = entries.sort(function (a, b) {
+      return b.value - a.value;
+    });
+    for (let i = 0; i < 20; i++) {
+      if (sortedArray[i]) {
+        returnArray[i] = sortedArray[i];
+      }
+    }
+  } catch (error) {
+    console.log("problem with name database" + error)
+  }
+  return returnArray;
 
 }
+
+
 export async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
-  let counter = 0;
-  while (true) {
-    const entries = await iterator.nextv(100)
-    if (entries.length === 0) {
-      break
-    }
-    for (const [key, value] of entries) {
-      counter++;
-    }
+  let entries = [];
+  for await (const [key, value] of mdb.iterator()) {
+    entries.push({ key: key});
   }
-  await iterator.close()
-  return counter;
+  return entries.length;
 }
 export async function checkNamesDatabase(mdb, name) {
   try {
@@ -255,35 +269,13 @@ export function roundToTwo(num) {
 }
 
 
-export async function getExistingNames(db, random, length) {
-  const iterator = db.iterator()
-  let counter = 0;
-  let allNames = [];
-  let returnValue;
-  while (true) {
-    const entries = await iterator.nextv(length)
-
-    if (entries.length === 0) {
-      break
-    }
-
-    for (const [key, value] of entries) {
-      allNames[counter] = key;
-      counter++;
-    }
-    returnValue = allNames[random];
+export async function getExistingNames(mdb, random, length) {
+  let entries = [];
+  for await (const [key, value] of mdb.iterator()) {
+    entries.push({ key: key, value: value});
   }
-
-  await iterator.close()
-  return returnValue;
+  return entries[random].key;
 }
-
-
-
-
-
-
-
 export function check_mem() {
   const mem = process.memoryUsage();
   return (mem.heapUsed / 1024 / 1024).toFixed(2);

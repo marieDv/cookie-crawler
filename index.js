@@ -1,6 +1,6 @@
 
 import Crawler from 'crawler';
-import { Level } from 'level';
+import level from 'level-party';
 import { clearDataBases, rand, check_mem, findMostUsed, getabsoluteNumberNames, checkNamesDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 // import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
 import * as fs from 'fs';
@@ -21,9 +21,9 @@ import { URL } from 'node:url';
 import WebSocket from 'ws';
 const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
 const emergencyURLS = ['https://youtube.com', 'https://elpais.com/', 'https://www.thelocal.it/', 'https://www.ait.ac.at/'];
-const db = new Level('namesLevel', { valueEncoding: 'json' })
-const dbUrl = new Level('urlsLevel', { valueEncoding: 'json' })
-const dbUrlPrecheck = new Level('dbUrlPrecheck', { valueEncoding: 'json' })
+const db = level('namesLevel', { valueEncoding: 'json' })
+const dbUrl = level('urlsLevel', { valueEncoding: 'json' })
+const dbUrlPrecheck = level('dbUrlPrecheck', { valueEncoding: 'json' })
 let totalNumberNames = 0;
 let lastProcessedURLs = [];
 let lastProcessedNames = [];
@@ -76,10 +76,18 @@ await checkSizeBeforeSendingData(1);
 // START WEBSOCKET IF FLAG 'web' is set
 //*************************************************** */
 console.log(process.argv);
-if (process.argv[2] === "web" || process.argv[3] === "web") {
+if (process.argv[2] === "web" || process.argv[3] === "web" || process.argv[4] === "web" || process.argv[5] === "web") {
   await websocket.websocketConnect();
 }
-if (process.argv[2] === "clear" || process.argv[3] === "clear" || process.argv[4] === "clear") {
+if (process.argv[2] === "ranking-snapshot" || process.argv[3] === "ranking-snapshot" || process.argv[4] === "ranking-snapshot" || process.argv[5] === "ranking-snapshot") {
+  console.log("NAMES:")
+  console.log(await findMostUsed(db));
+  console.log("URLS:")
+  console.log(await findMostUsed(dbUrl));
+}else {
+  await initCrawler();
+}
+if (process.argv[2] === "clear" || process.argv[3] === "clear" || process.argv[4] === "clear" || process.argv[5] === "clear") {
   clearDataBases([dbUrl, db]);
 }
 //*************************************************** */
@@ -87,126 +95,128 @@ if (process.argv[2] === "clear" || process.argv[3] === "clear" || process.argv[4
 //*************************************************** */
 
 totalURLS = await getabsoluteNumberNames(dbUrl);
-const c = new Crawler({
-  maxConnections: 10,
-  queueSize: 500,
-  retries: 0,
-  rateLimit: 0,
+
+async function initCrawler() {
+  const c = new Crawler({
+    maxConnections: 10,
+    queueSize: 500,
+    retries: 0,
+    rateLimit: 0,
 
 
-  preRequest: (options, done) => {
-    try {
-      done();
-    } catch (error) {
-      console.log(`prerequest error: ${error}`);
+    preRequest: (options, done) => {
+      try {
+        done();
+      } catch (error) {
+        console.log(`prerequest error: ${error}`);
 
-    }
-  },
-  callback: async (error, res, done) => {
+      }
+    },
+    callback: async (error, res, done) => {
 
 
-    if (error) {
+      if (error) {
 
-    } else {
-      totalURLS = await getabsoluteNumberNames(dbUrl);
-      const $ = res.$;
-      var urls = [];
-      currentURL = res.request.uri.href;
-      if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-        await checkNamesDatabase(dbUrl, currentURL)
-        // console.log(currentURL)
-        // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
-        // await dbUrl.put(currentURL, currentURL);
-        let array = $('a').toArray();
-        linksFound = array.length;
-        const url = new URL(res.request.uri.href);
-        var pslUrl = psl.parse(url.host);
-        lastHundredHosts[countURLS] = pslUrl.domain;
-        const allEqual = arr => arr.every(val => val === arr[0]);
-        if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
-          blacklistedHostUrls.push(lastHundredHosts[0]);
-          if (blacklistedHostUrls.length > 100) {
-            urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
-            urls = emergencyURLS;
-            c.queue(urls);
-            blacklistedHostUrls = [];
-          }
-        }
-        countURLS++;
-        if (countURLS === 20) {
-          countURLS = 0;
-        }
-        function includesBlacklistedURL(link) {
-          for (let i = 0; i < blacklistedHostUrls.length; i++) {
-            if (link.includes(blacklistedHostUrls[i])) {
-              return true;
+      } else {
+        totalURLS = await getabsoluteNumberNames(dbUrl);
+        const $ = res.$;
+        var urls = [];
+        currentURL = res.request.uri.href;
+        if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
+          await checkNamesDatabase(dbUrl, currentURL)
+          // console.log(currentURL)
+          // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
+          // await dbUrl.put(currentURL, currentURL);
+          let array = $('a').toArray();
+          linksFound = array.length;
+          const url = new URL(res.request.uri.href);
+          var pslUrl = psl.parse(url.host);
+          lastHundredHosts[countURLS] = pslUrl.domain;
+          const allEqual = arr => arr.every(val => val === arr[0]);
+          if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
+            blacklistedHostUrls.push(lastHundredHosts[0]);
+            if (blacklistedHostUrls.length > 100) {
+              urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
+              urls = emergencyURLS;
+              c.queue(urls);
+              blacklistedHostUrls = [];
             }
           }
-          return false;
-        }
-        if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-          await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
-          // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-        }
-        let countCurrentUrls = 0;
-        for (const a of array) {
-          if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
-            countCurrentUrls++;
-            let oldWebsite = false;
-            try {
-              const url = new URL(a.attribs.href, res.request.uri.href);
-              let value = await dbUrlPrecheck.get(url.origin, function (err) {
-                if (err) {
-                  oldWebsite = true;
-                } else {
-                  oldWebsite = false;
-                }
-              });
+          countURLS++;
+          if (countURLS === 20) {
+            countURLS = 0;
+          }
+          function includesBlacklistedURL(link) {
+            for (let i = 0; i < blacklistedHostUrls.length; i++) {
+              if (link.includes(blacklistedHostUrls[i])) {
+                return true;
+              }
+            }
+            return false;
+          }
+          if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+            await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
+            // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+          }
+          let countCurrentUrls = 0;
+          for (const a of array) {
+            if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
+              countCurrentUrls++;
+              let oldWebsite = false;
+              try {
+                const url = new URL(a.attribs.href, res.request.uri.href);
+                let value = await dbUrlPrecheck.get(url.origin, function (err) {
+                  if (err) {
+                    oldWebsite = true;
+                  } else {
+                    oldWebsite = false;
+                  }
+                });
 
 
-              await dbUrlPrecheck.put(url.origin, url.origin);
-              if (oldWebsite === true) {
-                let newDomain = url.protocol + '//' + pslUrl.domain;
-                mQueueSize = c.queueSize;
-                let tempString = url.href;
-                // console.log(tempString.includes('§'));
-                if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false)) {
-                  urls.push(url.href);
-                }
-                if (countLastProcessedURLs === 20) {
-                  saveLastSession(globalID + c.queueSize);
-                  countLastProcessedURLs = 0;
-                } else if (lastProcessedURLs.includes(newDomain) === false) {
-                  lastProcessedURLs[countSavedURLs] = newDomain;
-                  countLastProcessedURLs++
-                  countSavedURLs++;
-                  if (countSavedURLs === 100) {
-                    countSavedURLs = 0;
+                await dbUrlPrecheck.put(url.origin, url.origin);
+                if (oldWebsite === true) {
+                  let newDomain = url.protocol + '//' + pslUrl.domain;
+                  mQueueSize = c.queueSize;
+                  let tempString = url.href;
+                  // console.log(tempString.includes('§'));
+                  if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false)) {
+                    urls.push(url.href);
+                  }
+                  if (countLastProcessedURLs === 20) {
+                    saveLastSession(globalID + c.queueSize);
+                    countLastProcessedURLs = 0;
+                  } else if (lastProcessedURLs.includes(newDomain) === false) {
+                    lastProcessedURLs[countSavedURLs] = newDomain;
+                    countLastProcessedURLs++
+                    countSavedURLs++;
+                    if (countSavedURLs === 100) {
+                      countSavedURLs = 0;
+                    }
                   }
                 }
               }
-            }
-            catch (err) {
-              // console.log(err)
+              catch (err) {
+                // console.log(err)
+              }
             }
           }
+          if (lastUrl !== currentURL) {
+            currentHTML = $("html").html();
+            await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
+          }
+          lastUrl = currentURL;
+          // }
         }
-        if (lastUrl !== currentURL) {
-          currentHTML = $("html").html();
-          await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
-        }
-        lastUrl = currentURL;
-        // }
+        c.queue(urls);
       }
-      c.queue(urls);
+      done();
+
     }
-    done();
 
-  }
-
-});
-c.queue(savedToQueue);
-
+  });
+  c.queue(savedToQueue);
+}
 //*************************************************** */
 // NLP STUFF & DATA EXTRACTION
 //*************************************************** */
@@ -317,10 +327,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             };
             let dateObject = new Date();
             let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-
-
-
-
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
               await websocket.clientSend(toSend);
               startTime = new Date();
@@ -364,8 +370,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
     }
   }
   timeoutId = setTimeout(async function () {
-    let sendRecycledNameVar = await sendRecycledName(cc)
     if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+      let sendRecycledNameVar = await sendRecycledName(cc)
       await websocket.clientSend(sendRecycledNameVar);
     }
   }
@@ -387,6 +393,7 @@ async function sendRecycledName(cc) {
 //*************************************************** */
 // HELPER FUNCTIONS
 //*************************************************** */
+
 async function checkSizeBeforeSendingData(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
