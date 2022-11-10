@@ -411,7 +411,7 @@ async function checkSizeBeforeSendingData(i) {
       sdFULLInfo[1] = response[0].used;
     }
     // console.log(numericValue[0])
-    if (numericValue[0] >= 50.0) {
+    if (numericValue[0] >= 1.0) {
       if (i === 0) {
         sendEmailOnce[0] === true;
       }
@@ -442,7 +442,7 @@ async function checkSizeBeforeSendingData(i) {
       return false;
     }
   } else {
-    console.log("no path")
+    // console.log("no path")
     if (i === 0) {
       sdNAMESInfo[0] = ``;
       sdNAMESInfo[1] = `path doesn't exist`;
