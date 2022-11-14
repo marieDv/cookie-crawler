@@ -248,7 +248,7 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
     case '':
       break;
   }
-  // await printLogs(foundLinks, totalURLS);
+  await printLogs(foundLinks, totalURLS);
   allCurrentNames = [];
   foundNames = 0;
 
