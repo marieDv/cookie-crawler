@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import level from 'level-party';
-import { clearDataBases, rand, check_mem, findMostUsed, getabsoluteNumberNames, checkNamesDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
+import { clearDataBases, rand, check_mem, findMostUsed, getabsoluteNumberNames, checkNamesDatabase, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 // import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
 import * as fs from 'fs';
 import * as util from 'util';
@@ -84,7 +84,7 @@ if (process.argv[2] === "ranking-snapshot" || process.argv[3] === "ranking-snaps
   console.log(await findMostUsed(db));
   console.log("URLS:")
   console.log(await findMostUsed(dbUrl));
-}else {
+} else {
   await initCrawler();
 }
 if (process.argv[2] === "clear" || process.argv[3] === "clear" || process.argv[4] === "clear" || process.argv[5] === "clear") {
@@ -118,12 +118,12 @@ async function initCrawler() {
       if (error) {
 
       } else {
-        totalURLS = await getabsoluteNumberNames(dbUrl);
+        // totalURLS = await getabsoluteNumberNames(dbUrl);
         const $ = res.$;
         var urls = [];
         currentURL = res.request.uri.href;
         if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-          await checkNamesDatabase(dbUrl, currentURL)
+
           // console.log(currentURL)
           // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
           // await dbUrl.put(currentURL, currentURL);
@@ -201,12 +201,10 @@ async function initCrawler() {
               }
             }
           }
-          if (lastUrl !== currentURL) {
+          if (await checkDatabase(dbUrl, currentURL) === false) {
             currentHTML = $("html").html();
             await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
           }
-          lastUrl = currentURL;
-          // }
         }
         c.queue(urls);
       }
@@ -250,10 +248,7 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
     case '':
       break;
   }
-
-
   // await printLogs(foundLinks, totalURLS);
-  totalURLS++;
   allCurrentNames = [];
   foundNames = 0;
 
@@ -294,7 +289,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   let person = doc.match('#FirstName #LastName').out('array');
   for (const a of person) {
     let text = a;
-    const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+    const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
     if (matchedNames === null) {
       if (text.includes("’s") || text.includes("'s")) {
         text = a.slice(0, -2);
@@ -326,6 +321,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               textLanguage: currentLanguage
             };
             let dateObject = new Date();
+            console.log(`name side: ${totalURLS}`);
             let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
               await websocket.clientSend(toSend);
@@ -349,9 +345,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               foundNames++;
             } else {
               allCurrentNames[foundNames++] = a;
-              if (await checkSizeBeforeSendingData(1) === true) {
-                await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
-              }
               tempSaveNames = [];
               let totalNumberNames = await getabsoluteNumberNames(db);
               if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
@@ -360,15 +353,17 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               inCurrentDataset = 0;
             }
             latestData = data;
-
           }
-        } else {
         }
-      } else {
       }
-    } else {
     }
   }
+  
+  if (await checkSizeBeforeSendingData(1) === true) {
+    await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
+  }
+  totalURLS++;
+  await checkNamesDatabase(dbUrl, currentURL);
   timeoutId = setTimeout(async function () {
     if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
       let sendRecycledNameVar = await sendRecycledName(cc)

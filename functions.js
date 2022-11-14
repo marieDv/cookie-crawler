@@ -51,7 +51,7 @@ export async function saveLastNames(url, lastProcessedNames, countLastProcessedN
   fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
   countLastProcessedNames = 0
 }
-export async function returnMostUsed(mdb){
+export async function returnMostUsed(mdb) {
   let sortedArray = [];
   let entries = [];
   let returnArray = [];
@@ -102,9 +102,20 @@ export async function getabsoluteNumberNames(mdb) {
   const iterator = mdb.iterator()
   let entries = [];
   for await (const [key, value] of mdb.iterator()) {
-    entries.push({ key: key});
+    entries.push({ key: key });
   }
   return entries.length;
+}
+
+export async function checkDatabase(mdb, name) {
+  try {
+    let value = await mdb.get(name);
+    // await mdb.put(name, value += 1);//key value
+    return true;
+  } catch (err) {
+    // await mdb.put(name, 1);//key value
+    return false;
+  }
 }
 export async function checkNamesDatabase(mdb, name) {
   try {
@@ -120,12 +131,13 @@ export async function checkNamesDatabase(mdb, name) {
 export async function saveToSDCard(names, mData) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  // console.log(`save data ${sizeof(fullDataObj) / (1024 * 1024)}`);
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + (dateObject.getMonth() + 1) + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
     let page = mData;
     fullDataObj.push({ page });
-    if (sizeof(fullDataObj) / (1024 * 1024) > 6) {//sizeof(fullDataObj) / (1024 * 1024) > 10
+    if (sizeof(fullDataObj) / (1024 * 1024) > 2) {//sizeof(fullDataObj) / (1024 * 1024) > 10
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
@@ -272,7 +284,7 @@ export function roundToTwo(num) {
 export async function getExistingNames(mdb, random, length) {
   let entries = [];
   for await (const [key, value] of mdb.iterator()) {
-    entries.push({ key: key, value: value});
+    entries.push({ key: key, value: value });
   }
   return entries[random].key;
 }
