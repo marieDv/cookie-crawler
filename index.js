@@ -252,7 +252,7 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   }
 
 
-  await printLogs(foundLinks, totalURLS);
+  // await printLogs(foundLinks, totalURLS);
   totalURLS++;
   allCurrentNames = [];
   foundNames = 0;
