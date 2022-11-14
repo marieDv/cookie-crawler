@@ -121,9 +121,9 @@ async function initCrawler() {
         // totalURLS = await getabsoluteNumberNames(dbUrl);
         const $ = res.$;
         var urls = [];
-        currentURL = res.request.uri.href;
+       
         if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html") {
-
+          currentURL = res.request.uri.href;
           // console.log(currentURL)
           // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
           // await dbUrl.put(currentURL, currentURL);
@@ -321,7 +321,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               textLanguage: currentLanguage
             };
             let dateObject = new Date();
-            console.log(`name side: ${totalURLS}`);
             let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
               await websocket.clientSend(toSend);
@@ -360,10 +359,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   }
   
   if (await checkSizeBeforeSendingData(1) === true) {
-    await replaceAllNames(data, allCurrentNames, totalURLS, currentURL, getCurrentDate());
+    await replaceAllNames(data, allCurrentNames, totalURLS, url, getCurrentDate());
   }
   totalURLS++;
-  await checkNamesDatabase(dbUrl, currentURL);
+  await checkNamesDatabase(dbUrl, url);
   timeoutId = setTimeout(async function () {
     if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
       let sendRecycledNameVar = await sendRecycledName(cc)
