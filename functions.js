@@ -48,7 +48,7 @@ export async function saveLastNames(url, lastProcessedNames, countLastProcessedN
     queued: []
   };
   mData.queued.push({ lastProcessedNames });
-  fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
+  await fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
   countLastProcessedNames = 0
 }
 export async function returnMostUsed(mdb) {
@@ -97,9 +97,21 @@ export async function findMostUsed(mdb) {
 
 }
 
+export async function getURLId(mdb, MUrl){
+  let entries = [];
+  let count = 0;
+  for await (const [key, value] of mdb.iterator()) {
+    if(MUrl === key){
+      return count;
+    }else {
+      count ++;
+    }
+  }
+  return 0;
+  // return entries.length;
 
+}
 export async function getabsoluteNumberNames(mdb) {
-  const iterator = mdb.iterator()
   let entries = [];
   for await (const [key, value] of mdb.iterator()) {
     entries.push({ key: key });
@@ -129,19 +141,19 @@ export async function checkNamesDatabase(mdb, name) {
 }
 
 export async function saveToSDCard(names, mData) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   // console.log(`save data ${sizeof(fullDataObj) / (1024 * 1024)}`);
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + (dateObject.getMonth() + 1) + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
     let page = mData;
     fullDataObj.push({ page });
-    if (sizeof(fullDataObj) / (1024 * 1024) > 2) {//sizeof(fullDataObj) / (1024 * 1024) > 10
+    if (sizeof(fullDataObj) / (1024 * 1024) > 5) {//sizeof(fullDataObj) / (1024 * 1024) > 10
       let currentFileName = timestampDate + "_full.json";
       currentFileName = timestampDate + ".json"
       let tempPath = currentPath[1] + currentFileName;
-      fs.writeFileSync(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
+      await fs.writeFileSync(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
       fullDataObj = [];
     }
   } else {
@@ -151,7 +163,7 @@ export async function saveToSDCard(names, mData) {
     if (sizeof(fullNamesObj) > 6000) {//5000
       let currentFileName = timestampDate + "_names.json";
       let tempPath = currentPath[0] + currentFileName;
-      fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
+      await fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
       fullNamesObj = [];
     }
   }
@@ -174,7 +186,7 @@ export function detectDataLanguage(data) {
   return currentLanguage !== '' ? currentLanguage : lastValidLanguage;
 }
 
-export function getCurrentDate() {
+export async function getCurrentDate() {
   let dateObject = new Date();
   return (monthNames[dateObject.getMonth()] + ", " + dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds();// + ", " + dateObject.getMilliseconds();
 }
@@ -201,7 +213,7 @@ export async function replaceAllNames(mdata, savedNames, id, url, date) {
   for (let q = 0; q < savedNames.length; q++) {
     if (dataStringWithoutNames.includes(savedNames[q])) {
       replacedNames += "" + savedNames[q] + ", ";
-      dataStringWithoutNames = dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
+      dataStringWithoutNames = await dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
     }
   }
   let dataObj = {
