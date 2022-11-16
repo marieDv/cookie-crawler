@@ -249,7 +249,7 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
     case '':
       break;
   }
-  // await printLogs(foundLinks, totalURLS);
+  await printLogs(foundLinks, totalURLS);
 
 
 }
@@ -359,25 +359,39 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               }
             } else {
               saveNoNames = true;
-              if (checkedDataBase === false) {
-                allCurrentNames[justFound++] = a;
+              if (checkedDataBase === false && tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
+                allCurrentNames[justFound++] = tempNameString;
               }
               const toSaveCurrentNames = allCurrentNames;
 
               if (await checkSizeBeforeSendingData(0) === true) {
                 // for (let j = 0; j < toSaveCurrentNames.length; j++) {
-                if (toSaveCurrentNames !== null) {
-                  let obj = {
-                    name: toSaveCurrentNames,//tempNameString,
-                    url: pURL,
-                    nId: totalNumberNames,
-                    urlId: pURLS,
-                    date: currentDate,
-                    domain: cc,
-                    textLanguage: currentLanguage
-                  };
+                if (toSaveCurrentNames !== null && toSaveCurrentNames.length > 0) {
+                  for(let j=0; j<toSaveCurrentNames.length; j++){
+                    let obj = {
+                      name: toSaveCurrentNames[j],//tempNameString,
+                      url: pURL,
+                      nId: totalNumberNames,
+                      urlId: pURLS,
+                      date: currentDate,
+                      domain: cc,
+                      textLanguage: currentLanguage
+                    };
+  
+                    await saveToSDCard(true, obj);
 
-                  await saveToSDCard(true, obj);
+                  }
+                  // let obj = {
+                  //   name: toSaveCurrentNames,//tempNameString,
+                  //   url: pURL,
+                  //   nId: totalNumberNames,
+                  //   urlId: pURLS,
+                  //   date: currentDate,
+                  //   domain: cc,
+                  //   textLanguage: currentLanguage
+                  // };
+
+                  // await saveToSDCard(true, obj);
                 }
               }
               if (await checkSizeBeforeSendingData(1) === true) {
