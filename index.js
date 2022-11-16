@@ -231,8 +231,6 @@ async function extractData(mdata, href, id, foundLinks, dataHtml) {
 async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
 
-
-  console.log(`\nlanguage processing for ${url}`);
   switch (currentLanguage) {
     case 'german':
       await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml)
@@ -352,38 +350,42 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               countLastProcessedNames === 22 ? await saveLastNames(url, lastProcessedNames, countLastProcessedNames) : countLastProcessedNames++;
               lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
 
-              if (!(i === personBind.length - 1)) {
-                console.log(text)
-                tempSaveNames[inCurrentDataset] = text;
-                allCurrentNames[foundNames] = a;
-                inCurrentDataset++;
-                foundNames++;
+              if (i < personBind.length - 1) {
+                console.log(i)
+                if (text !== null) {
+                  tempSaveNames[inCurrentDataset] = text;
+                  allCurrentNames[foundNames] = a;
+                  inCurrentDataset++;
+                  foundNames++;
+                }
               } else {
+                console.log("total length:" + personBind.length)
+                console.log(allCurrentNames)
                 saveNoNames = true;
                 allCurrentNames[foundNames++] = a;
                 tempSaveNames = [];
                 const toSaveCurrentNames = allCurrentNames;
 
                 if (await checkSizeBeforeSendingData(0) === true) {
-                  for (let j = 0; j < toSaveCurrentNames.length; j++) {
-                    if (toSaveCurrentNames !== null) {
-                      let obj = {
-                        name: toSaveCurrentNames[i],//tempNameString,
-                        url: pURL,
-                        nId: totalNumberNames,
-                        urlId: pURLS,
-                        date: currentDate,
-                        domain: cc,
-                        textLanguage: currentLanguage
-                      };
+                  // for (let j = 0; j < toSaveCurrentNames.length; j++) {
+                  if (toSaveCurrentNames !== null) {
+                    let obj = {
+                      name: toSaveCurrentNames,//tempNameString,
+                      url: pURL,
+                      nId: totalNumberNames,
+                      urlId: pURLS,
+                      date: currentDate,
+                      domain: cc,
+                      textLanguage: currentLanguage
+                    };
 
-                      await saveToSDCard(true, obj);
-                    }
+                    await saveToSDCard(true, obj);
                   }
+                  // }
                 }
-                console.log(toSaveCurrentNames)
+                // console.log(toSaveCurrentNames)
                 if (await checkSizeBeforeSendingData(1) === true) {
-                  console.log("asd" + toSaveCurrentNames)
+                  // console.log("asd" + toSaveCurrentNames)
                   await replaceAllNames(allBind[0], toSaveCurrentNames, allBind[2], allBind[3], allBind[4]);
 
                 }
@@ -402,7 +404,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       latestData = data;
       //IF IT WASNT SAVED ON THE LAST UTERATION SAVE TO FILE
       if (i === personBind.length - 1 && saveNoNames === false) {
-        console.log("save empty")
+        // console.log("save empty")
         // if (await checkSizeBeforeSendingData(1) === true) {
         //   console.log(await getURLId(dbUrl, url));
         //   console.log(`all - url: ${pURL} id: ${pURLS}`);//[data, [], totalURLS, url, await getCurrentDate()]
