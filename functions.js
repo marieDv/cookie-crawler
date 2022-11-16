@@ -141,8 +141,8 @@ export async function checkNamesDatabase(mdb, name) {
 }
 
 export async function saveToSDCard(names, mData) {
-  let currentPath = ['./names-output/output/', './full-output/output/'];
-  // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  // let currentPath = ['./names-output/output/', './full-output/output/'];
+  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   // console.log(`save data ${sizeof(fullDataObj) / (1024 * 1024)}`);
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + (dateObject.getMonth() + 1) + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
@@ -206,21 +206,23 @@ export function checkCountryCode(countryCode) {
 
 
 
-export async function replaceAllNames(mdata, savedNames, id, url, date) {
+export async function replaceAllNames(mdata, savedNames, id, url, date,repeatedNames) {
   let replacedNames = '';
 
   let dataStringWithoutNames = mdata.toString();
-  for (let q = 0; q < savedNames.length; q++) {
-    if (dataStringWithoutNames.includes(savedNames[q])) {
-      replacedNames += "" + savedNames[q] + ", ";
-      dataStringWithoutNames = await dataStringWithoutNames.replaceAll(savedNames[q], " [NAME] ");
+  let toReplaceArray = savedNames.concat(repeatedNames);
+  for (let q = 0; q < toReplaceArray.length; q++) {
+    if (dataStringWithoutNames.includes(toReplaceArray[q])) {
+      replacedNames += "" + toReplaceArray[q] + ", ";
+      dataStringWithoutNames = await dataStringWithoutNames.replaceAll(toReplaceArray[q], " [NAME] ");
     }
   }
   let dataObj = {
     url: url,
     urlId: id,
     date: date,
-    names: savedNames,
+    newNames: savedNames,
+    oldNames: repeatedNames,
     html: dataStringWithoutNames,
   };
   await saveToSDCard(false, dataObj);
