@@ -302,6 +302,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   const tosaveCurrentId = totalURLS;
   let saveNoNames = false;
   let person = doc.match('#FirstName #LastName').out('array');
+  console.log("person length " + person.length)
   let personBind = [];
   let allBind = [data, [], tosaveCurrentId, tosaveCurrentURl, await getCurrentDate()];
   for (let i = 0; i < person.length; i++) {
