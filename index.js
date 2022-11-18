@@ -289,7 +289,7 @@ MOST FOUND URLs:
 
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
-  console.log("language processing")
+  console.log("language processing" + doc.length)
   foundNames = 0;
   let allCurrentNames = [];
   let repeatedCurrentNames = [];
@@ -318,8 +318,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       let pURL = personBind[i][1];
       let pURLS = personBind[i][2];
       let text = a;
-      const matchedNames = await a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+      const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
       const checkedDataBase = await checkNamesDatabase(db, text);
+      console.log("checked database");
       if (matchedNames === null) {
         if (text.includes("’s") || text.includes("'s")) {
           text = a.slice(0, -2);
@@ -334,7 +335,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = await getCurrentDate();
             totalNumberNames = await getabsoluteNumberNames(db);
-
+            console.log("absolute number names");
             if (tempNameString.length > longestName) {
               longestName = tempNameString.length;
             }
@@ -357,6 +358,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                   justFound++;
                   countLastProcessedNames === 22 ? await saveLastNames(url, lastProcessedNames, countLastProcessedNames) : countLastProcessedNames++;
                   lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+                  console.log("all processed names");
                 } else if (repeatedCurrentNames.includes(tempNameString) === false && allCurrentNames.includes(tempNameString) === false) {
                   repeatedCurrentNames[repeatedFound] = tempNameString;
                   repeatedFound++;
@@ -372,7 +374,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               if (await checkSizeBeforeSendingData(0) === true) {
                 // for (let j = 0; j < toSaveCurrentNames.length; j++) {
                 if (toSaveCurrentNames !== null && toSaveCurrentNames.length > 0) {
-                  for(let j=0; j<toSaveCurrentNames.length; j++){
+                  for (let j = 0; j < toSaveCurrentNames.length; j++) {
                     let obj = {
                       name: toSaveCurrentNames[j],//tempNameString,
                       url: pURL,
@@ -382,7 +384,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                       domain: cc,
                       textLanguage: currentLanguage
                     };
-  
+
                     await saveToSDCard(true, obj);
 
                   }
