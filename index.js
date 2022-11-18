@@ -157,6 +157,7 @@ async function initCrawler() {
             // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
           }
           let countCurrentUrls = 0;
+          console.log("new url")
           for (const a of array) {
             if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
               countCurrentUrls++;
@@ -202,7 +203,9 @@ async function initCrawler() {
           if (await checkDatabase(dbUrl, currentURL) === false) {
             // console.log(4294967256 / (1024 * 1024));
             // console.log(sizeof($("html")) / (1024 * 1024));
+
             currentHTML = $("html").html();
+            console.log("extract data")
             await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
           }
         }
@@ -229,7 +232,7 @@ async function extractData(mdata, href, id, foundLinks, dataHtml) {
 /** supports: german, english, french, italian and spanish */
 async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
-
+  console.log("search for names")
   switch (currentLanguage) {
     case 'german':
       await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml)
@@ -249,7 +252,7 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
     case '':
       break;
   }
-  await printLogs(foundLinks, totalURLS);
+  // await printLogs(foundLinks, totalURLS);
 
 
 }
@@ -286,6 +289,7 @@ MOST FOUND URLs:
 
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
+  console.log("language processing")
   foundNames = 0;
   let allCurrentNames = [];
   let repeatedCurrentNames = [];
@@ -303,7 +307,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   for (let i = 0; i < person.length; i++) {
     personBind[i] = [person[i], tosaveCurrentURl, tosaveCurrentId];
   }
-
+  console.log("found names");
   // console.log(personBind)
   if (person !== undefined) {
     // for await (const [a, pURL, pURLS] of personBind) {
@@ -460,6 +464,7 @@ async function sendRecycledName(cc) {
 //*************************************************** */
 
 async function checkSizeBeforeSendingData(i) {
+  console.log("check size before sending data " + i)
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let options = {
