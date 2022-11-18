@@ -205,7 +205,7 @@ async function initCrawler() {
             // console.log(sizeof($("html")) / (1024 * 1024));
 
             currentHTML = $("html").html();
-            console.log("extract data")
+            console.log("extract data " + url)
             await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
           }
         }
