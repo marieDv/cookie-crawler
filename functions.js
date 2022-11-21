@@ -160,7 +160,6 @@ export async function checkNamesDatabase(mdb, name) {
 }
 
 export async function saveToSDCard(names, mData) {
-  console.log("save to sd card")
   let currentPath = ['./names-output/output/', './full-output/output/'];
   // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   // console.log(`save data ${sizeof(fullDataObj) / (1024 * 1024)}`);
@@ -232,7 +231,6 @@ export function checkCountryCode(countryCode) {
 
 export async function replaceAllNames(mdata, savedNames, id, url, date, repeatedNames) {
   let replacedNames = '';
-  console.log("replace all names")
   let dataStringWithoutNames = mdata.toString();
   let toReplaceArray = savedNames.concat(repeatedNames);
   for (let q = 0; q < toReplaceArray.length; q++) {

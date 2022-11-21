@@ -256,27 +256,21 @@ async function extractData(mdata, href, id, foundLinks, dataHtml) {
 /** supports: german, english, french, italian and spanish */
 async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
-  console.log("search for names " + data.length);
   try {
     switch (currentLanguage) {
       case 'german':
-        console.log("german");
         await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'english':
-        console.log("english");
         await languageProcessing(enNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'french':
-        console.log("french");
         await languageProcessing(frNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'italian':
-        console.log("italian");
         await languageProcessing(itNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'spanish':
-        console.log("spanish");
         await languageProcessing(esNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case '':
@@ -288,7 +282,7 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
     console.log(error)
   }
 
-  // await printLogs(foundLinks, totalURLS);
+  await printLogs(foundLinks, totalURLS);
 
 
 }
@@ -325,7 +319,6 @@ MOST FOUND URLs:
 
 /** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
 async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
-  console.log("language processing" + doc.length)
   foundNames = 0;
   let allCurrentNames = [];
   let repeatedCurrentNames = [];
@@ -338,13 +331,11 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   const tosaveCurrentId = totalURLS;
   let saveNoNames = false;
   let person = doc.match('#FirstName #LastName').out('array');
-  console.log("person length " + person.length)
   let personBind = [];
   let allBind = [data, [], tosaveCurrentId, tosaveCurrentURl, await getCurrentDate()];
   for (let i = 0; i < person.length; i++) {
     personBind[i] = [person[i], tosaveCurrentURl, tosaveCurrentId];
   }
-  console.log("found names" + personBind.length);
   // console.log(personBind)
   if (person !== undefined) {
     // for await (const [a, pURL, pURLS] of personBind) {
@@ -361,7 +352,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       const checkedDataBase = await checkNamesDatabase(db, text);
       await saveCounter(db);
       const numberOfNames = await retrieveCounter(db);
-      console.log("checked database");
       if (matchedNames === null) {
         if (text.includes("’s") || text.includes("'s")) {
           text = a.slice(0, -2);
@@ -374,7 +364,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
-            console.log("absolute number names");
             if (tempNameString.length > longestName) {
               longestName = tempNameString.length;
             }
@@ -394,7 +383,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                   justFound++;
                   countLastProcessedNames === 22 ? await saveLastNames(url, lastProcessedNames, countLastProcessedNames) : countLastProcessedNames++;
                   lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-                  console.log("all processed names");
                 } else if (repeatedCurrentNames.includes(tempNameString) === false && allCurrentNames.includes(tempNameString) === false) {
                   repeatedCurrentNames[repeatedFound] = tempNameString;
                   repeatedFound++;
@@ -503,7 +491,6 @@ async function sendRecycledName(cc) {
 //*************************************************** */
 
 export async function checkSizeBeforeSendingData(i) {
-  console.log("check size before sending data " + i)
   let currentPath = ['./names-output/output/', './full-output/output/'];
   // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let options = {
