@@ -167,7 +167,6 @@ async function initCrawler() {
               // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
             }
             let countCurrentUrls = 0;
-            console.log("new url")
             for (const a of array) {
               if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
                 countCurrentUrls++;
@@ -215,7 +214,6 @@ async function initCrawler() {
               // console.log(sizeof($("html")) / (1024 * 1024));
 
               currentHTML = $("html").html();
-              console.log("extract data " + url)
               await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
             }
           }
