@@ -97,7 +97,7 @@ totalURLS = await getabsoluteNumberNames(dbUrl);
 
 async function initCrawler() {
   const c = new Crawler({
-    maxConnections: 10,
+    maxConnections: 3,
     queueSize: 500,
     retries: 0,
     rateLimit: 0,
