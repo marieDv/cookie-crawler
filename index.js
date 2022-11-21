@@ -93,7 +93,7 @@ if (process.argv[2] === "clear" || process.argv[3] === "clear" || process.argv[4
 // START CRAWLER
 //*************************************************** */
 
-totalURLS = await getabsoluteNumberNames(dbUrl);
+totalURLS = await retrieveCounter(dbUrl);
 
 async function initCrawler() {
   const c = new Crawler({
@@ -324,6 +324,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   let repeatedCurrentNames = [];
   totalURLS++;
   await checkNamesDatabase(dbUrl, url);
+  await saveCounter(dbUrl);
   let justFound = 0;
   let repeatedFound = 0;
   const tosaveCurrentURl = url;
@@ -341,6 +342,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   if (person !== undefined) {
     // for await (const [a, pURL, pURLS] of personBind) {
     let saveAtTheEnd = true;
+    currentDate = await getCurrentDate();
+    let dateObject = new Date();
+
     for (let i = 0; i < personBind.length; i++) {
       let a = personBind[i][0];
       let pURL = personBind[i][1];
@@ -363,14 +367,10 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
-            currentDate = await getCurrentDate();
             console.log("absolute number names");
             if (tempNameString.length > longestName) {
               longestName = tempNameString.length;
             }
-
-            let dateObject = new Date();
-
             // if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
             //   let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
             //   await websocket.clientSend(toSend);
@@ -400,39 +400,39 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               }
               const toSaveCurrentNames = allCurrentNames;
 
-              if (await checkSizeBeforeSendingData(0) === true) {
-                // for (let j = 0; j < toSaveCurrentNames.length; j++) {
-                if (toSaveCurrentNames !== null && toSaveCurrentNames.length > 0) {
-                  for (let j = 0; j < toSaveCurrentNames.length; j++) {
-                    let obj = {
-                      name: toSaveCurrentNames[j],//tempNameString,
-                      url: pURL,
-                      nId: numberOfNames,
-                      urlId: pURLS,
-                      date: currentDate,
-                      domain: cc,
-                      textLanguage: currentLanguage
-                    };
+              // if (await checkSizeBeforeSendingData(0) === true) {
+              // for (let j = 0; j < toSaveCurrentNames.length; j++) {
+              if (toSaveCurrentNames !== null && toSaveCurrentNames.length > 0) {
+                for (let j = 0; j < toSaveCurrentNames.length; j++) {
+                  let obj = {
+                    name: toSaveCurrentNames[j],//tempNameString,
+                    url: pURL,
+                    nId: numberOfNames,
+                    urlId: pURLS,
+                    date: currentDate,
+                    domain: cc,
+                    textLanguage: currentLanguage
+                  };
 
-                    await saveToSDCard(true, obj);
+                  await saveToSDCard(true, obj);
 
-                  }
-                  // let obj = {
-                  //   name: toSaveCurrentNames,//tempNameString,
-                  //   url: pURL,
-                  //   nId: totalNumberNames,
-                  //   urlId: pURLS,
-                  //   date: currentDate,
-                  //   domain: cc,
-                  //   textLanguage: currentLanguage
-                  // };
-
-                  // await saveToSDCard(true, obj);
                 }
+                // let obj = {
+                //   name: toSaveCurrentNames,//tempNameString,
+                //   url: pURL,
+                //   nId: totalNumberNames,
+                //   urlId: pURLS,
+                //   date: currentDate,
+                //   domain: cc,
+                //   textLanguage: currentLanguage
+                // };
+
+                // await saveToSDCard(true, obj);
               }
-              if (await checkSizeBeforeSendingData(1) === true) {
-                await replaceAllNames(allBind[0], toSaveCurrentNames, allBind[2], allBind[3], allBind[4], repeatedCurrentNames);
-              }
+              // }
+              // if (await checkSizeBeforeSendingData(1) === true) {
+              await replaceAllNames(allBind[0], toSaveCurrentNames, allBind[2], allBind[3], allBind[4], repeatedCurrentNames);
+              // }
               // if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
               //   let totalNumberNames = await getabsoluteNumberNames(db);
               //   await websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
@@ -457,9 +457,9 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
         //   console.log(`all - url: ${pURL} id: ${pURLS}`);//[data, [], totalURLS, url, await getCurrentDate()]
         //   await replaceAllNames(allBind[0], allBind[1], allBind[2], allBind[3], allBind[4]);
         // }
-        if (await checkSizeBeforeSendingData(1) === true) {
+        // if (await checkSizeBeforeSendingData(1) === true) {
           await replaceAllNames(allBind[0], [], allBind[2], allBind[3], allBind[4], []);
-        }
+        // }
       }
     }
     // console.log("allcurrentnames:")
@@ -495,10 +495,10 @@ async function sendRecycledName(cc) {
 // HELPER FUNCTIONS
 //*************************************************** */
 
-async function checkSizeBeforeSendingData(i) {
+export async function checkSizeBeforeSendingData(i) {
   console.log("check size before sending data " + i)
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let options = {
     file: currentPath[i],
     prefixMultiplier: 'GB',
@@ -564,6 +564,7 @@ async function checkSizeBeforeSendingData(i) {
     return false;
   }
 }
+
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
   globalID = totalNumberURLs.lastHandled;

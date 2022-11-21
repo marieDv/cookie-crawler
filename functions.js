@@ -5,6 +5,7 @@ import { open, close, fstat } from 'node:fs';
 import { convert } from 'html-to-text';
 import sizeof from 'object-sizeof';
 import { Console } from 'console';
+import { checkSizeBeforeSendingData } from './index.js';
 
 let lastValidLanguage = '';
 let fullDataObj = [];
@@ -137,7 +138,7 @@ export async function retrieveCounter(mdb) {
     console.log(error)
   }
 }
-export async function saveCounter(mdb){
+export async function saveCounter(mdb) {
   try {
     let value = await mdb.get("counter");
     await mdb.put("counter", value += 1);//key value
@@ -160,8 +161,8 @@ export async function checkNamesDatabase(mdb, name) {
 
 export async function saveToSDCard(names, mData) {
   console.log("save to sd card")
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
+  let currentPath = ['./names-output/output/', './full-output/output/'];
+  // let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   // console.log(`save data ${sizeof(fullDataObj) / (1024 * 1024)}`);
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + (dateObject.getMonth() + 1) + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
@@ -169,20 +170,24 @@ export async function saveToSDCard(names, mData) {
     let page = mData;
     fullDataObj.push({ page });
     if (sizeof(fullDataObj) / (1024 * 1024) > 5) {//sizeof(fullDataObj) / (1024 * 1024) > 10
-      let currentFileName = timestampDate + "_full.json";
-      currentFileName = timestampDate + ".json"
-      let tempPath = currentPath[1] + currentFileName;
-      await fs.writeFileSync(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
+      if (await checkSizeBeforeSendingData(1) === true) {
+        let currentFileName = timestampDate + "_full.json";
+        currentFileName = timestampDate + ".json"
+        let tempPath = currentPath[1] + currentFileName;
+        await fs.writeFileSync(tempPath, JSON.stringify(fullDataObj, null, 2), function () { });//stringify(json, null, 2)
+      }
       fullDataObj = [];
     }
   } else {
     let person = mData;
     fullNamesObj.push({ person });
 
-    if (sizeof(fullNamesObj) > 6000) {//5000
-      let currentFileName = timestampDate + "_names.json";
-      let tempPath = currentPath[0] + currentFileName;
-      await fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
+    if (sizeof(fullNamesObj) > 6000) {//5000+
+      if (await checkSizeBeforeSendingData(0) === true) {
+        let currentFileName = timestampDate + "_names.json";
+        let tempPath = currentPath[0] + currentFileName;
+        await fs.writeFileSync(tempPath, JSON.stringify(fullNamesObj, null, 2), function () { });
+      }
       fullNamesObj = [];
     }
   }
@@ -226,7 +231,7 @@ export function checkCountryCode(countryCode) {
 
 
 export async function replaceAllNames(mdata, savedNames, id, url, date, repeatedNames) {
-  let replacedNames = ''; 
+  let replacedNames = '';
   console.log("replace all names")
   let dataStringWithoutNames = mdata.toString();
   let toReplaceArray = savedNames.concat(repeatedNames);
