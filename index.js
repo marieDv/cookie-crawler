@@ -260,21 +260,28 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   try {
     switch (currentLanguage) {
       case 'german':
+        console.log("german");
         await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'english':
+        console.log("english");
         await languageProcessing(enNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'french':
+        console.log("french");
         await languageProcessing(frNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'italian':
+        console.log("italian");
         await languageProcessing(itNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case 'spanish':
+        console.log("spanish");
         await languageProcessing(esNlp(data), data, url, cc, foundLinks, dataHtml);
         break;
       case '':
+        break;
+      default:
         break;
     }
   } catch (error) {
@@ -458,7 +465,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
         //   await replaceAllNames(allBind[0], allBind[1], allBind[2], allBind[3], allBind[4]);
         // }
         // if (await checkSizeBeforeSendingData(1) === true) {
-          await replaceAllNames(allBind[0], [], allBind[2], allBind[3], allBind[4], []);
+        await replaceAllNames(allBind[0], [], allBind[2], allBind[3], allBind[4], []);
         // }
       }
     }
