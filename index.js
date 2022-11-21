@@ -256,7 +256,7 @@ async function extractData(mdata, href, id, foundLinks, dataHtml) {
 /** supports: german, english, french, italian and spanish */
 async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
-  console.log("search for names");
+  console.log("search for names " + data.length);
   try {
     switch (currentLanguage) {
       case 'german':
