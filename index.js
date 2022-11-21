@@ -232,26 +232,31 @@ async function extractData(mdata, href, id, foundLinks, dataHtml) {
 /** supports: german, english, french, italian and spanish */
 async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
-  console.log("search for names")
-  switch (currentLanguage) {
-    case 'german':
-      await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml)
-      break;
-    case 'english':
-      await languageProcessing(enNlp(data), data, url, cc, foundLinks, dataHtml);
-      break;
-    case 'french':
-      await languageProcessing(frNlp(data), data, url, cc, foundLinks, dataHtml);
-      break;
-    case 'italian':
-      await languageProcessing(itNlp(data), data, url, cc, foundLinks, dataHtml);
-      break;
-    case 'spanish':
-      await languageProcessing(esNlp(data), data, url, cc, foundLinks, dataHtml);
-      break;
-    case '':
-      break;
+  console.log("search for names");
+  try {
+    switch (currentLanguage) {
+      case 'german':
+        await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml);
+        break;
+      case 'english':
+        await languageProcessing(enNlp(data), data, url, cc, foundLinks, dataHtml);
+        break;
+      case 'french':
+        await languageProcessing(frNlp(data), data, url, cc, foundLinks, dataHtml);
+        break;
+      case 'italian':
+        await languageProcessing(itNlp(data), data, url, cc, foundLinks, dataHtml);
+        break;
+      case 'spanish':
+        await languageProcessing(esNlp(data), data, url, cc, foundLinks, dataHtml);
+        break;
+      case '':
+        break;
+    }
+  } catch (error) {
+    console.log(error)
   }
+
   // await printLogs(foundLinks, totalURLS);
 
 
@@ -295,7 +300,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   let repeatedCurrentNames = [];
   totalURLS++;
   await checkNamesDatabase(dbUrl, url);
-
   let justFound = 0;
   let repeatedFound = 0;
   const tosaveCurrentURl = url;
