@@ -101,8 +101,15 @@ async function initCrawler() {
     queueSize: 500,
     retries: 0,
     rateLimit: 0,
-
-
+    jQuery: 'cheerio',
+    //OR
+    jQuery: {
+      name: 'cheerio',
+      options: {
+        normalizeWhitespace: true,
+        xmlMode: true
+      }
+    },
     preRequest: (options, done) => {
       try {
         done();
@@ -112,112 +119,129 @@ async function initCrawler() {
       }
     },
     callback: async (error, res, done) => {
+      try {
+
+        // console.log(res)
 
 
-      if (error) {
+        if (error) {
 
-      } else {
-        const $ = res.$;
-        var urls = [];
-        const checkedDataBaseURLS = await checkNamesDatabase(dbUrlPrecheck, res.request.uri.href);
-        if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html" && checkedDataBaseURLS === false) {
-          currentURL = res.request.uri.href;
-          // console.log(currentURL)
-          // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
-          // await dbUrl.put(currentURL, currentURL);
-          let array = $('a').toArray();
-          linksFound = array.length;
-          const url = new URL(res.request.uri.href);
-          var pslUrl = psl.parse(url.host);
-          lastHundredHosts[countURLS] = pslUrl.domain;
-          const allEqual = arr => arr.every(val => val === arr[0]);
-          if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
-            blacklistedHostUrls.push(lastHundredHosts[0]);
-            if (blacklistedHostUrls.length > 100) {
-              urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
-              urls = emergencyURLS;
-              c.queue(urls);
-              blacklistedHostUrls = [];
-            }
-          }
-          countURLS++;
-          if (countURLS === 20) {
-            countURLS = 0;
-          }
-          function includesBlacklistedURL(link) {
-            for (let i = 0; i < blacklistedHostUrls.length; i++) {
-              if (link.includes(blacklistedHostUrls[i])) {
-                return true;
+        } else {
+          const $ = res.$;
+          var urls = [];
+          const checkedDataBaseURLS = await checkNamesDatabase(dbUrlPrecheck, res.request.uri.href);
+          if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html" && checkedDataBaseURLS === false) {
+            currentURL = res.request.uri.href;
+            // console.log(currentURL)
+            // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
+            // await dbUrl.put(currentURL, currentURL);
+            let array = $('a').toArray();
+            linksFound = array.length;
+            const url = new URL(res.request.uri.href);
+            var pslUrl = psl.parse(url.host);
+            lastHundredHosts[countURLS] = pslUrl.domain;
+            const allEqual = arr => arr.every(val => val === arr[0]);
+            if (allEqual(lastHundredHosts) && lastHundredHosts.length > 1) {
+              blacklistedHostUrls.push(lastHundredHosts[0]);
+              if (blacklistedHostUrls.length > 100) {
+                urls.push(emergencyURLS[rand(0, emergencyURLS.length)]);
+                urls = emergencyURLS;
+                c.queue(urls);
+                blacklistedHostUrls = [];
               }
             }
-            return false;
-          }
-          if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-            await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
-            // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-          }
-          let countCurrentUrls = 0;
-          console.log("new url")
-          for (const a of array) {
-            if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
-              countCurrentUrls++;
-              let oldWebsite = false;
-              try {
-                const url = new URL(a.attribs.href, res.request.uri.href);
-                let value = await dbUrlPrecheck.get(url.origin, function (err) {
-                  if (err) {
-                    oldWebsite = true;
-                  } else {
-                    oldWebsite = false;
-                  }
-                });
+            countURLS++;
+            if (countURLS === 20) {
+              countURLS = 0;
+            }
+            function includesBlacklistedURL(link) {
+              for (let i = 0; i < blacklistedHostUrls.length; i++) {
+                if (link.includes(blacklistedHostUrls[i])) {
+                  return true;
+                }
+              }
+              return false;
+            }
+            if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+              await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
+              // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+            }
+            let countCurrentUrls = 0;
+            console.log("new url")
+            for (const a of array) {
+              if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
+                countCurrentUrls++;
+                let oldWebsite = false;
+                try {
+                  const url = new URL(a.attribs.href, res.request.uri.href);
+                  let value = await dbUrlPrecheck.get(url.origin, function (err) {
+                    if (err) {
+                      oldWebsite = true;
+                    } else {
+                      oldWebsite = false;
+                    }
+                  });
 
 
-                await dbUrlPrecheck.put(url.origin, url.origin);
-                if (oldWebsite === true) {
-                  let newDomain = url.protocol + '//' + pslUrl.domain;
-                  mQueueSize = c.queueSize;
-                  let tempString = url.href;
-                  // console.log(tempString.includes('§'));
-                  if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false)) {
-                    urls.push(url.href);
-                  }
-                  if (countLastProcessedURLs === 20) {
-                    saveLastSession(globalID + c.queueSize);
-                    countLastProcessedURLs = 0;
-                  } else if (lastProcessedURLs.includes(newDomain) === false) {
-                    lastProcessedURLs[countSavedURLs] = newDomain;
-                    countLastProcessedURLs++
-                    countSavedURLs++;
-                    if (countSavedURLs === 100) {
-                      countSavedURLs = 0;
+                  await dbUrlPrecheck.put(url.origin, url.origin);
+                  if (oldWebsite === true) {
+                    let newDomain = url.protocol + '//' + pslUrl.domain;
+                    mQueueSize = c.queueSize;
+                    let tempString = url.href;
+                    // console.log(tempString.includes('§'));
+                    if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false)) {
+                      urls.push(url.href);
+                    }
+                    if (countLastProcessedURLs === 20) {
+                      saveLastSession(globalID + c.queueSize);
+                      countLastProcessedURLs = 0;
+                    } else if (lastProcessedURLs.includes(newDomain) === false) {
+                      lastProcessedURLs[countSavedURLs] = newDomain;
+                      countLastProcessedURLs++
+                      countSavedURLs++;
+                      if (countSavedURLs === 100) {
+                        countSavedURLs = 0;
+                      }
                     }
                   }
                 }
-              }
-              catch (err) {
-                // console.log(err)
+                catch (err) {
+                  // console.log(err)
+                }
               }
             }
-          }
-          if (await checkDatabase(dbUrl, currentURL) === false) {
-            // console.log(4294967256 / (1024 * 1024));
-            // console.log(sizeof($("html")) / (1024 * 1024));
+            if (await checkDatabase(dbUrl, currentURL) === false) {
+              // console.log(4294967256 / (1024 * 1024));
+              // console.log(sizeof($("html")) / (1024 * 1024));
 
-            currentHTML = $("html").html();
-            console.log("extract data " + url)
-            await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
+              currentHTML = $("html").html();
+              console.log("extract data " + url)
+              await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
+            }
           }
+          c.queue(urls);
         }
-        c.queue(urls);
+        done();
+      } catch (error) {
+        console.log(error);
       }
-      done();
-
     }
 
   });
   c.queue(savedToQueue);
+
+
+  c.on('request', (options) => {
+    try {
+
+    } catch (error) {
+      console.log(error)
+    }
+  });
 }
+
+
+
 //*************************************************** */
 // NLP STUFF & DATA EXTRACTION
 //*************************************************** */
@@ -322,7 +346,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       let pURL = personBind[i][1];
       let pURLS = personBind[i][2];
       let text = a;
-      const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
+      const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(\\.)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\")|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
       const checkedDataBase = await checkNamesDatabase(db, text);
       console.log("checked database");
       if (matchedNames === null) {
