@@ -129,6 +129,24 @@ export async function checkDatabase(mdb, name) {
     return false;
   }
 }
+export async function retrieveCounter(mdb) {
+  try {
+    let value = await mdb.get("counter");
+    return value;
+  } catch (error) {
+    console.log(error)
+  }
+}
+export async function saveCounter(mdb){
+  try {
+    let value = await mdb.get("counter");
+    await mdb.put("counter", value += 1);//key value
+    return true;
+  } catch (err) {
+    await mdb.put("counter", 1);//key value
+    return false;
+  }
+}
 export async function checkNamesDatabase(mdb, name) {
   try {
     let value = await mdb.get(name);

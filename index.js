@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import level from 'level-party';
-import { clearDataBases, rand, check_mem, findMostUsed, getURLId, getabsoluteNumberNames, checkNamesDatabase, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
+import { clearDataBases, rand, check_mem, findMostUsed, retrieveCounter, saveCounter, getURLId, getabsoluteNumberNames, checkNamesDatabase, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 // import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
 import * as fs from 'fs';
 import * as util from 'util';
@@ -336,7 +336,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   for (let i = 0; i < person.length; i++) {
     personBind[i] = [person[i], tosaveCurrentURl, tosaveCurrentId];
   }
-  console.log("found names");
+  console.log("found names" + personBind.length);
   // console.log(personBind)
   if (person !== undefined) {
     // for await (const [a, pURL, pURLS] of personBind) {
@@ -348,6 +348,8 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       let text = a;
       const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(\\.)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\")|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
       const checkedDataBase = await checkNamesDatabase(db, text);
+      await saveCounter(db);
+      const numberOfNames = await retrieveCounter(db);
       console.log("checked database");
       if (matchedNames === null) {
         if (text.includes("’s") || text.includes("'s")) {
@@ -362,7 +364,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
             let tempNameString = uppercaseName[0].concat(uppercaseName[1])
             currentDate = await getCurrentDate();
-            totalNumberNames = await getabsoluteNumberNames(db);
             console.log("absolute number names");
             if (tempNameString.length > longestName) {
               longestName = tempNameString.length;
@@ -406,7 +407,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                     let obj = {
                       name: toSaveCurrentNames[j],//tempNameString,
                       url: pURL,
-                      nId: totalNumberNames,
+                      nId: numberOfNames,
                       urlId: pURLS,
                       date: currentDate,
                       domain: cc,
