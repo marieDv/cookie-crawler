@@ -291,7 +291,7 @@ async function printLogs(foundLinks, totalURLS) {
   console.log(`
                                                               
 ${currentURL}
-NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${totalNumberNames} NAMES | ${totalURLS} URLS | LONGEST: ${longestName} | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
+NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${await retrieveCounter(db)} NAMES | ${totalURLS} URLS | LONGEST: ${longestName} | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
                                                               
 `);
   if (process.argv[2] === "ranking" || process.argv[3] === "ranking" || process.argv[4] === "ranking") {
@@ -525,7 +525,7 @@ export async function checkSizeBeforeSendingData(i) {
       if (i === 0 && sendEmailOnce[0] === true) {
         let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card NAMES is already filled with data 🤯 \nPlease change it asap!\n
         Current Stats: 
-        TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
+        TOTAL: ${await retrieveCounter(db)} NAMES | ${await retrieveCounter(dbUrl)} URLS
         ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
 
         await sendEmail(whichCard)
@@ -535,7 +535,7 @@ export async function checkSizeBeforeSendingData(i) {
         console.log("time to change card");
         let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card ALL is already filled with data 🤯 \nPlease change it asap!\n
         Current Stats: 
-        TOTAL: ${await getabsoluteNumberNames(db)} NAMES | ${await getabsoluteNumberNames(dbUrl)} URLS
+        TOTAL: ${await retrieveCounter(db)} NAMES | ${await retrieveCounter(dbUrl)} URLS
         ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
         await sendEmail(whichCard)
         sendEmailOnce[1] = false;
