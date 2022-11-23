@@ -196,11 +196,11 @@ async function initCrawler() {
               }
             }
             if (await checkDatabase(dbUrl, currentURL) === false) {
-              await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
               timeoutURL = setTimeout(async function () {
-                console.log("insane timeout");
+                console.log("kill process");
                 done();
               }, 50000);
+              await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
             }
           }
           c.queue(urls);
