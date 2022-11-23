@@ -19,59 +19,12 @@ let cardFilled = 0;
 let currentLanguage;
 const lngDetector = new LanguageDetect();
 let numberSDcards = 1;
-let totalURLs = 0;
 
-export function saveCurrentDataToFile() {
-  let data = {
-    keydata: []
-  };
 
-  numberSDcards = 1;
-  data.keydata.push({ totalNames: Object.keys(totalNumberNames).length, totalURLs: Object.keys(totalNumberURLs).length, numberSDcards: 1, });
-  fs.writeFileSync('./globalVariables.json', JSON.stringify(data));
-  return [Object.keys(totalNumberNames).length, totalURLs];
-}
-export function rand(min, max) { 
-  return Math.floor(Math.random() * (max - min + 1) + min)
-}
-export function returnWithZero(obj) {
-  if (obj < 10) {
-    return '0' + obj;
-  } else {
-    return obj;
-  }
-}
-export async function saveLastNames(url, lastProcessedNames, countLastProcessedNames) {
-  let mData = {
-    queued: []
-  };
-  mData.queued.push({ lastProcessedNames });
-  await fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
-  countLastProcessedNames = 0
-}
-export async function returnMostUsed(mdb) {
-  let sortedArray = [];
-  let entries = [];
-  let returnArray = [];
-  try {
-    for await (const [key, value] of mdb.iterator()) {
-      entries.push({ key: key, value: value });
-    }
-    sortedArray = entries.sort(function (a, b) {
-      return b.value - a.value;
-    });
-    for (let i = 0; i < 10; i++) {
-      if (sortedArray[i]) {
-        returnArray[i] = sortedArray[i];
-      }
-    }
-  } catch (error) {
-    console.log("problem with name database" + error)
-  }
-  console.log(sortedArray.length)
-  return returnArray;
-}
 
+// ************************************************************************************************
+// ***** RETURNS MOST USED NAMES & URLS
+// ************************************************************************************************
 export async function findMostUsed(mdb) {
   let sortedArray = [];
   let entries = [];
@@ -94,37 +47,9 @@ export async function findMostUsed(mdb) {
   return returnArray;
 
 }
-
-export async function getURLId(mdb, MUrl) {
-  let entries = [];
-  let count = 0;
-  for await (const [key, value] of mdb.iterator()) {
-    if (MUrl === key) {
-      return count;
-    } else {
-      count++;
-    }
-  }
-  return 0;
-  // return entries.length;
-
-}
-export async function getabsoluteNumberNames(mdb) {
-  let entries = [];
-  for await (const [key, value] of mdb.iterator()) {
-    entries.push({ key: key });
-  }
-  return entries.length;
-}
-
-export async function checkDatabase(mdb, name) {
-  try {
-    let value = await mdb.get(name);
-    return true;
-  } catch (err) {
-    return false;
-  }
-}
+// ************************************************************************************************
+// ***** RETURN COUNTER
+// ************************************************************************************************
 export async function retrieveCounter(mdb) {
   try {
     let value = await mdb.get("counter");
@@ -133,6 +58,9 @@ export async function retrieveCounter(mdb) {
     console.log(error)
   }
 }
+// ************************************************************************************************
+// ***** SAVE COUNTER VARIABE TO DATABASE THAT KEEPS TRACK OF CURRENT ID
+// ************************************************************************************************
 export async function saveCounter(mdb) {
   try {
     let value = await mdb.get("counter");
@@ -143,7 +71,10 @@ export async function saveCounter(mdb) {
     return false;
   }
 }
-export async function checkNamesDatabase(mdb, name) {
+// ************************************************************************************************
+// ***** CHECK IF KEY IS ALREADY IN DATABASE & SAVE KEY VALUE PAIR
+// ************************************************************************************************
+export async function handleNewEntry(mdb, name) {
   try {
     let value = await mdb.get(name);
     await mdb.put(name, value += 1);//key value
@@ -153,7 +84,31 @@ export async function checkNamesDatabase(mdb, name) {
     return false;
   }
 }
-
+// ************************************************************************************************
+// ***** CHECK IF KEY IS ALREADY IN DATABASE
+// ************************************************************************************************
+export async function checkDatabase(mdb, name) {
+  try {
+    await mdb.get(name);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+// ************************************************************************************************
+// ***** SAVE THE LAST FOUND 20 NAMES INTO A JSON FILE (FOR WEBSOCKET)
+// ************************************************************************************************
+export async function saveLastNames(url, lastProcessedNames, countLastProcessedNames) {
+  let mData = {
+    queued: []
+  };
+  mData.queued.push({ lastProcessedNames });
+  await fs.writeFileSync('./latest_names.json', JSON.stringify(mData));
+  countLastProcessedNames = 0
+}
+// ************************************************************************************************
+// ***** SAVE FOUND DATA INTO GLOBAL TEMP VARIABLE AND SAVE IT TO JSON FILES
+// ************************************************************************************************
 export async function saveToSDCard(names, mData) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
@@ -187,14 +142,9 @@ export async function saveToSDCard(names, mData) {
 
   /***** READ OUT SIZE OF SD CARD ***/
 }
-
-
-function closeFd(fd) {
-  close(fd, (err) => {
-    if (err) throw err;
-  });
-}
-
+// ************************************************************************************************
+// ***** DETECT TEXT LANGUAGE RETURNS STRING
+// ************************************************************************************************
 export function detectDataLanguage(data) {
   currentLanguage = lngDetector.detect(data, 1)[0] ? lngDetector.detect(data, 1)[0][0] : '';
   if (currentLanguage !== '') {
@@ -202,27 +152,16 @@ export function detectDataLanguage(data) {
   }
   return currentLanguage !== '' ? currentLanguage : lastValidLanguage;
 }
-
+// ************************************************************************************************
+// ***** RETURN CURRENT DATE month, date year hours:minutes:seconds
+// ************************************************************************************************
 export async function getCurrentDate() {
   let dateObject = new Date();
   return (monthNames[dateObject.getMonth()] + ", " + dateObject.getDate()) + " " + dateObject.getFullYear() + " " + dateObject.getHours() + ":" + dateObject.getMinutes() + ":" + dateObject.getSeconds();// + ", " + dateObject.getMilliseconds();
 }
-
-export function checkCountryCode(countryCode) {
-  if (countryCode[1]) {
-    if (countryCode[1].includes('%')) {
-      countryCode = countryCode[1].split('%')[0];
-    } else {
-      countryCode = countryCode[1].split('/')[0];
-    }
-    return true;
-  }
-}
-
-
-
-
-
+// ************************************************************************************************
+// ***** REPLACE FOUND NAMES IN ALL-OUTPUT FILES BEFORE CALLING saveToSDCard
+// ************************************************************************************************
 export async function replaceAllNames(mdata, savedNames, id, url, date, repeatedNames) {
   let replacedNames = '';
   let dataStringWithoutNames = mdata.toString();
@@ -243,30 +182,9 @@ export async function replaceAllNames(mdata, savedNames, id, url, date, repeated
   };
   await saveToSDCard(false, dataObj);
 }
-
-export function readJsonFile() {
-  const file = fs.readFileSync('names.json');
-  var json = JSON.parse(file.toString());
-  var mydata = JSON.parse(file.toString());
-}
-
-
-export async function saveFullFile(data) {
-  let dataObj = {
-    dataPage: []
-  };
-  dataObj.dataPage.push({ text: data, id: 0 });
-  await saveToSDCard(false, dataObj);
-}
-
-
-
-
-
-
-
-
-
+// ************************************************************************************************
+// ***** OUTPUTS LATEST FOUND NAMES TO TERMINAL
+// ************************************************************************************************
 export function writeLatestToTerminal(id, urls) {
   const file = fs.readFileSync('names.json');
   var mydata = JSON.parse(file.toString());
@@ -299,18 +217,17 @@ export function writeLatestToTerminal(id, urls) {
   }
   );
 }
-
+// ************************************************************************************************
+// ***** CLEAR LEVEL DATABASE
+// ************************************************************************************************
 export function clearDataBases(databases) {
   for (let i = 0; i < databases.length; i++) {
     databases[i].clear();
   }
 }
-
-export function roundToTwo(num) {
-  return +(Math.round(num + "e+5") + "e-5");
-}
-
-
+// ************************************************************************************************
+// ***** RETURN RANDOM NAME (WEBSOCKET)
+// ************************************************************************************************
 export async function getExistingNames(mdb, random, length) {
   let entries = [];
   for await (const [key, value] of mdb.iterator()) {
@@ -318,22 +235,36 @@ export async function getExistingNames(mdb, random, length) {
   }
   return entries[random].key;
 }
+// ************************************************************************************************
+// ***** CHECK CURRENT CPU USE
+// ************************************************************************************************
 export function check_mem() {
   const mem = process.memoryUsage();
   return (mem.heapUsed / 1024 / 1024).toFixed(2);
 }
-
+// ************************************************************************************************
+// ***** GET LATEST NAMES (WEBSOCKET)
+// ************************************************************************************************
 export function retrieveNames() {
   let totalNumberNames = JSON.parse(fs.readFileSync("./latest_names.json").toString());
   return totalNumberNames.queued[0].lastProcessedNames;
 }
-
-
-export function isJsonString(str) {
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    return false;
+// ************************************************************************************************
+// ***** FORMATS DATES AND TIME
+// ************************************************************************************************
+export function returnWithZero(obj) {
+  if (obj < 10) {
+    return '0' + obj;
+  } else {
+    return obj;
   }
-  return true;
+}
+// ************************************************************************************************
+// ***** HELPER FUNCTIONS
+// ************************************************************************************************
+export function roundToTwo(num) {
+  return +(Math.round(num + "e+5") + "e-5");
+}
+export function rand(min, max) { 
+  return Math.floor(Math.random() * (max - min + 1) + min)
 }

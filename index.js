@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import level from 'level-party';
-import { clearDataBases, rand, check_mem, findMostUsed, retrieveCounter, saveCounter, getURLId, getabsoluteNumberNames, checkNamesDatabase, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
+import { clearDataBases, rand, check_mem, findMostUsed, retrieveCounter, saveCounter, getURLId, handleNewEntry, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 // import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
 import * as fs from 'fs';
 import * as util from 'util';
@@ -92,7 +92,7 @@ totalURLS = await retrieveCounter(dbUrl);
 
 async function initCrawler() {
   const c = new Crawler({
-    maxConnections: 15,
+    maxConnections: 8,
     queueSize: 500,
     retries: 0,
     rateLimit: 0,
@@ -117,11 +117,11 @@ async function initCrawler() {
         } else {
           const $ = res.$;
           var urls = [];
-          const checkedDataBaseURLS = await checkNamesDatabase(dbUrlPrecheck, res.request.uri.href);
+          const checkedDataBaseURLS = await handleNewEntry(dbUrlPrecheck, res.request.uri.href);
           if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html" && checkedDataBaseURLS === false) {
             currentURL = res.request.uri.href;
             // console.log(currentURL)
-            // if (await checkNamesDatabase(dbUrl, currentURL) === false) {
+            // if (await handleNewEntry(dbUrl, currentURL) === false) {
             // await dbUrl.put(currentURL, currentURL);
             let array = $('a').toArray();
             linksFound = array.length;
@@ -296,7 +296,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   let allCurrentNames = [];
   let repeatedCurrentNames = [];
   totalURLS++;
-  await checkNamesDatabase(dbUrl, url);
+  await handleNewEntry(dbUrl, url);
   await saveCounter(dbUrl);
   let justFound = 0;
   let repeatedFound = 0;
@@ -346,7 +346,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             //   //ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
             //   await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
             // }
-            const checkedDataBase = await checkNamesDatabase(db, tempNameString);
+            const checkedDataBase = await handleNewEntry(db, tempNameString);
             if (i < personBind.length - 1) {
               if (tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
                 if (checkedDataBase === false) {
@@ -416,7 +416,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       if (i === personBind.length - 1 && saveNoNames === false) {
         // console.log("save empty")
         // if (await checkSizeBeforeSendingData(1) === true) {
-        //   console.log(await getURLId(dbUrl, url));
         //   console.log(`all - url: ${pURL} id: ${pURLS}`);//[data, [], totalURLS, url, await getCurrentDate()]
         //   await replaceAllNames(allBind[0], allBind[1], allBind[2], allBind[3], allBind[4]);
         // }
@@ -448,7 +447,7 @@ async function sendRecycledName(cc) {
   let dateObject = new Date();
   waitForRecycledName = true;
   if (await retrieveCounter(db) > 2) {
-    let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
+    let savedName = await getExistingNames(db, rand(0, (await retrieveCounter(db))), await retrieveCounter(db));
     let toSend = (`RECYCLED%${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
     startTime = new Date();
     waitForRecycledName = false;
