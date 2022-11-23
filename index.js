@@ -128,7 +128,7 @@ async function initCrawler() {
             timeoutURL = setTimeout(async function () {
               console.log("abort")
               done();
-            }, 2000);
+            }, 10000);
             let array = $('a').toArray();
             linksFound = array.length;
             const url = new URL(res.request.uri.href);
