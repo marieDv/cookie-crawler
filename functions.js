@@ -265,6 +265,13 @@ export function returnWithZero(obj) {
 export function roundToTwo(num) {
   return +(Math.round(num + "e+5") + "e-5");
 }
-export function rand(min, max) { 
+export function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min)
+}
+export function isJsonString(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
 }
