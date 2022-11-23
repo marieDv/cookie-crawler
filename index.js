@@ -96,7 +96,7 @@ async function initCrawler() {
     maxConnections: 5,
     queueSize: 300,
     retries: 0,
-    rateLimit: 10,
+    rateLimit: 100,
     jQuery: {
       name: 'cheerio',
       options: {
