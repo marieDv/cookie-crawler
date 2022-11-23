@@ -1,7 +1,7 @@
 
 import Crawler from 'crawler';
 import level from 'level-party';
-import { clearDataBases, rand, check_mem, findMostUsed, retrieveCounter, saveCounter, getURLId, handleNewEntry, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
+import { clearDataBases, rand, check_mem, findMostUsed, retrieveCounter, saveCounter, handleNewEntry, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
 // import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
 import * as fs from 'fs';
 import * as util from 'util';
