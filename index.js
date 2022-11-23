@@ -124,7 +124,11 @@ async function initCrawler() {
             // console.log(currentURL)
             // if (await handleNewEntry(dbUrl, currentURL) === false) {
             // await dbUrl.put(currentURL, currentURL);
-            clearTimeout(timeoutId);
+            clearTimeout(timeoutURL);
+            timeoutURL = setTimeout(async function () {
+              console.log("abort")
+              done();
+            }, 2000);
             let array = $('a').toArray();
             linksFound = array.length;
             const url = new URL(res.request.uri.href);
@@ -196,10 +200,6 @@ async function initCrawler() {
               }
             }
             if (await checkDatabase(dbUrl, currentURL) === false) {
-              timeoutURL = setTimeout(async function () {
-                console.log("kill process");
-                done();
-              }, 50000);
               await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
             }
           }
