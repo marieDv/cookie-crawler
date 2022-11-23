@@ -42,6 +42,7 @@ let currentURL = '';
 let startTime = new Date();
 var client;
 let timeoutId;
+let timeoutURL;
 let sdCardToChange = "";
 let emailSend = false;
 let blacklistedHostUrls = [];
@@ -123,6 +124,7 @@ async function initCrawler() {
             // console.log(currentURL)
             // if (await handleNewEntry(dbUrl, currentURL) === false) {
             // await dbUrl.put(currentURL, currentURL);
+            clearTimeout(timeoutId);
             let array = $('a').toArray();
             linksFound = array.length;
             const url = new URL(res.request.uri.href);
@@ -152,7 +154,6 @@ async function initCrawler() {
             }
             if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
               await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
-              // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
             }
             let countCurrentUrls = 0;
             for (const a of array) {
@@ -196,6 +197,10 @@ async function initCrawler() {
             }
             if (await checkDatabase(dbUrl, currentURL) === false) {
               await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
+              timeoutURL = setTimeout(async function () {
+                console.log("insane timeout");
+                done();
+              }, 50000);
             }
           }
           c.queue(urls);
@@ -337,7 +342,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             if (tempNameString.length > longestName) {
               longestName = tempNameString.length;
             }
-          
+
             const checkedDataBase = await handleNewEntry(db, tempNameString);
             if (i < personBind.length - 1) {
               if (tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
@@ -382,8 +387,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               }
               await replaceAllNames(allBind[0], toSaveCurrentNames, allBind[2], allBind[3], allBind[4], repeatedCurrentNames);
               if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-                let totalNumberNames = await getabsoluteNumberNames(db);
-                await websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
+                await websocket.clientSend(`METADATA % ${mQueueSize}% ${await retrieveCounter(db)}% ${await retrieveCounter(dbUrl)}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
               }
               inCurrentDataset = 0;
               allBind[1] = allCurrentNames;
@@ -410,8 +414,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
         let sendRecycledNameVar = await sendRecycledName(cc)
         await websocket.clientSend(sendRecycledNameVar);
       }
-    }
-      , 18000);
+    }, 18000);
   }
 }
 // ************************************************************************************************
@@ -421,11 +424,12 @@ async function sendRecycledName(cc) {
   let dateObject = new Date();
   waitForRecycledName = true;
   if (await retrieveCounter(db) > 2) {
-    // let savedName = await getExistingNames(db, rand(0, (await retrieveCounter(db))), await retrieveCounter(db));
-    // let toSend = (`RECYCLED%${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    let savedName = await getExistingNames(db, rand(0, (await retrieveCounter(db))), await retrieveCounter(db));
+    console.log(savedName)
+    let toSend = (`RECYCLED%${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
     startTime = new Date();
     waitForRecycledName = false;
-    // return toSend;
+    return toSend;
   }
 }
 
@@ -504,7 +508,9 @@ export async function checkSizeBeforeSendingData(i) {
     return false;
   }
 }
-
+// ************************************************************************************************
+// RETURN LAST SAVED URLS
+// ************************************************************************************************
 function retrieveURLs() {
   let totalNumberURLs = JSON.parse(fs.readFileSync("./recoverLastSession.json").toString());
   globalID = totalNumberURLs.lastHandled;
@@ -513,6 +519,9 @@ function retrieveURLs() {
   }
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
+// ************************************************************************************************
+// GET LAST SAVED URLS TO PRESUME CRAWLING SESSION AFTER SHUTDOWN/CRASH
+// ************************************************************************************************
 
 function saveLastSession(handledNumber) {
   let mData = {
@@ -524,7 +533,9 @@ function saveLastSession(handledNumber) {
   fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
   countLastProcessedURLs = 0
 }
-
+// ************************************************************************************************
+// SEND AN EMAIL WHEN THE SD CARD IS FULL
+// ************************************************************************************************
 async function sendEmail(mText) {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",

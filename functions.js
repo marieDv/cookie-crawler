@@ -229,11 +229,12 @@ export function clearDataBases(databases) {
 // ***** RETURN RANDOM NAME (WEBSOCKET)
 // ************************************************************************************************
 export async function getExistingNames(mdb, random, length) {
-  let entries = [];
-  for await (const [key, value] of mdb.iterator()) {
-    entries.push({ key: key, value: value });
+  let randomEntry = '';
+  for await (const [key, value] of mdb.iterator({ limit: rand(0, 750) })) {
+    randomEntry = key;
   }
-  return entries[random].key;
+  return randomEntry;
+  // return entries[random].key;
 }
 // ************************************************************************************************
 // ***** CHECK CURRENT CPU USE
