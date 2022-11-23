@@ -5,12 +5,8 @@ import { clearDataBases, rand, check_mem, findMostUsed, retrieveCounter, saveCou
 // import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
 import * as fs from 'fs';
 import * as util from 'util';
-import sizeof from 'object-sizeof';
 import df_ from 'node-df';
-
 const df = util.promisify(df_);
-
-
 import nodemailer from 'nodemailer';
 import psl from 'psl';
 import enNlp from 'compromise';
@@ -39,14 +35,12 @@ let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
 var currentDate;
 let currentLanguage = "";
-let latestData = "";
 let inCurrentDataset = 0;
 let linksFound = 0;
 let mQueueSize = 0;
 let currentURL = '';
 let startTime = new Date();
 var client;
-let currentHTML = '';
 let timeoutId;
 let sdCardToChange = "";
 let emailSend = false;
@@ -57,38 +51,39 @@ let waitForRecycledName = false;
 let sdFULLInfo = [];
 let sdNAMESInfo = [];
 let foundNames = 0;
-let isConnected = true;
-let lastUrl = '';
 let totalURLS = ' ';
 
 let sendEmailOnce = [true, true];
 
 import { Websocket } from './websocket.js';
 const websocket = new Websocket();
-
-// clearDataBases([dbUrl, dbUrlPrecheck, db]);//db
 clearDataBases([dbUrlPrecheck]);
 await checkSizeBeforeSendingData(0);
 await checkSizeBeforeSendingData(1);
 
 //*************************************************** */
+// CHECK FOR FLAGS https://github.com/StudioProcess/ppl-crawler/blob/main/README.md
 // START WEBSOCKET IF FLAG 'web' is set
 //*************************************************** */
 console.log(process.argv);
-if (process.argv[2] === "web" || process.argv[3] === "web" || process.argv[4] === "web" || process.argv[5] === "web") {
+if (process.argv[2] === "web" || process.argv[3] === "web" || process.argv[4] === "web" || process.argv[5] === "web" || process.argv[6] === "web") {
   await websocket.websocketConnect();
 }
-if (process.argv[2] === "ranking-snapshot" || process.argv[3] === "ranking-snapshot" || process.argv[4] === "ranking-snapshot" || process.argv[5] === "ranking-snapshot") {
+if (process.argv[2] === "ranking-snapshot" || process.argv[3] === "ranking-snapshot" || process.argv[4] === "ranking-snapshot" || process.argv[5] === "ranking-snapshot" || process.argv[6] === "ranking-snapshot") {
   console.log("NAMES:")
   console.log(await findMostUsed(db));
   console.log("URLS:")
   console.log(await findMostUsed(dbUrl));
 } else {
-  await initCrawler();
+  await initCrawler(); // START CRAWLER HERE
 }
-if (process.argv[2] === "clear" || process.argv[3] === "clear" || process.argv[4] === "clear" || process.argv[5] === "clear") {
+if (process.argv[2] === "clear-all" || process.argv[3] === "clear-all" || process.argv[4] === "clear-all" || process.argv[5] === "clear-all" || process.argv[6] === "clear-all") {
   clearDataBases([dbUrl, db]);
 }
+if (process.argv[2] === "clear-urls" || process.argv[3] === "clear-urls" || process.argv[4] === "clear-urls" || process.argv[5] === "clear-urls" || process.argv[6] === "clear-urls") {
+  clearDataBases([dbUrl]);
+}
+
 //*************************************************** */
 // START CRAWLER
 //*************************************************** */
@@ -101,8 +96,6 @@ async function initCrawler() {
     queueSize: 500,
     retries: 0,
     rateLimit: 0,
-    jQuery: 'cheerio',
-    //OR
     jQuery: {
       name: 'cheerio',
       options: {
@@ -112,12 +105,6 @@ async function initCrawler() {
     },
     preRequest: (options, done) => {
       try {
-        // timeoutId = setTimeout(async function () {
-        //   // console.log(options)
-        //   // console.log("requtaking too long ... " + options.uri);
-        //   // done();
-        // }
-        //   , 5000);
         done();
       } catch (error) {
         console.log(`prerequest error: ${error}`);
@@ -126,14 +113,8 @@ async function initCrawler() {
     },
     callback: async (error, res, done) => {
       try {
-
-        // console.log(res)
-
-
         if (error) {
-
         } else {
-          // clearTimeout(timeoutId);
           const $ = res.$;
           var urls = [];
           const checkedDataBaseURLS = await checkNamesDatabase(dbUrlPrecheck, res.request.uri.href);
@@ -169,10 +150,10 @@ async function initCrawler() {
               }
               return false;
             }
-            if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-              await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
-              // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-            }
+            // if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+            //   await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
+            //   // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+            // }
             let countCurrentUrls = 0;
             for (const a of array) {
               if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
@@ -187,17 +168,14 @@ async function initCrawler() {
                       oldWebsite = false;
                     }
                   });
-
-
                   await dbUrlPrecheck.put(url.origin, url.origin);
                   if (oldWebsite === true) {
                     let newDomain = url.protocol + '//' + pslUrl.domain;
                     mQueueSize = c.queueSize;
                     let tempString = url.href;
-                    // console.log(tempString.includes('§'));
-                    if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false) && tempString.includes('.mp3') === false && tempString.includes('.mp4') === false && tempString.includes('.wav') === false  && tempString.includes('.ogg') === false && tempString.includes('.mov') === false && tempString.includes('pdf') === false  && tempString.includes('javascript') === false) {
+                    if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false) && tempString.includes('.mp3') === false && tempString.includes('.mp4') === false && tempString.includes('.wav') === false && tempString.includes('.ogg') === false && tempString.includes('.mov') === false && tempString.includes('pdf') === false && tempString.includes('javascript') === false) {
                       urls.push(url.href);
-                    }else{
+                    } else {
                     }
                     if (countLastProcessedURLs === 20) {
                       saveLastSession(globalID + c.queueSize);
@@ -213,15 +191,10 @@ async function initCrawler() {
                   }
                 }
                 catch (err) {
-                  // console.log(err)
                 }
               }
             }
             if (await checkDatabase(dbUrl, currentURL) === false) {
-              // console.log(4294967256 / (1024 * 1024));
-              // console.log(sizeof($("html")) / (1024 * 1024));
-
-              currentHTML = $("html").html();
               await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
             }
           }
@@ -235,19 +208,7 @@ async function initCrawler() {
 
   });
   c.queue(savedToQueue);
-
-
-  c.on('request', (options) => {
-    try {
-
-
-    } catch (error) {
-      console.log(error)
-    }
-  });
 }
-
-
 
 //*************************************************** */
 // NLP STUFF & DATA EXTRACTION
@@ -259,8 +220,11 @@ async function extractData(mdata, href, id, foundLinks, dataHtml) {
     await searchForNames(href.href, countryCode[1], mdata, foundLinks, dataHtml);
   }
 }
-/** CHECK LANGUAGE AND REDIRECT DATA TO LANGUAGE PROCESSING WITH FITTING NLP */
-/** supports: german, english, french, italian and spanish */
+//*************************************************** */
+// CHECK LANGUAGE AND REDIRECT DATA TO LANGUAGE PROCESSING WITH MATCHING NLP 
+// supports: german, english, french, italian and spanish
+//*************************************************** */
+
 async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
   try {
@@ -288,12 +252,12 @@ async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   } catch (error) {
     console.log(error)
   }
-
   await printLogs(foundLinks, totalURLS);
-
-
 }
 
+// ************************************************************************************************
+// ***** CHECK SIZE OF SD CARD AND PRINT LOGS
+// ************************************************************************************************
 async function printLogs(foundLinks, totalURLS) {
   await checkSizeBeforeSendingData(1);
   await checkSizeBeforeSendingData(0);
@@ -324,7 +288,9 @@ MOST FOUND URLs:
   }
 }
 
-/** CHECK INCOMING DATA FOR NAMES AND PROCESS THEM -> TO FILE & WEBSOCKET */
+// ************************************************************************************************
+// ***** FIND NAMES AND SAVE THEM
+// ************************************************************************************************
 async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   foundNames = 0;
   let allCurrentNames = [];
@@ -343,9 +309,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   for (let i = 0; i < person.length; i++) {
     personBind[i] = [person[i], tosaveCurrentURl, tosaveCurrentId];
   }
-  // console.log(personBind)
   if (person !== undefined) {
-    // for await (const [a, pURL, pURLS] of personBind) {
     let saveAtTheEnd = true;
     currentDate = await getCurrentDate();
     let dateObject = new Date();
@@ -356,7 +320,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       let pURLS = personBind[i][2];
       let text = a;
       const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(\\.)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\")|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
-      const checkedDataBase = await checkNamesDatabase(db, text);
+
       await saveCounter(db);
       const numberOfNames = await retrieveCounter(db);
       if (matchedNames === null) {
@@ -382,6 +346,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             //   //ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
             //   await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
             // }
+            const checkedDataBase = await checkNamesDatabase(db, tempNameString);
             if (i < personBind.length - 1) {
               if (tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
                 if (checkedDataBase === false) {
@@ -401,9 +366,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                 allCurrentNames[justFound++] = tempNameString;
               }
               const toSaveCurrentNames = allCurrentNames;
-
-              // if (await checkSizeBeforeSendingData(0) === true) {
-              // for (let j = 0; j < toSaveCurrentNames.length; j++) {
               if (toSaveCurrentNames !== null && toSaveCurrentNames.length > 0) {
                 for (let j = 0; j < toSaveCurrentNames.length; j++) {
                   let obj = {
@@ -450,8 +412,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
         }
 
       }
-      latestData = data;
-      //IF IT WASNT SAVED ON THE LAST UTERATION SAVE TO FILE
+      //IF IT WASNT SAVED ON THE LAST ITERATION SAVE TO FILE
       if (i === personBind.length - 1 && saveNoNames === false) {
         // console.log("save empty")
         // if (await checkSizeBeforeSendingData(1) === true) {
@@ -480,12 +441,13 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
   //   , 18000);
 
 }
-
+// ************************************************************************************************
+// ***** SEND RECYCLED NAME (ONLY FOR WEBSOCKET)
+// ************************************************************************************************
 async function sendRecycledName(cc) {
   let dateObject = new Date();
   waitForRecycledName = true;
-  // console.log(`absolute number of names ${await getabsoluteNumberNames(db)}`);
-  if (await getabsoluteNumberNames(db) > 2) {
+  if (await retrieveCounter(db) > 2) {
     let savedName = await getExistingNames(db, rand(0, (await getabsoluteNumberNames(db))), await getabsoluteNumberNames(db));
     let toSend = (`RECYCLED%${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
     startTime = new Date();
@@ -493,9 +455,13 @@ async function sendRecycledName(cc) {
     return toSend;
   }
 }
-//*************************************************** */
+
+
+
+
+// ************************************************************************************************
 // HELPER FUNCTIONS
-//*************************************************** */
+// ************************************************************************************************
 
 export async function checkSizeBeforeSendingData(i) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
@@ -575,7 +541,6 @@ function retrieveURLs() {
   return totalNumberURLs.queued[0].lastProcessedURLs;
 }
 
-
 function saveLastSession(handledNumber) {
   let mData = {
     queued: [],
@@ -586,6 +551,7 @@ function saveLastSession(handledNumber) {
   fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
   countLastProcessedURLs = 0
 }
+
 async function sendEmail(mText) {
   let transporter = nodemailer.createTransport({
     host: "mail.gmx.net",

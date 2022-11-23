@@ -1,10 +1,9 @@
 import * as fs from 'fs';
 import pkg from 'terminal-kit';
 import LanguageDetect from 'languagedetect';
-import { open, close, fstat } from 'node:fs';
+import { close } from 'node:fs';
 import { convert } from 'html-to-text';
 import sizeof from 'object-sizeof';
-import { Console } from 'console';
 import { checkSizeBeforeSendingData } from './index.js';
 
 let lastValidLanguage = '';
@@ -19,7 +18,6 @@ const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
 let cardFilled = 0;
 let currentLanguage;
 const lngDetector = new LanguageDetect();
-let safeOneDataset;
 let numberSDcards = 1;
 let totalURLs = 0;
 
@@ -29,12 +27,11 @@ export function saveCurrentDataToFile() {
   };
 
   numberSDcards = 1;
-  // let totalNumberNames = getabsoluteNumberNames;
   data.keydata.push({ totalNames: Object.keys(totalNumberNames).length, totalURLs: Object.keys(totalNumberURLs).length, numberSDcards: 1, });
   fs.writeFileSync('./globalVariables.json', JSON.stringify(data));
   return [Object.keys(totalNumberNames).length, totalURLs];
 }
-export function rand(min, max) { // min and max included 
+export function rand(min, max) { 
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
 export function returnWithZero(obj) {
@@ -123,10 +120,8 @@ export async function getabsoluteNumberNames(mdb) {
 export async function checkDatabase(mdb, name) {
   try {
     let value = await mdb.get(name);
-    // await mdb.put(name, value += 1);//key value
     return true;
   } catch (err) {
-    // await mdb.put(name, 1);//key value
     return false;
   }
 }
@@ -162,7 +157,6 @@ export async function checkNamesDatabase(mdb, name) {
 export async function saveToSDCard(names, mData) {
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
-  // console.log(`save data ${sizeof(fullDataObj) / (1024 * 1024)}`);
   let dateObject = new Date();
   let timestampDate = dateObject.getFullYear() + "_" + (dateObject.getMonth() + 1) + "_" + dateObject.getDate() + "_" + dateObject.getHours() + "-" + dateObject.getMinutes() + "-" + dateObject.getSeconds();
   if (names === false) {
