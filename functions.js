@@ -110,6 +110,7 @@ export async function saveLastNames(url, lastProcessedNames, countLastProcessedN
 // ***** SAVE FOUND DATA INTO GLOBAL TEMP VARIABLE AND SAVE IT TO JSON FILES
 // ************************************************************************************************
 export async function saveToSDCard(names, mData) {
+  console.log("save to sd card")
   // let currentPath = ['./names-output/output/', './full-output/output/'];
   let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
   let dateObject = new Date();
@@ -163,6 +164,7 @@ export async function getCurrentDate() {
 // ***** REPLACE FOUND NAMES IN ALL-OUTPUT FILES BEFORE CALLING saveToSDCard
 // ************************************************************************************************
 export async function replaceAllNames(mdata, savedNames, id, url, date, repeatedNames) {
+  console.log("replace names")
   let replacedNames = '';
   let dataStringWithoutNames = mdata.toString();
   let toReplaceArray = savedNames.concat(repeatedNames);

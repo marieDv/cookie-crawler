@@ -232,6 +232,7 @@ async function extractData(mdata, href, id, foundLinks, dataHtml) {
 
 async function searchForNames(url, cc, data, foundLinks, dataHtml) {
   currentLanguage = detectDataLanguage(data.substring(500, 8000));
+  console.log("search for names")
   try {
     switch (currentLanguage) {
       case 'german':
@@ -297,6 +298,7 @@ MOST FOUND URLs:
 // ***** FIND NAMES AND SAVE THEM
 // ************************************************************************************************
 async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
+  console.log("language processing")
   foundNames = 0;
   let allCurrentNames = [];
   let repeatedCurrentNames = [];
@@ -342,7 +344,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             if (tempNameString.length > longestName) {
               longestName = tempNameString.length;
             }
-
+            console.log("modify name")
             const checkedDataBase = await handleNewEntry(db, tempNameString);
             if (i < personBind.length - 1) {
               if (tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
@@ -354,7 +356,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                     clearTimeout(timeoutId);
                     await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
                   }
-
+                  console.log("send name")
                   allCurrentNames[justFound] = tempNameString;
                   inCurrentDataset++;
                   justFound++;
