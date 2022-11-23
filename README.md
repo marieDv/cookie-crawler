@@ -8,7 +8,9 @@
 ## Flags: 
 >**ranking** shows the top 5 names and URLs
 
->**clear** resets all databases (names and urls)
+>**clear-all** resets all databases (names and urls)
+
+>**clear-urls** resets url database
 
 >**web** opens websocket connection – monitor incoming data live @ (https://ait-residency.herokuapp.com/ & https://ait-residency.herokuapp.com/dev-check.html)
 
