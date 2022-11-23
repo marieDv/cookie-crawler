@@ -150,10 +150,10 @@ async function initCrawler() {
               }
               return false;
             }
-            // if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-            //   await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
-            //   // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
-            // }
+            if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+              await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
+              // client.send(JSON.stringify(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`));
+            }
             let countCurrentUrls = 0;
             for (const a of array) {
               if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
@@ -310,7 +310,6 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
     personBind[i] = [person[i], tosaveCurrentURl, tosaveCurrentId];
   }
   if (person !== undefined) {
-    let saveAtTheEnd = true;
     currentDate = await getCurrentDate();
     let dateObject = new Date();
 
@@ -338,18 +337,19 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
             if (tempNameString.length > longestName) {
               longestName = tempNameString.length;
             }
-            // if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-            //   let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-            //   await websocket.clientSend(toSend);
-            //   startTime = new Date();
-            //   clearTimeout(timeoutId);
-            //   //ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
-            //   await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
-            // }
+          
             const checkedDataBase = await handleNewEntry(db, tempNameString);
             if (i < personBind.length - 1) {
               if (tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
                 if (checkedDataBase === false) {
+                  if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+                    let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
+                    await websocket.clientSend(toSend);
+                    startTime = new Date();
+                    clearTimeout(timeoutId);
+                    await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
+                  }
+
                   allCurrentNames[justFound] = tempNameString;
                   inCurrentDataset++;
                   justFound++;
@@ -369,7 +369,7 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
               if (toSaveCurrentNames !== null && toSaveCurrentNames.length > 0) {
                 for (let j = 0; j < toSaveCurrentNames.length; j++) {
                   let obj = {
-                    name: toSaveCurrentNames[j],//tempNameString,
+                    name: toSaveCurrentNames[j],
                     url: pURL,
                     nId: numberOfNames,
                     urlId: pURLS,
@@ -377,30 +377,14 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
                     domain: cc,
                     textLanguage: currentLanguage
                   };
-
                   await saveToSDCard(true, obj);
-
                 }
-                // let obj = {
-                //   name: toSaveCurrentNames,//tempNameString,
-                //   url: pURL,
-                //   nId: totalNumberNames,
-                //   urlId: pURLS,
-                //   date: currentDate,
-                //   domain: cc,
-                //   textLanguage: currentLanguage
-                // };
-
-                // await saveToSDCard(true, obj);
               }
-              // }
-              // if (await checkSizeBeforeSendingData(1) === true) {
               await replaceAllNames(allBind[0], toSaveCurrentNames, allBind[2], allBind[3], allBind[4], repeatedCurrentNames);
-              // }
-              // if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-              //   let totalNumberNames = await getabsoluteNumberNames(db);
-              //   await websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
-              // }
+              if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+                let totalNumberNames = await getabsoluteNumberNames(db);
+                await websocket.clientSend(`METADATA % ${mQueueSize}% ${totalNumberNames}% ${totalURLS}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
+              }
               inCurrentDataset = 0;
               allBind[1] = allCurrentNames;
             }
@@ -414,31 +398,21 @@ async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
       }
       //IF IT WASNT SAVED ON THE LAST ITERATION SAVE TO FILE
       if (i === personBind.length - 1 && saveNoNames === false) {
-        // console.log("save empty")
-        // if (await checkSizeBeforeSendingData(1) === true) {
-        //   console.log(`all - url: ${pURL} id: ${pURLS}`);//[data, [], totalURLS, url, await getCurrentDate()]
-        //   await replaceAllNames(allBind[0], allBind[1], allBind[2], allBind[3], allBind[4]);
-        // }
-        // if (await checkSizeBeforeSendingData(1) === true) {
         await replaceAllNames(allBind[0], [], allBind[2], allBind[3], allBind[4], []);
-        // }
       }
     }
-    // console.log("allcurrentnames:")
-    // console.log(allCurrentNames)
   }
-  // console.log(allCurrentNames + " " + totalURLS)
   foundNames = justFound;
 
-
-  // timeoutId = setTimeout(async function () {
-  //   if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-  //     let sendRecycledNameVar = await sendRecycledName(cc)
-  //     await websocket.clientSend(sendRecycledNameVar);
-  //   }
-  // }
-  //   , 18000);
-
+  if (websocket.returnClient()) {
+    timeoutId = setTimeout(async function () {
+      if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
+        let sendRecycledNameVar = await sendRecycledName(cc)
+        await websocket.clientSend(sendRecycledNameVar);
+      }
+    }
+      , 18000);
+  }
 }
 // ************************************************************************************************
 // ***** SEND RECYCLED NAME (ONLY FOR WEBSOCKET)
@@ -447,11 +421,11 @@ async function sendRecycledName(cc) {
   let dateObject = new Date();
   waitForRecycledName = true;
   if (await retrieveCounter(db) > 2) {
-    let savedName = await getExistingNames(db, rand(0, (await retrieveCounter(db))), await retrieveCounter(db));
-    let toSend = (`RECYCLED%${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
+    // let savedName = await getExistingNames(db, rand(0, (await retrieveCounter(db))), await retrieveCounter(db));
+    // let toSend = (`RECYCLED%${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
     startTime = new Date();
     waitForRecycledName = false;
-    return toSend;
+    // return toSend;
   }
 }
 
