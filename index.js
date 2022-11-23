@@ -97,7 +97,7 @@ totalURLS = await retrieveCounter(dbUrl);
 
 async function initCrawler() {
   const c = new Crawler({
-    maxConnections: 3,
+    maxConnections: 15,
     queueSize: 500,
     retries: 0,
     rateLimit: 0,
