@@ -93,10 +93,10 @@ totalURLS = await retrieveCounter(dbUrl);
 
 async function initCrawler() {
   const c = new Crawler({
-    maxConnections: 8,
-    queueSize: 500,
+    maxConnections: 5,
+    queueSize: 300,
     retries: 0,
-    rateLimit: 0,
+    rateLimit: 10,
     jQuery: {
       name: 'cheerio',
       options: {
@@ -121,9 +121,6 @@ async function initCrawler() {
           const checkedDataBaseURLS = await handleNewEntry(dbUrlPrecheck, res.request.uri.href);
           if ($ && $('a').length >= 1 && res.headers['content-type'].split(';')[0] === "text/html" && checkedDataBaseURLS === false) {
             currentURL = res.request.uri.href;
-            // console.log(currentURL)
-            // if (await handleNewEntry(dbUrl, currentURL) === false) {
-            // await dbUrl.put(currentURL, currentURL);
             clearTimeout(timeoutURL);
             timeoutURL = setTimeout(async function () {
               console.log("abort")
@@ -181,6 +178,7 @@ async function initCrawler() {
                     if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false) && tempString.includes('.mp3') === false && tempString.includes('.mp4') === false && tempString.includes('.wav') === false && tempString.includes('.ogg') === false && tempString.includes('.mov') === false && tempString.includes('pdf') === false && tempString.includes('javascript') === false) {
                       urls.push(url.href);
                     } else {
+                      console.log("dont save: "+url.href)
                     }
                     if (countLastProcessedURLs === 20) {
                       saveLastSession(globalID + c.queueSize);
