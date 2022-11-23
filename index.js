@@ -112,6 +112,12 @@ async function initCrawler() {
     },
     preRequest: (options, done) => {
       try {
+        // timeoutId = setTimeout(async function () {
+        //   // console.log(options)
+        //   // console.log("requtaking too long ... " + options.uri);
+        //   // done();
+        // }
+        //   , 5000);
         done();
       } catch (error) {
         console.log(`prerequest error: ${error}`);
@@ -127,6 +133,7 @@ async function initCrawler() {
         if (error) {
 
         } else {
+          // clearTimeout(timeoutId);
           const $ = res.$;
           var urls = [];
           const checkedDataBaseURLS = await checkNamesDatabase(dbUrlPrecheck, res.request.uri.href);
@@ -188,8 +195,9 @@ async function initCrawler() {
                     mQueueSize = c.queueSize;
                     let tempString = url.href;
                     // console.log(tempString.includes('§'));
-                    if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false)) {
+                    if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false) && tempString.includes('.mp3') === false && tempString.includes('.mp4') === false && tempString.includes('.wav') === false  && tempString.includes('.ogg') === false && tempString.includes('.mov') === false && tempString.includes('pdf') === false  && tempString.includes('javascript') === false) {
                       urls.push(url.href);
+                    }else{
                     }
                     if (countLastProcessedURLs === 20) {
                       saveLastSession(globalID + c.queueSize);
@@ -231,6 +239,7 @@ async function initCrawler() {
 
   c.on('request', (options) => {
     try {
+
 
     } catch (error) {
       console.log(error)
