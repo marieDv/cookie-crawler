@@ -1,21 +1,12 @@
-# ppl-crawler
-## Webcrawler with nlp to detect names in html bodies
-
-
+# cookie-crawler
+## A web crawler that detects Third-Party Cookies in HTML headers
 
 >**npm start** 
+>**opens a Serial connection to Arduino
 
 ## Flags: 
->**ranking** shows the top 5 names and URLs
+>**ranking** shows the top URLs
 
 >**clear-all** resets all databases (names and urls)
 
 >**clear-urls** resets url database
-
->**web** opens websocket connection – monitor incoming data live @ (https://ait-residency.herokuapp.com/ & https://ait-residency.herokuapp.com/dev-check.html)
-
->**npm ranking-snapshot** gives a snapshot of the most found names & urls – doens't start the crawler
-
-
-
-
