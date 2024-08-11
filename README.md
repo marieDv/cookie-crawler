@@ -1,12 +1,11 @@
-# cookie-crawler
-## A web crawler that detects Third-Party Cookies in HTML headers
+# cookies-crawler
+## Webcrawler detecting and saving tracking cookies
+
+
 
 >**npm start** 
->**opens a Serial connection to Arduino
 
 ## Flags: 
->**ranking** shows the top URLs
-
->**clear-all** resets all databases (names and urls)
+>**clear-all** resets all databases
 
 >**clear-urls** resets url database

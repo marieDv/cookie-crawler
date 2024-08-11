@@ -1,102 +1,82 @@
 
 import Crawler from 'crawler';
 import level from 'level-party';
-import { clearDataBases, rand, check_mem, findMostUsed, retrieveCounter, saveCounter, handleNewEntry, checkDatabase, saveLastNames, getExistingNames, detectDataLanguage, returnWithZero, getCurrentDate, replaceAllNames, saveToSDCard } from './functions.js';
-// import { websocketConnect, reconnect, heartbeat, returnClient } from './websocket.js';
+import { clearDataBases, rand, retrieveCounter, handleNewEntry, checkDatabase } from './functions.js';
 import * as fs from 'fs';
-import * as util from 'util';
-import df_ from 'node-df';
-const df = util.promisify(df_);
-import nodemailer from 'nodemailer';
 import psl from 'psl';
-import enNlp from 'compromise';
-import deNlp from 'de-compromise';
-import esNlp from 'es-compromise';
-import frNlp from 'fr-compromise';
-import itNlp from 'it-compromise';
 import { URL } from 'node:url';
-import WebSocket from 'ws';
-const startURL = ['https://crawlee.dev/api/å', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
-const emergencyURLS = ['https://youtube.com', 'https://elpais.com/', 'https://www.thelocal.it/', 'https://www.ait.ac.at/'];
-const db = level('namesLevel', { valueEncoding: 'json' })
+//*************************************************** */
+// SERIALPORT
+//*************************************************** */
+import { SerialPort } from "serialport";
+import { ReadlineParser } from '@serialport/parser-readline';
+
+// const port = new SerialPort({path: '/dev/cu.usbmodem14201', baudRate: 9600 }, (err) => {
+const selectedPort = '/dev/cu.usbmodem14101'; // Adjust this to your actual port
+
+const port = new SerialPort({ path: selectedPort, baudRate: 9600 });
+const parser = port.pipe(new ReadlineParser({ delimiter: '\n' }));
+
+port.on('open', () => {
+  console.log('Serial port opened');
+
+  port.write('why\n', (err) => {
+    if (err) {
+      return console.log('Error on write: ', err.message);
+    }
+  });
+
+  parser.on('data', (data) => {
+    console.log('Received from Arduino: ', data);
+  });
+  
+});
+
+port.on('error', (err) => {
+  console.error('Serial port error: ', err.message);
+});
+
+const buffer = [];
+const sendInterval = 500; // Time interval in milliseconds
+let isSending = false;
+
+const startURL = ['https://crawlee.dev/', 'https://www.lemonde.fr/', 'https://elpais.com/america/?ed=ame'];
+const emergencyURLS = ['https://youtube.com', 'https://elpais.com/', 'https://www.thelocal.it/', 'https://mariedvorzak.at'];
 const dbUrl = level('urlsLevel', { valueEncoding: 'json' })
 const dbUrlPrecheck = level('dbUrlPrecheck', { valueEncoding: 'json' })
-let totalNumberNames = 0;
 let lastProcessedURLs = [];
-let lastProcessedNames = [];
 let countLastProcessedURLs = 0;
-let countLastProcessedNames = 0;
 let globalID = 0;
-let cardFilled = [0, 0];
-let cardRemaining = [0, 0];
 let countSavedURLs = 0;
 let longestName = 0;
 let savedToQueue = retrieveURLs();
 savedToQueue = savedToQueue.concat(startURL);
-var currentDate;
-let currentLanguage = "";
-let inCurrentDataset = 0;
+let currentURL = '';
 let linksFound = 0;
 let mQueueSize = 0;
-let currentURL = '';
-let startTime = new Date();
-var client;
-let timeoutId;
 let timeoutURL;
-let sdCardToChange = "";
-let emailSend = false;
 let blacklistedHostUrls = [];
 let lastHundredHosts = [];
 let countURLS = 0;
-let waitForRecycledName = false;
-let sdFULLInfo = [];
-let sdNAMESInfo = [];
-let foundNames = 0;
 let totalURLS = ' ';
-
-let sendEmailOnce = [true, true];
-
-import { Websocket } from './websocket.js';
-const websocket = new Websocket();
+let allCookies = [];
 clearDataBases([dbUrlPrecheck]);
-await checkSizeBeforeSendingData(0);
-await checkSizeBeforeSendingData(1);
+clearDataBases([dbUrl]);
+await initCrawler();
+analyzeCookieData();
+let values = []
 
-//*************************************************** */
-// CHECK FOR FLAGS https://github.com/StudioProcess/ppl-crawler/blob/main/README.md
-// START WEBSOCKET IF FLAG 'web' is set
-//*************************************************** */
-console.log(process.argv);
-if (process.argv[2] === "web" || process.argv[3] === "web" || process.argv[4] === "web" || process.argv[5] === "web" || process.argv[6] === "web") {
-  await websocket.websocketConnect();
-}
-if (process.argv[2] === "ranking-snapshot" || process.argv[3] === "ranking-snapshot" || process.argv[4] === "ranking-snapshot" || process.argv[5] === "ranking-snapshot" || process.argv[6] === "ranking-snapshot") {
-  console.log("NAMES:")
-  console.log(await findMostUsed(db));
-  console.log("URLS:")
-  console.log(await findMostUsed(dbUrl));
-} else {
-  await initCrawler(); // START CRAWLER HERE
-}
-if (process.argv[2] === "clear-all" || process.argv[3] === "clear-all" || process.argv[4] === "clear-all" || process.argv[5] === "clear-all" || process.argv[6] === "clear-all") {
-  clearDataBases([dbUrl, db]);
-}
-if (process.argv[2] === "clear-urls" || process.argv[3] === "clear-urls" || process.argv[4] === "clear-urls" || process.argv[5] === "clear-urls" || process.argv[6] === "clear-urls") {
-  clearDataBases([dbUrl]);
-}
 
 //*************************************************** */
 // START CRAWLER
 //*************************************************** */
-
 totalURLS = await retrieveCounter(dbUrl);
-
 async function initCrawler() {
   const c = new Crawler({
-    maxConnections: 5,
+    maxConnections: 1,
     queueSize: 300,
     retries: 0,
-    rateLimit: 100,
+    rateLimit: 500,
     jQuery: {
       name: 'cheerio',
       options: {
@@ -153,9 +133,6 @@ async function initCrawler() {
               }
               return false;
             }
-            if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-              await websocket.clientSend(`CURRENTURLINFORMATION%${currentURL}%${linksFound}%${totalURLS}%${check_mem()}`);
-            }
             let countCurrentUrls = 0;
             for (const a of array) {
               if (a.attribs.href && a.attribs.href !== '#' && includesBlacklistedURL(a.attribs.href) === false && countCurrentUrls <= 300) {
@@ -178,7 +155,7 @@ async function initCrawler() {
                     if (c.queueSize <= 2000 && (tempString.includes('§') === false && tempString.includes('å') === false) && tempString.includes('.mp3') === false && tempString.includes('.mp4') === false && tempString.includes('.wav') === false && tempString.includes('.ogg') === false && tempString.includes('.mov') === false && tempString.includes('pdf') === false && tempString.includes('javascript') === false) {
                       urls.push(url.href);
                     } else {
-                      console.log("dont save: "+url.href)
+                      // console.log("dont save: " + url.href)
                     }
                     if (countLastProcessedURLs === 20) {
                       saveLastSession(globalID + c.queueSize);
@@ -198,7 +175,17 @@ async function initCrawler() {
               }
             }
             if (await checkDatabase(dbUrl, currentURL) === false) {
-              await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
+              // console.log(res.headers['set-cookie'])
+              if (res.headers['set-cookie']) {
+                let setCookie = res.headers['set-cookie'].toString();
+                /** SET CRITERIA FOR FILTERING THIRD PARTY COOKIES HERE */
+                /** name/value pairs containing: analytics or tracking */
+
+                // if (!setCookie.includes("SameSite=strict") || !setCookie.includes("SameSite=Strict") || !setCookie.includes("samesite=strict")) {
+                await saveCookies(res.headers['set-cookie'], url);
+                // }
+              }
+              // await extractData($("html").text(), url, (globalID + c.queueSize), array.length, $("html").html());
             }
           }
           c.queue(urls);
@@ -213,301 +200,108 @@ async function initCrawler() {
   c.queue(savedToQueue);
 }
 
-//*************************************************** */
-// NLP STUFF & DATA EXTRACTION
-//*************************************************** */
+// ************************************************************************************************
+// CHECK CRITERIA FOR TRACKING COOKIES AND SAFE THEM
+// ************************************************************************************************
+async function saveCookies(data, mUrl) {
+  let dateTemp = new Date();
+  // let date = dateTemp.getFullYear() + "_" + dateTemp.getMonth() + 1 + "_" + dateTemp.getDate() + "_" + dateTemp.getHours() + "-" + dateTemp.getMinutes() + "-" + dateTemp.getSeconds();
+  let currentPath = ['./cookies/'];
 
-async function extractData(mdata, href, id, foundLinks, dataHtml) {
-  let countryCode = href.host.split('.').splice(-2);
-  if (countryCode[1]) {
-    await searchForNames(href.href, countryCode[1], mdata, foundLinks, dataHtml);
-  }
-}
-//*************************************************** */
-// CHECK LANGUAGE AND REDIRECT DATA TO LANGUAGE PROCESSING WITH MATCHING NLP 
-// supports: german, english, french, italian and spanish
-//*************************************************** */
+  let mI = 0;
+  data.forEach((e) => {
+    let fullPair = e.split(';')[0]
+    let mDomain = "";
+    let mSameSite = "";
+    let mExpires = "";
 
-async function searchForNames(url, cc, data, foundLinks, dataHtml) {
-  currentLanguage = detectDataLanguage(data.substring(500, 8000));
-  console.log("search for names")
-  try {
-    switch (currentLanguage) {
-      case 'german':
-        await languageProcessing(deNlp(data), data, url, cc, foundLinks, dataHtml);
-        break;
-      case 'english':
-        await languageProcessing(enNlp(data), data, url, cc, foundLinks, dataHtml);
-        break;
-      case 'french':
-        await languageProcessing(frNlp(data), data, url, cc, foundLinks, dataHtml);
-        break;
-      case 'italian':
-        await languageProcessing(itNlp(data), data, url, cc, foundLinks, dataHtml);
-        break;
-      case 'spanish':
-        await languageProcessing(esNlp(data), data, url, cc, foundLinks, dataHtml);
-        break;
-      case '':
-        break;
-      default:
-        break;
+    if (e.includes("domain=")) {
+      mDomain = e.split('domain=')[1];
+      mDomain = mDomain.split(';')[0];
     }
-  } catch (error) {
-    console.log(error)
-  }
-  await printLogs(foundLinks, totalURLS);
+    if (e.includes("Domain=")) {
+      mDomain = e.split('Domain=')[1];
+      mDomain = mDomain.split(';')[0];
+    }
+    if (e.includes("samesite=")) {
+      mSameSite = e.split('samesite=')[1];
+      mSameSite = mSameSite.split(';')[0];
+    }
+    if (e.includes("SameSite=")) {
+      mSameSite = e.split('SameSite=')[1];
+      mSameSite = mSameSite.split(';')[0];
+    }
+
+    if (e.includes("Expires=")) {
+      mExpires = e.split('Expires=')[1];
+      mExpires = mExpires.split(';')[0];
+    }
+    if (e.includes("expires=")) {
+      mExpires = e.split('expires=')[1];
+      mExpires = mExpires.split(';')[0];
+    }
+
+    // let tempToBinary = fullPair.split('=')[1];//VALUE
+    let tempToBinary = fullPair;//FULLCOOKIE
+    let binary = toBinary(tempToBinary);
+    let binaryToArduino = mUrl.hostname+"|"+binary+"\n";
+    addToBuffer(binaryToArduino);
+   /** port.write(binaryToArduino, (err) => {
+      if (err) {
+        return console.log('Error on write: ', err.message);
+      }
+    }); */
+    
+    values[mI] = { "binary": binary, "name": fullPair.split('=')[0], "value": fullPair.split('=')[1], "sameSite": mSameSite, "expires": mExpires, "domain": mDomain, "parsedPage": mUrl.hostname };
+    mI++;
+  });
+
+  let tempdata = { "cookiesPerPage": values };//, "data": data, "url": mUrl 
+  allCookies.push(tempdata);
+  let tempPath = currentPath[0] + "to-analyze.json";
+  fs.appendFileSync(tempPath, JSON.stringify(tempdata, null, 2), function () { });
+  allCookies = [];
+  mI = 0;
 }
 
-// ************************************************************************************************
-// ***** CHECK SIZE OF SD CARD AND PRINT LOGS
-// ************************************************************************************************
-async function printLogs(foundLinks, totalURLS) {
-  await checkSizeBeforeSendingData(1);
-  await checkSizeBeforeSendingData(0);
-  console.log(`
-                                                              
-${currentURL}
-NEW NAMES: ${foundNames} | URLS: ${foundLinks}(${mQueueSize}) | TOTAL: ${await retrieveCounter(db)} NAMES | ${totalURLS} URLS | LONGEST: ${longestName} | ALL ${sdFULLInfo[1]}${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}${sdNAMESInfo[0]}
-                                                              
-`);
-  if (process.argv[2] === "ranking" || process.argv[3] === "ranking" || process.argv[4] === "ranking") {
-    let mostUsedNames = await findMostUsed(db);
-    let mostUsedURLS = await findMostUsed(dbUrl);
-    console.log(`NAME STATS
-LONGEST: ${longestName} | MOST FOUND:
-1: ${mostUsedNames[0].key}: ${mostUsedNames[0].value}
-2: ${mostUsedNames[1].key}: ${mostUsedNames[1].value}
-3: ${mostUsedNames[2].key}: ${mostUsedNames[2].value}
-4: ${mostUsedNames[3].key}: ${mostUsedNames[3].value}
-5: ${mostUsedNames[4].key}: ${mostUsedNames[4].value}
-
-MOST FOUND URLs: 
-1: ${mostUsedURLS[0].key}: ${mostUsedURLS[0].value}
-2: ${mostUsedURLS[1].key}: ${mostUsedURLS[1].value}
-3: ${mostUsedURLS[2].key}: ${mostUsedURLS[2].value}
-4: ${mostUsedURLS[3].key}: ${mostUsedURLS[3].value}
-5: ${mostUsedURLS[4].key}: ${mostUsedURLS[4].value}
-`)
+function addToBuffer(data) {
+  buffer.push(data);
+  if (!isSending) {
+      isSending = true; // Mark as sending
+      sendData(); // Start sending data
   }
 }
 
-// ************************************************************************************************
-// ***** FIND NAMES AND SAVE THEM
-// ************************************************************************************************
-async function languageProcessing(doc, data, url, cc, foundLinks, dataHtml) {
-  console.log("language processing")
-  foundNames = 0;
-  let allCurrentNames = [];
-  let repeatedCurrentNames = [];
-  totalURLS++;
-  await handleNewEntry(dbUrl, url);
-  await saveCounter(dbUrl);
-  let justFound = 0;
-  let repeatedFound = 0;
-  const tosaveCurrentURl = url;
-  const tosaveCurrentId = totalURLS;
-  let saveNoNames = false;
-  let person = doc.match('#FirstName #LastName').out('array');
-  let personBind = [];
-  let allBind = [data, [], tosaveCurrentId, tosaveCurrentURl, await getCurrentDate()];
-  for (let i = 0; i < person.length; i++) {
-    personBind[i] = [person[i], tosaveCurrentURl, tosaveCurrentId];
-  }
-  if (person !== undefined) {
-    currentDate = await getCurrentDate();
-    let dateObject = new Date();
-
-    for (let i = 0; i < personBind.length; i++) {
-      let a = personBind[i][0];
-      let pURL = personBind[i][1];
-      let pURLS = personBind[i][2];
-      let text = a;
-      const matchedNames = a.match(new RegExp(`/([\u4e00-\u9fff\u3400-\u4dbf\ufa0e\ufa0f\ufa11\ufa13\ufa14\ufa1f\ufa21\ufa23\ufa24\ufa27\ufa28\ufa29\u3006\u3007]|[\ud840-\ud868\ud86a-\ud879\ud880-\ud887][\udc00-\udfff]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud87a[\udc00-\udfef]|\ud888[\udc00-\udfaf])([\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/gm|(\s+\S\s)|(、)|(/\\/g)|(phd)|(«)|(Phd)|(™)|(PHD)|(dr)|(Dr)|(DR)|(ceo)|(Ceo)|(CEO)|(=)|(})|(\\;)|(\\；)|(\\.)|(•)|(·)|(\\,)|(\\:)|({)|(\\")|(\\')|(\\„)|(\\”)|(\\*)|(ii)|(—)|(\\|)|(\\[)|(\\])|(“)|(=)|(®)|(’)|(#)|(!)|(&)|(・)|(\\+)|(-)|(\\?)|(@)|(²)|(_)|(–)|(,)|(:)|(und)|(©)|(\\))|(\\()|(%)|(&)|(>)|(\\/)|(\\")|(\\d)|(\\s{2,20})|($\s\S)|(\\b[a-z]{1,2}\\b\\s*)|(\\b[a-z]{20,90}\\b\\s*)|(\\\.)`));//(\/)|(\\)|
-
-      await saveCounter(db);
-      const numberOfNames = await retrieveCounter(db);
-      if (matchedNames === null) {
-        if (text.includes("’s") || text.includes("'s")) {
-          text = a.slice(0, -2);
-        }
-        let uppercaseName = text.split(" ");
-        if (uppercaseName[1]) {
-          if (uppercaseName[0][2] && uppercaseName[1][2]) {
-            uppercaseName[0] = uppercaseName[0].toLowerCase();
-            uppercaseName[1] = uppercaseName[1].toLowerCase();
-            uppercaseName[0] = uppercaseName[0].charAt(0).toUpperCase() + uppercaseName[0].slice(1) + " ";
-            uppercaseName[1] = uppercaseName[1].charAt(0).toUpperCase() + uppercaseName[1].slice(1);
-            let tempNameString = uppercaseName[0].concat(uppercaseName[1])
-            if (tempNameString.length > longestName) {
-              longestName = tempNameString.length;
-            }
-            console.log("modify name")
-            const checkedDataBase = await handleNewEntry(db, tempNameString);
-            if (i < personBind.length - 1) {
-              if (tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
-                if (checkedDataBase === false) {
-                  if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-                    let toSend = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc`)//%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`)// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-                    await websocket.clientSend(toSend);
-                    startTime = new Date();
-                    clearTimeout(timeoutId);
-                    await websocket.clientSend(`GETCARDSIZE%${sdFULLInfo[1]}%${sdNAMESInfo[1]}%${sdFULLInfo[0]}%${sdNAMESInfo[0]}`);
-                  }
-                  console.log("send name")
-                  allCurrentNames[justFound] = tempNameString;
-                  inCurrentDataset++;
-                  justFound++;
-                  countLastProcessedNames === 22 ? await saveLastNames(url, lastProcessedNames, countLastProcessedNames) : countLastProcessedNames++;
-                  lastProcessedNames[countLastProcessedNames] = (`${tempNameString}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getMinutes())}%${cc}`);//tempNameString;// + '............' + currentDate + '............' + cc)//+ mUrl.host);
-                } else if (repeatedCurrentNames.includes(tempNameString) === false && allCurrentNames.includes(tempNameString) === false) {
-                  repeatedCurrentNames[repeatedFound] = tempNameString;
-                  repeatedFound++;
-                }
-              }
-            } else {
-              saveNoNames = true;
-              if (checkedDataBase === false && tempNameString !== null && tempNameString !== undefined && tempNameString.length > 2) {
-                allCurrentNames[justFound++] = tempNameString;
-              }
-              const toSaveCurrentNames = allCurrentNames;
-              if (toSaveCurrentNames !== null && toSaveCurrentNames.length > 0) {
-                for (let j = 0; j < toSaveCurrentNames.length; j++) {
-                  let obj = {
-                    name: toSaveCurrentNames[j],
-                    url: pURL,
-                    nId: numberOfNames,
-                    urlId: pURLS,
-                    date: currentDate,
-                    domain: cc,
-                    textLanguage: currentLanguage
-                  };
-                  await saveToSDCard(true, obj);
-                }
-              }
-              await replaceAllNames(allBind[0], toSaveCurrentNames, allBind[2], allBind[3], allBind[4], repeatedCurrentNames);
-              if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-                await websocket.clientSend(`METADATA % ${mQueueSize}% ${await retrieveCounter(db)}% ${await retrieveCounter(dbUrl)}% ${check_mem()}% ${inCurrentDataset}% ${currentURL}% ${linksFound} `);//ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]
-              }
-              inCurrentDataset = 0;
-              allBind[1] = allCurrentNames;
-            }
-
-
-
-
+function sendData() {
+  if (buffer.length > 0) {
+      const dataToSend = buffer.shift(); // Get the first item from the buffer
+      port.write(dataToSend, (err) => {
+          if (err) {
+              return console.error('Error on write: ', err.message);
           }
-        }
-
-      }
-      //IF IT WASNT SAVED ON THE LAST ITERATION SAVE TO FILE
-      if (i === personBind.length - 1 && saveNoNames === false) {
-        await replaceAllNames(allBind[0], [], allBind[2], allBind[3], allBind[4], []);
-      }
-    }
+      });
   }
-  foundNames = justFound;
 
-  if (websocket.returnClient()) {
-    timeoutId = setTimeout(async function () {
-      if (websocket.returnClient() && websocket.returnClient().readyState === WebSocket.OPEN) {
-        let sendRecycledNameVar = await sendRecycledName(cc)
-        await websocket.clientSend(sendRecycledNameVar);
-      }
-    }, 18000);
-  }
-}
-// ************************************************************************************************
-// ***** SEND RECYCLED NAME (ONLY FOR WEBSOCKET)
-// ************************************************************************************************
-async function sendRecycledName(cc) {
-  let dateObject = new Date();
-  waitForRecycledName = true;
-  if (await retrieveCounter(db) > 2) {
-    let savedName = await getExistingNames(db, rand(0, (await retrieveCounter(db))), await retrieveCounter(db));
-    console.log(savedName)
-    let toSend = (`RECYCLED%${savedName}%${dateObject.getFullYear()}-${returnWithZero(dateObject.getMonth())}-${returnWithZero(dateObject.getDate())}&nbsp;&nbsp;${returnWithZero(dateObject.getHours())}:${returnWithZero(dateObject.getMinutes())}:${returnWithZero(dateObject.getSeconds())}%${cc}`);
-    startTime = new Date();
-    waitForRecycledName = false;
-    return toSend;
-  }
-}
-
-
-
-
-// ************************************************************************************************
-// HELPER FUNCTIONS
-// ************************************************************************************************
-
-export async function checkSizeBeforeSendingData(i) {
-  // let currentPath = ['./names-output/output/', './full-output/output/'];
-  let currentPath = ["/media/process/NAMES/", "/media/process/ALL/"];
-  let options = {
-    file: currentPath[i],
-    prefixMultiplier: 'GB',
-    isDisplayPrefixMultiplier: true,
-    precision: 2
-  };
-  let numericValue = '0';
-  if (fs.existsSync(currentPath[i])) {
-    const response = await df(options);
-    cardFilled[i] = response[0].used;
-    cardRemaining[i] = response[0].available;
-    numericValue = response[0].available.includes('GB') ? response[0].available.split('GB') : '';
-    if (i === 0) {
-      sdNAMESInfo[0] = '/' + response[0].size;
-      sdNAMESInfo[1] = response[0].used;
-    }
-    if (i === 1) {
-      sdFULLInfo[0] = '/' + response[0].size;
-      sdFULLInfo[1] = response[0].used;
-    }
-    // console.log(numericValue[0])
-    if (numericValue[0] >= 1.0) {
-      if (i === 0) {
-        sendEmailOnce[0] === true;
-      }
-      if (i === 1) {
-        sendEmailOnce[1] === true;
-      }
-      return true;
-    }
-    if (numericValue[0] <= 0.5) {
-      if (i === 0 && sendEmailOnce[0] === true) {
-        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card NAMES is already filled with data 🤯 \nPlease change it asap!\n
-        Current Stats: 
-        TOTAL: ${await retrieveCounter(db)} NAMES | ${await retrieveCounter(dbUrl)} URLS
-        ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
-
-        await sendEmail(whichCard)
-        sendEmailOnce[0] = false;
-      }
-      if (i === 1 && sendEmailOnce[1] === true) {
-        console.log("time to change card");
-        let whichCard = `🤖 People Crawler here 🤖 \n\n The SD card ALL is already filled with data 🤯 \nPlease change it asap!\n
-        Current Stats: 
-        TOTAL: ${await retrieveCounter(db)} NAMES | ${await retrieveCounter(dbUrl)} URLS
-        ALL ${sdFULLInfo[1]}/${sdFULLInfo[0]} | NAMES ${sdNAMESInfo[1]}/${sdNAMESInfo[0]}\n`;
-        await sendEmail(whichCard)
-        sendEmailOnce[1] = false;
-      }
-      return false;
-    }
+  if (buffer.length > 0) {
+      setTimeout(sendData, sendInterval); // Schedule the next send
   } else {
-    // console.log("no path")
-    if (i === 0) {
-      sdNAMESInfo[0] = ``;
-      sdNAMESInfo[1] = `path doesn't exist`;
-    }
-    if (i === 1) {
-      sdFULLInfo[0] = ``;
-      sdFULLInfo[1] = `path doesn't exist`;
-    }
-
-    return false;
+      isSending = false; // Reset sending status
   }
 }
+
+
+function toBinary(string) {
+  return string.split('').map(function (char) {
+    return char.charCodeAt(0).toString(2);
+  }).join('');
+}
+
+function analyzeCookieData() {
+  // let completeData = JSON.parse(fs.readFileSync("./cookies/to-analyze-progress.json").toString());
+  // console.log(completeData[0])
+
+}
+
 // ************************************************************************************************
 // RETURN LAST SAVED URLS
 // ************************************************************************************************
@@ -533,30 +327,3 @@ function saveLastSession(handledNumber) {
   fs.writeFileSync('./recoverLastSession.json', JSON.stringify(mData));
   countLastProcessedURLs = 0
 }
-// ************************************************************************************************
-// SEND AN EMAIL WHEN THE SD CARD IS FULL
-// ************************************************************************************************
-async function sendEmail(mText) {
-  let transporter = nodemailer.createTransport({
-    host: "mail.gmx.net",
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: "ait-crawler@gmx.at", // generated ethereal user
-      pass: "9izAYkkqLjWYtQJ", // generated ethereal password
-    },
-  });
-  // send mail with defined transport object
-  let info = await transporter.sendMail({
-    from: '"AIT CRAWLER" <ait-crawler@gmx.at>', // sender address
-    to: "mariedvorzak@gmail.com", // list of receivers
-    // cc: "hello@process.studio",
-    subject: "TIME TO CHANGE SD", // Subject line
-    text: `${mText}`, // plain text body
-    // html: `${mText}`, // html body
-  });
-  emailSend = true;
-  console.log("Message sent: %s", info.messageId);
-  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-}
-
